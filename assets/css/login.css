@@ -1,0 +1,48 @@
+body{
+	padding: 40px;
+	margin: 0;
+	background: url('../img/background_2.jpg') no-repeat center center fixed;
+	min-height: 100vh;
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
+}
+
+#login-div{
+	padding: 60px 20px;
+	background-color: rgb(20, 82, 82, 0.35);
+	/*background-color: #00b3b3;
+	rgb(46, 184, 184)*/
+	background-repeat: no-repeat;
+	background-position: center top;
+	height: auto;
+	/*padding-bottom: 10px;*/
+	margin-bottom: 10px;
+	z-index: 100;
+	box-shadow:  0 0 8px #333;
+	color: #fff;
+}
+
+.header_design{
+	text-shadow: 2px 0 0 #fff, -2px 0 0 #fff, 0 2px 0 #fff, 0 -2px 0 #fff, 1px 1px #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+	/*text-shadow: 2px 2px 9px #180B07;*/
+	background-color: transparent !important;
+	color: black;
+	margin-top: 20%;
+	font-weight: 900;
+	opacity: 10.0;
+	z-index: 1038;
+}
+
+.btn-login{
+	background-color: #008fb3;
+	color: #fff;
+	margin-top: 30px;
+}
+
+.card{
+	background-color: transparent;
+	border: 0px;
+	margin: 10px 30px;
+}
