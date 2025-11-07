@@ -148,13 +148,45 @@ $(document).ready(function () {
         sorter: data => data.sort((a, b) => a.text.localeCompare(b.text))
     });
 
-    $('select.dynamic_dropdown').select2({
-        width: '100%',
-        placeholder: 'Select...',
-        //dropdownPosition: 'below',
-        theme: 'bootstrap4',
-        sorter: data => data.sort((a, b) => a.text.localeCompare(b.text))
+    // $('select.dynamic_dropdown').select2({
+    //     width: '100%',
+    //     placeholder: 'Select...',
+    //     //dropdownPosition: 'below',
+    //     theme: 'bootstrap4',
+    //     sorter: data => data.sort((a, b) => a.text.localeCompare(b.text)),
+        
+    // });
+
+    $('select.dynamic_dropdown').each(function() {
+        var $select = $(this);
+        var $tableWrapper = $select.closest('.table-responsive');
+
+        if ($select.find('option[value="_reset"]').length === 0) {
+            $select.prepend('<option value="_reset">Select</option>');
+        }
+
+        $select.select2({
+            placeholder: 'Select...',
+            theme: 'bootstrap4',
+            sorter: data => data.sort((a, b) => {
+                if (a.id === '_reset') return -1;
+                if (b.id === '_reset') return 1;
+                return a.text.localeCompare(b.text);
+            }),
+            width: '100%',
+            dropdownParent: $tableWrapper.length ? $tableWrapper : $select.parent()
+        });
+
+        $select.on('change', function() {
+            if ($(this).val() === '_reset') {
+                $(this).val('').trigger('change'); 
+            }
+        });
     });
+
+    
+    
+
 
     $('select.dynamic_dropdown_no_order').select2({
         width: '100%',
@@ -3979,6 +4011,15 @@ $(document).ready(function () {
         $(formID).find('select').val('').trigger('change');
     });
 
+    $(document).on('click', '.upload-supplier', function(e){
+
+        var formID = '#upload-supplier';
+        var modalID = '#modal-upload-supplier';
+        $(modalID).modal({show:true});
+
+        $(formID).find('select').val('').trigger('change');
+    });
+
     var supplierGrid = $('#tbl-supplier').DataTable({
         "pagingType": "full",
         "language": {
@@ -4063,6 +4104,41 @@ $(document).ready(function () {
             }
         });
     });
+  
+$(document).on('submit', '#upload-supplier-form', function(event) {  
+    event.preventDefault();
+    var formID = '#upload-supplier-form';
+    var modalID = '#modal-upload-supplier';
+    $('#loader-div').removeClass('loaded');
+
+    $.ajax({
+        url: base_url + 'admin/upload-supplier/',
+        method: 'POST',
+        data: new FormData(this),
+        contentType: false,
+        processData: false,
+        dataType: 'json',
+        success: function(data) {
+            if (!data.success) {
+                showAlertError(data.successMsg);
+            } else {
+                $(formID)[0].reset();
+                $(modalID).modal('hide');
+                $(modalID).on('hidden.bs.modal', function() {
+                    $(this).removeData('bs.modal');
+                });
+                supplierGrid.ajax.reload(null, false);
+                showSuccess(data.successMsg);
+            }
+            $('#loader-div').addClass('loaded');
+        },
+        error: function(xhr, textStatus, errorThrown) {
+            showError('Error in Uploading!');
+            console.log(xhr.responseText);
+            $('#loader-div').addClass('loaded');
+        }
+    });
+});
 
     $(document).on('click', '.edit-supplier', function(e){
         e.preventDefault();
@@ -5150,6 +5226,7 @@ $(document).ready(function () {
         });
     });
 
+    
     //END OF COMMERCIAL FEEDMILL SCRIPT
 
 
@@ -5231,7 +5308,7 @@ $(document).ready(function () {
                     showAlertError(data.successMsg);
                 } else {
                     $(formID)[0].reset();  
-                    $(modalID).modal('hide');
+                     $(modalID).modal('hide');
                     $(modalID).on('hidden.bs.modal', function () {
                         $(this).removeData('bs.modal');
                     });
@@ -5720,7 +5797,6 @@ $(document).ready(function () {
         });
     });
 
-
     $(document).on('click', '.edit-test-parameter', function(e){
         e.preventDefault();
         var id = $(this).attr('data-id');
@@ -5859,6 +5935,241 @@ $(document).ready(function () {
     });
 
     //END OF TEST PARAMETER SCRIPT
+
+    //TEST NAME SCRIPT
+
+    $(document).on('click', '.add-test-name', function(e){
+        var formID = '#add-test-name';
+        var modalID = '#modal-add-test-name';
+        $(modalID).modal({show:true});
+        $(formID)[0].reset();
+        $(formID).find('select').val('').trigger('change');
+    });
+
+    var testnameGrid = $('#tbl-test-name').DataTable({
+        "pagingType": "full",
+        "language": {
+            "emptyTable":     "No data available",
+            "lengthMenu":     "Show _MENU_ entries",
+            "info":           "Displaying _START_ to _END_ of _TOTAL_ entries",
+            "infoEmpty":      "Displaying 0 to 0 of 0 entries",
+            'search': '<i class="fa fa-search" aria-hidden="true"></i>',
+            "paginate": {
+                "first":      '<i class="fas fa-fast-backward"></i>',
+                "last":       '<i class="fas fa-fast-forward"></i>',
+                "next":       '<i class="fas fa-step-forward"></i>',
+                "previous":   '<i class="fas fa-step-backward"></i>'
+            },
+        },
+        "responsive": true,
+        "columnDefs": [
+            { responsivePriority: 1, targets: 0 },
+            { responsivePriority: 2, targets: -1 },
+            { responsivePriority: 3, targets: 1 },
+            { responsivePriority: 4, targets: -2 }
+        ],
+        "order": [],
+        select : true,
+        "lengthMenu": [[10, 50, 100, 500, 1000, -1], [10, 50, 100, 500, 1000, "All"]],
+        "ajax": {
+            url : base_url+'admin/testNameGrid',
+            type : 'GET'
+        },
+        buttons: [
+            {
+                extend: 'excel',
+                messageTop: 'Run Date : '+date,
+                customize: function( xlsx ) {
+                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                },
+                autoFilter: true
+            }
+        ]
+    });
+
+    $(document).on('click', '.refresh-dt', function(e){
+        
+        testnameGrid.ajax.reload(null, false);
+    });
+
+    $(document).on('click', '.print-dt', function(e){
+        
+        testnameGrid.button( '.buttons-excel' ).trigger();
+        //alert('hello');
+    });
+
+    $(document).on('submit', '#add-test-name', function(event){  
+        event.preventDefault();
+        var formID = '#add-test-name';
+        var modalID = '#modal-add-test-name';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/add-test-name/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    testnameGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('click', '.edit-test-name', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/modal-test-name/',
+            data: {id:id},
+            method: 'POST',
+            success:function(response){
+                var parse_response = JSON.parse(response);
+                if(parse_response['result'] == 1){
+                    $('#update-test-name').find('#id').val(id);
+                    $('#update-test-name').find('#testName').val(parse_response['info'].name);
+                    $('#modal-edit-test-name').modal({show:true});
+                }else{
+                    console.log('Error please contact your administrator.');
+                }
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#update-test-name', function(event){  
+        event.preventDefault();
+        var formID = '#update-test-name';
+        var modalID = '#modal-edit-test-name';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/update-test-name/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    testnameGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('click', '.toggle-inactive', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#activate-test-name').find('#id').val(id);
+        $('#activate-test-name').find('#val').html(val);
+        $('#modal-active-test-name').modal({show:true});
+    });
+
+    $(document).on('click', '.toggle-active', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#deactivate-test-name').find('#id').val(id);
+        $('#deactivate-test-name').find('#val').html(val);
+        $('#modal-deactivate-test-name').modal({show:true});
+    });
+    
+    $(document).on('submit', '#deactivate-test-name', function(event){  
+        event.preventDefault();
+        var formID = '#deactivate-test-name';
+        var modalID = '#modal-deactivate-test-name';
+        
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/deactivate-test-name/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    testnameGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#activate-test-name', function(event){  
+        event.preventDefault();
+        var formID = '#activate-test-name';
+        var modalID = '#modal-active-test-name';
+
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/activate-test-name/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                     testnameGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    //END OF TEST NAME SCRIPT
+
 
     //TEST METHOD SCRIPT
 
@@ -6094,7 +6405,7 @@ $(document).ready(function () {
 
     //END OF TEST METHOD SCRIPT
 
-    //REF METHOD SCRIPT
+    //REFERENCE METHOD SCRIPT
     $(document).on('click', '.add-ref-method', function(e){
         var formID = '#add-ref-method';
         var modalID = '#modal-add-ref-method';
@@ -6396,7 +6707,7 @@ $(document).ready(function () {
         //alert('hello');
     });
 
-     $(document).on('submit', '#add-lab-test-group', function(event){  
+    $(document).on('submit', '#add-lab-test-group', function(event){  
         event.preventDefault();
         var formID = '#add-lab-test-group';
         var modalID = '#modal-lab-test-group';
@@ -6802,7 +7113,6 @@ $(document).ready(function () {
     //END OF NUTRITIONIST SCRIPT
 
 
-
     // BATCH NUMBER SCRIPT
 
     $(document).on('click', '.add-batch-number', function(e){
@@ -6898,7 +7208,378 @@ $(document).ready(function () {
         });
     });
 
+    $(document).on('click', '.edit-batch-number', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/modal-batch-number/',
+            data: {id:id},
+            method: 'POST',
+            success:function(response){
+                var parse_response = JSON.parse(response);
+                if(parse_response['result'] == 1){
+                    $('#update-batch-number').find('#id').val(id);
+                    $('#update-batch-number').find('#batchNumber').val(parse_response['info'].batch_number);
+                    $('#modal-edit-batch-number').modal({show:true});
+                }else{
+                    console.log('Error please contact your administrator.');
+                }
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#update-batch-number', function(event){  
+        event.preventDefault();
+        var formID = '#update-batch-number';
+        var modalID = '#modal-edit-batch-number';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/update-batch-number/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    batchnumberGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('click', '.toggle-inactive', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#activate-batch-number').find('#id').val(id);
+        $('#activate-batch-number').find('#val').html(val);
+        $('#modal-active-batch-number').modal({show:true});
+    });
+
+    $(document).on('click', '.toggle-active', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#deactivate-batch-number').find('#id').val(id);
+        $('#deactivate-batch-number').find('#val').html(val);
+        $('#modal-deactivate-batch-number').modal({show:true});
+    });
+    
+    $(document).on('submit', '#deactivate-batch-number', function(event){  
+        event.preventDefault();
+        var formID = '#deactivate-batch-number';
+        var modalID = '#modal-deactivate-batch-number';
+        
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/deactivate-batch-number/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    batchnumberGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#activate-batch-number', function(event){  
+        event.preventDefault();
+        var formID = '#activate-batch-number';
+        var modalID = '#modal-active-batch-number';
+
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/activate-batch-number/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                     batchnumberGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
     //END OF BATCH NUMBER SCRIPT
+
+    // PLATE NUMBER SCRIPT
+
+    $(document).on('click', '.add-plate-number', function(e){
+        var formID = '#add-plate-number';
+        var modalID = '#modal-add-plate-number';
+        $(modalID).modal({show:true});
+        $(formID)[0].reset();
+        $(formID).find('select').val('').trigger('change');
+    });
+
+    var platenumberGrid = $('#tbl-plate-number').DataTable({
+        "pagingType": "full",
+        "language": {
+            "emptyTable":     "No data available",
+            "lengthMenu":     "Show _MENU_ entries",
+            "info":           "Displaying _START_ to _END_ of _TOTAL_ entries",
+            "infoEmpty":      "Displaying 0 to 0 of 0 entries",
+            'search': '<i class="fa fa-search" aria-hidden="true"></i>',
+            "paginate": {
+                "first":      '<i class="fas fa-fast-backward"></i>',
+                "last":       '<i class="fas fa-fast-forward"></i>',
+                "next":       '<i class="fas fa-step-forward"></i>',
+                "previous":   '<i class="fas fa-step-backward"></i>'
+            },
+        },
+        "responsive": true,
+        "columnDefs": [
+            { responsivePriority: 1, targets: 0 },
+            { responsivePriority: 2, targets: -1 },
+            { responsivePriority: 3, targets: 1 },
+            { responsivePriority: 4, targets: -2 }
+        ],
+        "order": [],
+        select : true,
+        "lengthMenu": [[10, 50, 100, 500, 1000, -1], [10, 50, 100, 500, 1000, "All"]],
+        "ajax": {
+            url : base_url+'admin/plateNumberGrid',
+            type : 'GET'
+        },
+        buttons: [
+            {
+                extend: 'excel',
+                messageTop: 'Run Date : '+date,
+                customize: function( xlsx ) {
+                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                },
+                autoFilter: true
+            }
+        ]
+    });
+
+    $(document).on('click', '.refresh-dt', function(e){
+        
+        platenumberGrid.ajax.reload(null, false);
+    });
+
+    $(document).on('click', '.print-dt', function(e){
+        
+        platenumberGrid.button( '.buttons-excel' ).trigger();
+        //alert('hello');
+    });
+
+    $(document).on('submit', '#add-plate-number', function(event){  
+        event.preventDefault();
+        var formID = '#add-plate-number';
+        var modalID = '#modal-add-plate-number';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/add-plate-number/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    platenumberGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('click', '.edit-plate-number', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/modal-plate-number/',
+            data: {id:id},
+            method: 'POST',
+            success:function(response){
+                var parse_response = JSON.parse(response);
+                if(parse_response['result'] == 1){
+                    $('#update-plate-number').find('#id').val(id);
+                    $('#update-plate-number').find('#plateNumber').val(parse_response['info'].plate_number);
+                    $('#modal-edit-plate-number').modal({show:true});
+                }else{
+                    console.log('Error please contact your administrator.');
+                }
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#update-plate-number', function(event){  
+        event.preventDefault();
+        var formID = '#update-plate-number';
+        var modalID = '#modal-edit-plate-number';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/update-plate-number/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    platenumberGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('click', '.toggle-inactive', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#activate-plate-number').find('#id').val(id);
+        $('#activate-plate-number').find('#val').html(val);
+        $('#modal-active-plate-number').modal({show:true});
+    });
+
+    $(document).on('click', '.toggle-active', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#deactivate-plate-number').find('#id').val(id);
+        $('#deactivate-plate-number').find('#val').html(val);
+        $('#modal-deactivate-plate-number').modal({show:true});
+    });
+    
+    $(document).on('submit', '#deactivate-plate-number', function(event){  
+        event.preventDefault();
+        var formID = '#deactivate-plate-number';
+        var modalID = '#modal-deactivate-plate-number';
+        
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/deactivate-plate-number/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    platenumberGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#activate-plate-number', function(event){  
+        event.preventDefault();
+        var formID = '#activate-plate-number';
+        var modalID = '#modal-active-plate-number';
+
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/activate-plate-number/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                     platenumberGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    //END OF PLATE NUMBER SCRIPT
 
     // TEST CODE SCRIPT
 
@@ -6995,28 +7676,37 @@ $(document).ready(function () {
         });
     });
 
-    $(document).on('click', '.edit-test', function(e){
+    $(document).on('click', '.edit-test', function(e) {
         e.preventDefault();
         var id = $(this).attr('data-id');   
+        
         $('#loader-div').removeClass('loaded');
+
         $.ajax({
             url: base_url + 'admin/modal-test/',
-            data: {id:id},
+            data: { id: id },
             method: 'POST',
-            success:function(response){
+            success: function(response) {
                 var parse_response = JSON.parse(response);
-                if(parse_response['result'] == 1){
+                
+                if (parse_response['result'] == 1) {
                     $('#update-test').find('#id').val(id);
-                    $('#update-test').find('#testName').val(parse_response['info'].test_name);
-                    $('#update-test').find('#testCode').val(parse_response['info'].test_code).trigger('change');
-                    $('#modal-edit-test').modal({show:true});
-                }else{
+
+                    $('#update-test').find('#testName').empty();
+                    $('#update-test').find('#testName').append(parse_response['info'].test_name_id);
+
+                    $('#update-test').find('#testCode').val(parse_response['info'].test_code);
+
+                    $('#modal-edit-test').modal({ show: true });
+                } else {
                     console.log('Error please contact your administrator.');
                 }
+
                 $('#loader-div').addClass('loaded');
             }
         });
     });
+
 
     $(document).on('submit', '#update-test', function(event){  
         event.preventDefault();
@@ -7137,7 +7827,246 @@ $(document).ready(function () {
 
     //END OF TEST CODE SCRIPT
 
+    
+    // TRANSACTION REASON SCRIPT
+
+    $(document).on('click', '.add-reason', function(e){
+        var formID = '#add-test';
+        var modalID = '#modal-add-reason';
+        $(modalID).modal({show:true});
+        $(formID)[0].reset();
+        $(formID).find('select').val('').trigger('change');
+    });
+
+    var reasonGrid = $('#tbl-reason').DataTable({
+        "pagingType": "full",
+        "language": {
+            "emptyTable":     "No data available",
+            "lengthMenu":     "Show _MENU_ entries",
+            "info":           "Displaying _START_ to _END_ of _TOTAL_ entries",
+            "infoEmpty":      "Displaying 0 to 0 of 0 entries",
+            'search': '<i class="fa fa-search" aria-hidden="true"></i>',
+            "paginate": {
+                "first":      '<i class="fas fa-fast-backward"></i>',
+                "last":       '<i class="fas fa-fast-forward"></i>',
+                "next":       '<i class="fas fa-step-forward"></i>',
+                "previous":   '<i class="fas fa-step-backward"></i>'
+            },
+        },
+        "responsive": true,
+        "columnDefs": [
+            { responsivePriority: 1, targets: 0 },
+            { responsivePriority: 2, targets: -1 },
+            { responsivePriority: 3, targets: 1 },
+            { responsivePriority: 4, targets: -2 }
+        ],
+        "order": [],
+        select : true,
+        "lengthMenu": [[10, 50, 100, 500, 1000, -1], [10, 50, 100, 500, 1000, "All"]],
+        "ajax": {
+            url : base_url+'admin/reasonGrid',
+            type : 'GET'
+        },
+        buttons: [
+            {
+                extend: 'excel',
+                messageTop: 'Run Date : '+date,
+                customize: function( xlsx ) {
+                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                },
+                autoFilter: true
+            }
+        ]
+    });
+
+    $(document).on('click', '.refresh-dt', function(e){
         
+        reasonGrid.ajax.reload(null, false);
+    });
+
+    $(document).on('click', '.print-dt', function(e){
+        
+        reasonGrid.button( '.buttons-excel' ).trigger();
+        //alert('hello');
+    });
+
+
+    $(document).on('submit', '#add-reason', function(event){  
+        event.preventDefault();
+        var formID = '#add-reason';
+        var modalID = '#modal-add-reason';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/add-reason/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    reasonGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('click', '.edit-reason', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');   
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/modal-reason/',
+            data: {id:id},
+            method: 'POST',
+            success:function(response){
+                var parse_response = JSON.parse(response);
+                if(parse_response['result'] == 1){
+                    $('#update-reason').find('#id').val(id);
+                    $('#update-reason').find('#reasonName').val(parse_response['info'].reason_name);
+                    $('#modal-edit-reason').modal({show:true});
+                }else{
+                    console.log('Error please contact your administrator.');
+                }
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#update-reason', function(event){  
+        event.preventDefault();
+        var formID = '#update-reason';
+        var modalID = '#modal-edit-reason';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/update-reason/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    reasonGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });   
+
+    $(document).on('click', '.toggle-inactive', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#activate-reason').find('#id').val(id);
+        $('#activate-reason').find('#val').html(val);
+        $('#modal-active-reason').modal({show:true});
+    });
+
+    $(document).on('click', '.toggle-active', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#deactivate-reason').find('#id').val(id);
+        $('#deactivate-reason').find('#val').html(val);
+        $('#modal-deactivate-reason').modal({show:true});
+    });
+    
+    $(document).on('submit', '#deactivate-reason', function(event){  
+        event.preventDefault();
+        var formID = '#deactivate-reason';
+        var modalID = '#modal-deactivate-reason';
+        
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/deactivate-reason/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    reasonGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#activate-reason', function(event){  
+        event.preventDefault();
+        var formID = '#activate-reason';
+        var modalID = '#modal-active-reason';
+
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/activate-reason/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                     reasonGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    //END OF TRANSACTION REASON SCRIPT
+
+        
+
+
+
     //ANIMAL NUTRIONIONIST SCRIPT
 
     $(document).on('click', '.add-animal-nutritionist', function(e){
@@ -7458,7 +8387,7 @@ $(document).ready(function () {
                     showAlertError(data.successMsg);
                 } else {
                     $(formID)[0].reset();  
-                    $(modalID).modal('hide');
+                     $(modalID).modal('hide');
                     $(modalID).on('hidden.bs.modal', function () {
                         $(this).removeData('bs.modal');
                     });
@@ -8401,7 +9330,7 @@ $(document).ready(function () {
         ignore: 'input[type=hidden], .select2-input, .select2-focusser',
         rules: {
             'new-password': {
-                
+            
                 minlength: 7
             },
             'confirm-password':{

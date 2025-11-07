@@ -1,0 +1,33 @@
+PHP Notice:  Undefined index: HTTP_HOST in D:\xampp\htdocs\blims\application\config\config.php on line 31
+
+Notice: Undefined index: HTTP_HOST in D:\xampp\htdocs\blims\application\config\config.php on line 31
+
+A PHP Error was encountered
+
+Severity:    Notice
+Message:     Undefined index: HTTP_HOST
+Filename:    D:\xampp\htdocs\blims\application\config\config.php
+Line Number: 31
+
+Backtrace:
+	File: D:\xampp\htdocs\blims\application\config\config.php
+	Line: 31
+	Function: _error_handler
+
+	File: D:\xampp\htdocs\blims\index.php
+	Line: 316
+	Function: require_once
+
+
+
+Database error: A Database Error Occurred
+
+	Error Number: 1054
+	Unknown column 'tt.latest_timestamp' in 'field list'
+	SELECT `td`.`trans_detail_id`, `td`.`lead_time`, `tt`.`latest_timestamp` AS `date_submitted`
+FROM `trans_details` `td`
+LEFT JOIN `trans_timestamps` `tt` ON `tt`.`trans_detail_id` = `td`.`trans_detail_id` AND `tt`.`trans_detail_status_id` = 26
+WHERE `td`.`lead_time` IS NOT NULL
+	Filename: D:/xampp/htdocs/blims/system/database/DB_driver.php
+	Line Number: 691
+

@@ -15008,6 +15008,11 @@ body.sidebar-toggled footer.sticky-footer {
 	-webkit-animation: load6 1.7s infinite ease, round 1.7s infinite ease;
 	animation: load6 1.7s infinite ease, round 1.7s infinite ease;
 }
+
+.loaded #loader-wrapper {
+	visibility: hidden;
+}
+
 @-webkit-keyframes load6 {
 	0% {
 		box-shadow: 0 -0.83em 0 -0.4em, 0 -0.83em 0 -0.42em, 0 -0.83em 0 -0.44em,
@@ -15091,9 +15096,7 @@ body.sidebar-toggled footer.sticky-footer {
 	}
 }
 
-.loaded #loader-wrapper {
-	visibility: hidden;
-}
+
 
 /* width */
 ::-webkit-scrollbar {

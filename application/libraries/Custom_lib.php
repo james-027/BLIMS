@@ -72,6 +72,27 @@ class Custom_lib {
 			return false;
 		}
 	}
+public function get_lab_access($filter)
+{
+    $ci =& get_instance();
+
+    $userID = $filter['ul.userID'] ?? $filter['userID'] ?? null;
+
+    if (!$userID) return false;
+
+    $ci->db->select('ul.userID, ul.laboratory_id, l.laboratory_name AS lab_name');
+    $ci->db->from('userslabs ul');
+    $ci->db->join('laboratories l', 'ul.laboratory_id = l.id', 'left');
+    $ci->db->where('ul.userID', $userID);
+
+    $result = $ci->db->get()->result_array();
+
+    return !empty($result) ? $result : false;
+}
+
+
+
+
 
 	// Additional function from controller to reduce redundant code
 	public function _require_login($empID=null)

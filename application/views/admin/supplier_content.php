@@ -77,6 +77,38 @@
     </div>
 </div>
 
+<div class="modal fade animated bounceInDown" id="modal-upload-supplier" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header <?=expColor($thColor)->fontColor?> bg-<?=$btnColor?>">
+                <h6 class="modal-title" id="uploadModalLabel"><strong>Upload Supplier File</strong></h6>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" id="upload-supplier-form" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="uploadFile">Select File to Upload:</label>
+                        <div class="input-group">
+                            <input type="file" name="supplier_file" id="uploadFile" class="form-control form-control-md" accept=".csv" required>
+
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            Allowed file types: <strong>.csv only</strong>
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-<?=$btnColor?> btn-md btn-round">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 <div class="modal fade animated bounceInDown" id="modal-edit-supplier" role="dialog" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
     <div class="modal-dialog" role="document">

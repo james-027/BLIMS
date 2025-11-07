@@ -1,6 +1,15 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+require_once(APPPATH.'third_party/phpmailer/src/PHPMailer.php');
+require_once(APPPATH.'third_party/phpmailer/src/SMTP.php');
+require_once(APPPATH.'third_party/phpmailer/src/Exception.php');
+
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+
 class Welcome extends CI_Controller {
 
 	/**
@@ -22,4 +31,39 @@ class Welcome extends CI_Controller {
 	{
 		$this->load->view('welcome_message');
 	}
+
+	
+    public function test_email_phpmailer()
+    {
+
+        $mail = new PHPMailer(true);
+
+        try {
+            $mail->isSMTP();
+            $mail->SMTPDebug  = 2;              // detailed debug
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'jamesdimaculangan222@gmail.com';
+            $mail->Password   = 'mbneztmrybczyfcc'; // use Gmail app password
+            $mail->SMTPSecure = 'tls';
+            $mail->Port       = 587;
+
+            $mail->setFrom('jamesdimaculangan222@gmail.com', 'CI Mail Test');
+            $mail->addAddress('jamesdimaculangan222@gmail.com');
+
+            $mail->isHTML(true);
+            $mail->Subject = 'PHPMailer Test Email';
+            $mail->Body    = '<p>This is a test email sent via PHPMailer.</p>';
+
+            $mail->send();
+            echo '✅ Email sent successfully!';
+        } catch (Exception $e) {
+            echo '❌ Email failed: ' . $mail->ErrorInfo;
+        }
+    }
+
+
 }
+
+
+

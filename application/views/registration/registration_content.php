@@ -12,16 +12,15 @@
         <div class="col-md-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
-                    <h4 class="mb-0">Registration</h4>
+                    <h4 class="mb-0"><?php echo $title ?></h4>
                 </div>
                 <div class="card-body">
                     <form method="post" action="<?=base_url($controller.'/submit_registration')?>" enctype="multipart/form-data"
                         id="registrationForm">
-
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="internalFeedmill">Internal Feedmill</label>
+                                    <label for="internalFeedmill">Internal Feedmill<span class="text-danger"> *</span></label>
                                     <select class="form-control" id="internalFeedmill" name="internalFeedmill" required>
                                         <option value="">Select Feedmill</option>
                                         <?php foreach($internalFeedmills as $feedmill): ?>
@@ -31,7 +30,7 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="commercialFeed">Commercial Feed</label>
+                                    <label for="commercialFeed">Commercial Feedmill</label>
                                     <select class="form-control" id="commercialFeed" name="commercialFeed" required
                                         disabled>
                                         <option value="">Select Feed</option>
@@ -54,12 +53,12 @@
                                         style="display:none;">
                                 </div>
                                 <div class="form-group">
-                                    <label for="contactNumber">Contact Number</label>
+                                    <label for="contactNumber">Contact Number<span class="text-danger"> *</span></label>
                                     <input type="tel" class="form-control" id="contactNumber" name="contactNumber"
                                         placeholder="0917 123 4567" pattern="^(09|\+639)\d{9}$" maxlength="13" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="nutritionist">Nutritionist</label>
+                                    <label for="nutritionist">Nutritionist<span class="text-danger"> *</span></label>
                                     <select class="form-control" id="nutritionist" name="nutritionist" required>
                                         <option value="">Select Nutritionist</option>
                                         <?php foreach($nutritionists as $nutri): ?>
@@ -69,24 +68,13 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="labLocation">Laboratory Location</label>
+                                    <label for="labLocation">Laboratory Location<span class="text-danger"> *</span></label></label>
                                     <select class="form-control" id="labLocation" name="labLocation" required>
                                         <option value="">Select Location</option>
                                         <?php foreach($laboratories as $lab): ?>
                                         <option value="<?= $lab->id ?>"><?= $lab->laboratory_name ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="remarks">Remarks</label>
-                                    <textarea class="form-control" id="remarks" name="remarks" rows="2"
-                                        placeholder="Enter any remarks"></textarea>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="attachFile">Attach File</label>
-                                    <input type="file" class="form-control-file" id="attachFile" name="attachFile">
                                 </div>
                             </div>
 
@@ -107,16 +95,16 @@
                                     </div>
                                 </div>
 
-<div class="form-group">
-    <label for="wayBillNumber">Way Bill Number</label>
-    <input type="text" class="form-control" id="wayBillNumber" name="wayBillNumber"
-           placeholder="Enter Way Bill Number" required>
-</div>
+                                <div class="form-group">
+                                    <label for="wayBillNumber">Way Bill Number</label>
+                                    <input type="text" class="form-control" id="wayBillNumber" name="wayBillNumber"
+                                        placeholder="Enter Way Bill Number" required>
+                                </div>
 
-<div id="driverGroup" class="form-group">
-    <label for="driverName">Driver Name</label>
-    <input type="text" class="form-control" id="driverName" name="driverName" placeholder="Enter Driver Name" required>
-</div>
+                                <div id="driverGroup" class="form-group">
+                                    <label for="driverName">Driver Name</label>
+                                    <input type="text" class="form-control" id="driverName" name="driverName" placeholder="Enter Driver Name" required>
+                                </div>
 
                                 <div class="form-group" id="plateNumberGroup" style="display:none;">
                                     <label for="plateNumber">Plate Number</label>
@@ -135,24 +123,34 @@
                                     <input type="text" class="form-control" id="dateSubmitted" name="dateSubmitted"
                                         value="<?=date('Y-m-d')?>" readonly>
                                 </div>
+
+                                <div class="form-group">
+                                    <label for="remarks">Remarks</label>
+                                    <textarea class="form-control" id="remarks" name="remarks" rows="2"
+                                        placeholder="Enter any remarks"></textarea>
+                                </div>
+                                 <div class="form-group">
+                                    <label for="attachFile">Attach File</label>
+                                    <input type="file" class="form-control-file" id="attachFile" name="attachFile">
+                                </div>
                             </div>
                         </div>
 
                         <div class="mt-4">
-                            <h5>Sample Details</h5>
+                            <h5>Sample Details<span class="text-danger"> *</span></label></h5>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-sm" id="sampleDetailsTable">
                                     <thead class="thead-light text-center">
                                         <tr>
                                             <th style="min-width:140px;">Sample Name</th>
                                             <th style="min-width:140px;">Type of Sample</th>
-                                            <th style="min-width:140px;">Laboratory Tests</th>
+                                            <th style="min-width:180px;">Test Code</th>
                                             <th style="min-width:140px;">Production/Delivery Date</th>
-                                            <th style="min-width:140px;">Shipment/Supplier</th>
+                                            <th style="min-width:180px;">Shipment/Supplier</th>
                                             <th style="min-width:140px;">Plate/Van Number</th>
                                             <th style="min-width:100px;">Batch/Lot Number</th>
                                             <th style="min-width:140px;">Type of Lead Time</th>
-                                            <th style="min-width:60px;">COA</th>
+                                            <th style="min-width:20px;">COA</th>
                                             <th style="min-width:80px;">Action</th>
                                         </tr>
                                     </thead>
@@ -169,7 +167,7 @@
                                                     <option value="">Type of Sample</option>
                                                 </select></td>
                                             <td><select name="laboratoryTests[]" class="form-control" required>
-                                                    <option value="">Lab Test</option>
+                                                    <option value="">Test Code</option>
                                                 </select></td>
                                             <td><input type="date" name="productionDate[]" class="form-control"
                                                     required></td>
@@ -186,7 +184,7 @@
                                                     required>
                                                     <option value="">Plate/Van</option>
                                                     <?php foreach($plate_numbers as $pm): ?>
-                                                    <option value="<?= $pm->id ?>"><?= $pm->plate_number ?></option>
+                                                    <option value="<?= $pm->plate_number  ?>"><?= $pm->plate_number ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </td>
@@ -195,12 +193,11 @@
                                                     required>
                                                     <option value="">Batch/Lot Number</option>
                                                     <?php foreach($batches as $batch): ?>
-                                                    <option value="<?= $batch->id ?>"><?= $batch->batch_number ?>
+                                                    <option value="<?= $batch->batch_number ?>"><?= $batch->batch_number ?>
                                                     </option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </td>
-
 
                                             <td><select name="leadTimeType[]" class="form-control" required>
                                                     <option value="">Select Lead Time</option>
@@ -224,6 +221,7 @@
                                 <button type="button" class="btn btn-danger"
                                     onclick="window.history.back();">Cancel</button>
                             </div>
+                            
                         </div>
 
 
@@ -237,9 +235,8 @@
 <script>
 let baseUrl = '<?= base_url() ?>';
 let controllerName = '<?= $controller ?>';
-
-var plateNumbers = <?= json_encode($plate_numbers); ?>;
-var batchNumbers = <?= json_encode($batches); ?>;
-var suppliers = <?= json_encode($suppliers); ?>;
-var samples = <?= json_encode($samples); ?>;
+let plateNumbers = <?= json_encode($plate_numbers); ?>;
+let batchNumbers = <?= json_encode($batches); ?>;
+let suppliers = <?= json_encode($suppliers); ?>;
+let samples = <?= json_encode($samples); ?>;
 </script>

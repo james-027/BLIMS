@@ -26,11 +26,28 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 date_default_timezone_set('Asia/Manila');
 $port = APP_PORT;
 
-// $base_url2 = $_SERVER['HTTP_HOST'] == 'localhost' || $_SERVER['HTTP_HOST'] == 'localhost:'.$port || $_SERVER['HTTP_HOST'] == '127.0.0.1:'.$port  ? 'http://'.$_SERVER['HTTP_HOST'] : 'https://'.$_SERVER['HTTP_HOST'];
 
-$base_url2 = 'http://'.$_SERVER['HTTP_HOST'].APP_SUB_DIR;
+//LOCAL
+//$base_url2 = 'http://'.$_SERVER['HTTP_HOST'].APP_SUB_DIR;
+
+
+
+//TO QA SERVER
+
+$server_private_ip = '10.2.0.57';
+$base_url2 = $_SERVER['HTTP_HOST'] == 'localhost' || $_SERVER['HTTP_HOST'] == 'localhost:'.$port || $_SERVER['HTTP_HOST'] == '127.0.0.1:'.$port || $_SERVER['HTTP_HOST'] == $server_private_ip.':'.$port  ? 'http://'.$_SERVER['HTTP_HOST'] : 'https://'.$_SERVER['HTTP_HOST'];
+
 
 $config['base_url'] = $base_url2;
+
+
+// if (php_sapi_name() == 'cli') {
+//     // Running from CLI
+//     $base_url2 = 'http://localhost' . APP_SUB_DIR; 
+// } else {
+//     // Running from web
+//     $base_url2 = 'http://' . $_SERVER['HTTP_HOST'] . APP_SUB_DIR;
+// }
 
 
 /*
@@ -388,7 +405,7 @@ $config['encryption_key'] = 'tzY3728DXUvZzY4zZl9TRbGLRTj7KJqA';
 $config['sess_driver'] = 'files';
 $config['sess_cookie_name'] = APP_SESS_COOKIE_NAME;
 $config['sess_expiration'] = 10800;
-$config['sess_save_path'] = FCPATH . APP_SESS_DIR;
+$config['sess_save_path'] = APPPATH  . APP_SESS_DIR;
 $config['sess_match_ip'] = TRUE;
 $config['sess_time_to_update'] = 300;
 $config['sess_regenerate_destroy'] = FALSE;

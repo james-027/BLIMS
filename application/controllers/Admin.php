@@ -1,5 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 
 class Admin extends CI_Controller {
 
@@ -1220,6 +1222,7 @@ class Admin extends CI_Controller {
 			$filter = array(
 				'statusID' => 1
 			);
+			
 			$recFound = $this->main->get_join_datatables('businesscenter a', $join=false, false, 'a.bcName', false, '*', $filter);
 			$get_bc = $recFound->result();
 			$data_bc	= '<option value="-1"> Select All</option>';
@@ -5800,6 +5803,48 @@ class Admin extends CI_Controller {
 	// END OF region CONTROLLER
 
 
+	
+	/*  
+	module: CSv Controller
+	desc: Helper Methods (Upload CSV)
+	date created: 2025-10-24
+	created by: James
+
+	*/
+
+	private function _read_csv($filePath)
+{
+    $rows = [];
+    if (($handle = fopen($filePath, "r")) !== FALSE) {
+        $header = fgetcsv($handle, 1000, ",");
+        while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            if (count($data) === count($header)) {
+                $rows[] = array_combine($header, $data);
+            }
+        }
+        fclose($handle);
+    }
+    return $rows;
+}
+
+private function _read_excel($filePath)
+{
+    $this->load->library('excel'); 
+    $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filePath);
+    $sheet = $spreadsheet->getActiveSheet();
+    $data = $sheet->toArray(null, true, true, true);
+
+    $header = array_shift($data);
+    $rows = [];
+    foreach ($data as $row) {
+        $rows[] = array_combine($header, $row);
+    }
+    return $rows;
+}
+
+
+
+
 	/*  
 	module: supplier Controller
 	desc: CRUD of supplier (Transaction)
@@ -5813,7 +5858,6 @@ class Admin extends CI_Controller {
 
 	public function supplier()
 	{
-		
 		$info = $this->custom_lib->_require_login();
 		$data['js_file'] = '';
 		$data['profile'] = $this->custom_lib->_get_profile();
@@ -5837,7 +5881,10 @@ class Admin extends CI_Controller {
 			$data['new_button'] .= '
 			
 				<button type="button" class="add-supplier '.$btn_class.'"><span class="fas fa-plus"></span></button>
-				<button type="button" class="refresh-dt '.$btn_class.'"><span class="fa fa-refresh"></span></button>';
+				<button type="button" class="refresh-dt '.$btn_class.'"><span class="fa fa-refresh"></span></button>
+				<button type="button" class="upload-supplier '.$btn_class.'"><span class="fa fa-upload"></span></button>
+				';
+				
 		}
 		if($module_access->dlod){
 			$data['new_button'] .= '<button type="button" class="print-dt '.$btn_class.'"><span class="fas fa-file-excel"></span></button>';
@@ -6025,6 +6072,105 @@ class Admin extends CI_Controller {
 	}
 
 
+	public function upload_supplier()
+	{
+		$info = $this->custom_lib->_require_login();
+
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			if (empty($_FILES['supplier_file']['name'])) {
+				echo json_encode([
+					'success' => false,
+					'successMsg' => 'No file uploaded or invalid request.'
+				]);
+				return;
+			}
+
+			$upload_path = FCPATH . 'uploads/suppliers/';
+			if (!is_dir($upload_path)) {
+				mkdir($upload_path, 0777, true);
+			}
+
+			$config['upload_path']   = $upload_path;
+			$config['allowed_types'] = 'csv'; // only CSV
+			$config['max_size']      = 5120;
+			$config['encrypt_name']  = TRUE;
+
+			$this->load->library('upload', $config);
+
+			if (!$this->upload->do_upload('supplier_file')) {
+				echo json_encode([
+					'success' => false,
+					'successMsg' => strip_tags($this->upload->display_errors())
+				]);
+				return;
+			}
+
+			$uploadData = $this->upload->data();
+			$filePath = $uploadData['full_path'];
+
+			$handle = fopen($filePath, 'r');
+			if (!$handle) {
+				echo json_encode([
+					'success' => false,
+					'successMsg' => 'Unable to open CSV file.'
+				]);
+				return;
+			}
+
+			$added = 0; $skipped = 0;
+			$rowIndex = 0;
+
+			while (($row = fgetcsv($handle, 1000, ',')) !== FALSE) {
+				$rowIndex++;
+				if ($rowIndex == 1) continue;
+
+				$supplierName   = trim($row[0]);
+				$laboratoryName = trim($row[1]);
+
+				if (empty($supplierName) || empty($laboratoryName)) continue;
+
+				$laboratoryName = strtoupper(trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $laboratoryName)));
+
+				$lab = $this->main->check_data('laboratories', ['identifier_code' => $laboratoryName], TRUE);
+				if (!$lab['result']) {
+					$skipped++;
+					continue;
+				}
+
+				$exists = $this->main->check_data('suppliers', [
+					'supplier_name' => strtoupper($supplierName),
+					'laboratory_id' =>  $lab['info']->id
+				]);
+
+				if ($exists) { $skipped++; continue; }
+
+				$insert = [
+					'supplier_name' => strtoupper($supplierName),
+					'laboratory_id' => $lab['info']->id,
+					'status_id'     => 1,
+					'created_by'    => decode($info['userID']),
+					'created_at'    => date_now(),
+					'modified_at'   => date_now()
+				];
+				$this->main->insert_data('suppliers', $insert, TRUE);
+				$added++;
+			}
+
+			fclose($handle);
+
+			echo json_encode([
+				'success' => true,
+				'successMsg' => "Upload complete. Added: {$added}, Skipped: {$skipped}"
+			]);
+			return;
+		}
+
+		echo json_encode([
+			'success' => false,
+			'successMsg' => 'Invalid request method.'
+		]);
+	}
+
 	public function modal_supplier(){
 		$info = $this->custom_lib->_require_login();
 		$keyID = decode($info['current_keyID']);
@@ -6052,7 +6198,6 @@ class Admin extends CI_Controller {
 		echo json_encode($data);
 
 	}
-
 
 	public function update_supplier(){
 		$info = $this->custom_lib->_require_login();
@@ -9179,6 +9324,414 @@ class Admin extends CI_Controller {
 	}
 	//END OF TEST PARAMETER CONTROLLER
 
+
+
+		/*  
+	module: Test Name Controller
+	desc: CRUD of Test Name (Transaction)
+	date created: 2025-10-24
+	created by: James
+	Change Management #1
+		Date:
+		Description: Continuation of CRUD (Add, Edit, Deactivation, & Activation)
+		Modified By: 
+	*/
+	public function test_name()
+	{
+		
+		$info = $this->custom_lib->_require_login();
+		$data['js_file'] = '';
+		$data['profile'] = $this->custom_lib->_get_profile();
+		$data['menuColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->menuColor;
+	    $data['tableColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->tableColor;
+	    $data['thColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->thColor;
+	    $data['btnColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->btnColor;
+	    
+	    $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+
+	    $keyID = decode($info['current_keyID']);
+	    $userID = decode($info['userID']);
+		
+		$data['available_access'] = $this->custom_lib->_get_available_access( array('userID' => decode($info['userID'])) );
+		$module_access = $this->custom_lib->module_access('test-name');
+		$data['new_button'] = '<div class="row col-lg-12">';
+
+		$btn_class = 'btn btn-icon btn-sm btn-round btn-'.$data['btnColor'].' mr-2 mb-2';
+		if($module_access->add){
+			
+			$data['new_button'] .= '
+			
+				<button type="button" class="add-test-name '.$btn_class.'"><span class="fas fa-plus"></span></button>
+				<button type="button" class="refresh-dt '.$btn_class.'"><span class="fa fa-refresh"></span></button>';
+		}
+		if($module_access->dlod){
+			$data['new_button'] .= '<button type="button" class="print-dt '.$btn_class.'"><span class="fas fa-file-excel"></span></button>';
+			
+		}
+		$data['new_button'] .= '</div>';
+		
+		
+		if(!$module_access->view){redirect('admin');}
+		
+		$bc_access = $this->custom_lib->_get_data_access( array('userID' => $userID, 'statusID' => 1));
+		$where_in_field = FALSE;
+		$where_in = FALSE;
+		if(!empty($bc_access)){
+			$where_in_field = 'bcID';
+			$where_in = $bc_access;
+		}
+
+		$filter = array('statusID'	=>	1);
+
+		$data['title'] = 'Test Name';
+		$data['menu_title'] = 'Master data';
+		$data['parent_title'] = 'Test Config';
+
+		$data['userID'] = decode($info['userID']);
+		$data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
+
+		$data['content'] = $this->load->view('admin/test_name_content', $data , TRUE);
+		$this->load->view('admin/templates', $data);
+	}
+
+	public function testNameGrid()
+	{
+		$info = $this->custom_lib->_require_login();
+		$userID = decode($info['userID']);
+		$module_access = $this->custom_lib->module_access('test-name');
+
+		$draw   = intval($this->input->get("draw"));
+		$start  = intval($this->input->get("start"));
+		$length = intval($this->input->get("length"));
+		$data   = array();
+
+		$join = array(
+			'stats s'   => 'a.status_id = s.statusID',
+			'users u1'  => array('a.created_by = u1.userID'   => 'INNER'),
+			'users u2'  => array('a.updated_by = u2.userID'   => 'LEFT'),
+		);
+
+		$select = "a.*, 
+				a.status_id as displaystatusID, 
+				s.statDesc, 
+				CONCAT(u1.userFirstName, ' ', u1.userLastName) as createdByName, 
+				CONCAT(u2.userFirstName, ' ', u2.userLastName) as modifiedByName";
+
+		$recFound = $this->main->get_join_datatables(
+			'test_names a',
+			$join,
+			false,
+			'a.name',
+			false,
+			$select,
+			false
+		);
+
+		$toggle = '';
+		$primary_action = '';
+
+		foreach ($recFound->result() as $r) {
+
+			if($r->displaystatusID == 1){
+				$badge = '<span class="badge badge-success">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-active text-success" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-on fa-lg"></span></a>';
+				}
+			} elseif($r->displaystatusID == 2){
+				$badge = '<span class="badge badge-warning">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-inactive text-warning" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-off fa-lg"></span></a>';
+				}
+			}
+
+			if($module_access->edit){
+				$primary_action = '<a href="#" class="edit-test-name" data-id="'.encode($r->id).'"><span class="fas fa-pencil-alt fa-md"></span></a>';
+			}
+
+			$createdBy  = $r->createdByName;
+			$createdOn  = time_stamp_display($r->created_at);
+			$modifiedBy = $r->updated_by == '' ? '' : $r->modifiedByName;
+			$modifiedOn = $r->updated_by == '' ? '' : time_stamp_display($r->modified_at);
+
+			$data[] = array(
+				$r->name,
+				$createdBy,
+				$createdOn,
+				$modifiedBy,
+				$modifiedOn,
+				$badge,
+				$primary_action.'&nbsp;'.$toggle
+			);
+		}
+
+		$output = array(
+			"draw"            => $draw,
+			"recordsTotal"    => $recFound->num_rows(),
+			"recordsFiltered" => $recFound->num_rows(),
+			"data"            => $data
+		);
+
+		echo json_encode($output);
+		exit();
+	}
+
+
+	public function add_test_name()
+	{
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$testName = clean_data($this->input->post('testName'));
+
+			if(!empty($testName)){
+				$check = $this->main->check_data('test_names', array('name' =>  $testName));
+					if($check == FALSE){
+						$set = array(
+							'name' => trim(strtoupper($testName)),
+							'status_id' => 1,
+							'created_by'    => decode($info['userID']),
+                            'created_at'  => date_now(),
+                            'modified_at'  => date_now(),
+						);
+
+						$result = $this->main->insert_data('test_names', $set, TRUE);
+
+						if($result['id']){
+							$user_logs = array(
+								'userID'	=>	decode($info['userID']),
+								'userFullName' =>	$info['userFullName'],
+								'logTS'	=>	date_now(),
+								'page'	=>	'Admin/add_test_name',
+								'logDetail'	=>	'Successfully added Test Name ID:'.@$result['id']
+							);
+					        $this->main->user_logs($user_logs);
+
+							echo json_encode(array(
+			                	'success'       =>    true,
+			                	'successMsg'    =>    'Test Name added successfully.',
+			                	'tnID' => $result['id'],
+			                	'testName' => trim(strtoupper($testName))
+			                ));
+						}
+					}else{
+						echo json_encode(array(
+		                	'success'       =>    false,
+		                	'successMsg'    =>    'Test Name already exist.'
+		                ));
+					}
+				
+			}else{
+				echo json_encode(array(
+                	'success'       =>    false,
+                	'successMsg'    =>    'Make sure all fields are filled.'
+                ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Please contact your administrator.'
+            ));
+		}	
+	}
+
+	public function modal_test_name(){
+		$info = $this->custom_lib->_require_login();
+		$keyID = decode($info['current_keyID']);
+
+		$id = decode($this->input->post('id'));
+
+		$join = array(
+			'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
+		);
+		$check = $this->main->check_join('test_names a', $join, true);
+
+		echo json_encode($check); exit;
+		
+		if($check['result'] == TRUE){
+			$data['result'] = 1;
+			$data['info'] = array(
+				'name' => $check['info']->name,
+				
+			);
+		}else{
+			$data['result'] = 0;
+		}
+
+		echo json_encode($data);
+
+	}
+
+	public function update_test_name(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$testnameID = decode($this->input->post('id'));
+			$testName = clean_data($this->input->post('testName'));
+
+			if(!empty($testnameID && !empty($testName))){
+					$check = $this->main->check_data('test_names', array('name' =>  $testName, 'id !=' => $testnameID));
+					if($check == FALSE){
+						$set = array(
+							'name' => trim(strtoupper($testName)),
+							'updated_by' => decode($info['userID']),
+                            'modified_at'   => date_now()
+						);
+						$result = $this->main->update_data('test_names', $set, array('id' => $testnameID));
+						if($result == TRUE){
+							$user_logs = array(
+								'userID'	=>	decode($info['userID']),
+								'userFullName' =>	$info['userFullName'],
+								'logTS'	=>	date_now(),
+								'page'	=>	'Admin/update_test_name',
+								'logDetail'	=>	'Successfully updated Test Name ID:'.@$testnameID
+							);
+					        $this->main->user_logs($user_logs);
+							echo json_encode(array(
+				            	'success'       =>    true,
+				            	'successMsg'    =>    'Test Name  successfully updated.'
+				            ));
+						}else{
+							echo json_encode(array(
+				            	'success'       =>    false,
+				            	'successMsg'    =>    'Opps. Please try again.'
+				            ));
+						}
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Test Name  Name already exist.'
+			            ));
+					}
+
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Please make sure all required fields are filled.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	public function deactivate_test_name(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$testnameID = decode(clean_data($this->input->post('id')));
+			if(!empty($testnameID)){
+				$check = $this->main->check_data('test_names', array('id' => $testnameID, 'status_id' => 2), true);
+				if($check['result'] == FALSE){
+					$set = array(
+						'status_id' => 2,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $testnameID);
+					$result = $this->main->update_data('test_names', $set, $where);
+					log_message('debug', 'Deactive Test Name Update Result: ' . print_r($result, true));
+
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/deactivate_test_name',
+							'logDetail'	=>	'Successfully deactivated Test Name ID:'.@$testnameID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'Test Name successfully deactivated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. Test Name already inactive.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Test Name ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+
+	public function activate_test_name(){
+		$info = $this->custom_lib->_require_login();
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$testnameID = decode(clean_data($this->input->post('id')));
+			if(!empty($testnameID)){
+				$check = $this->main->check_data('test_names', array('id' => $testnameID, 'status_id' => 1), true);
+				if($check['result'] == FALSE){
+					$set = array(
+						'status_id' => 1,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $testnameID);
+					$result = $this->main->update_data('test_names', $set, $where);
+					log_message('debug', 'Active Test Name Update Result: ' . print_r($result, true));
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/activate_test_name',
+							'logDetail'	=>	'Successfully activated Test Name ID:'.@$testnameID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'Test Name successfully activated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. Test Name already active.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Test Name ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+	//END OF TEST NAME CONTROLLER
+
+
 	/*  
 	module: Test Method Controller
 	desc: CRUD of Test Method (Transaction)
@@ -9737,7 +10290,6 @@ class Admin extends CI_Controller {
 
 		if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$methodName = clean_data($this->input->post('methodName'));
-
 			if(!empty($methodName)){
 				$check = $this->main->check_data('ref_methods', array('method_name' =>  $methodName));
 					if($check == FALSE){
@@ -10985,8 +11537,7 @@ class Admin extends CI_Controller {
 		exit();
 	}
 
-
-public function add_batch_number()
+	public function add_batch_number()
 	{
 		$info = $this->custom_lib->_require_login();  
 
@@ -11047,9 +11598,8 @@ public function add_batch_number()
 		}
 	}
 
-	
-
-public function modal_batch_number(){
+	public function modal_batch_number()
+	{
 		$info = $this->custom_lib->_require_login();
 		$keyID = decode($info['current_keyID']);
 
@@ -11246,6 +11796,830 @@ public function modal_batch_number(){
 
 	//END OF BATCH NUMBER CONTROLLER
 
+
+
+
+			/*  
+	module: Transaction Reason Controller
+	desc: CRUD of Transaction Reason (Transaction)
+	date created: 2025-10-22
+	created by: James
+	Change Management #1
+		Date:
+		Description: Continuation of CRUD (Add, Edit, Deactivation, & Activation)
+		Modified By: 
+	*/
+	public function reason()
+	{
+		
+		$info = $this->custom_lib->_require_login();
+		$data['js_file'] = '';
+		$data['profile'] = $this->custom_lib->_get_profile();
+		$data['menuColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->menuColor;
+	    $data['tableColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->tableColor;
+	    $data['thColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->thColor;
+	    $data['btnColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->btnColor;
+	    
+	    $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+
+	    $keyID = decode($info['current_keyID']);
+	    $userID = decode($info['userID']);
+		
+		$data['available_access'] = $this->custom_lib->_get_available_access( array('userID' => decode($info['userID'])) );
+		$module_access = $this->custom_lib->module_access('reason');
+		$data['new_button'] = '<div class="row col-lg-12">';
+
+		$btn_class = 'btn btn-icon btn-sm btn-round btn-'.$data['btnColor'].' mr-2 mb-2';
+		if($module_access->add){
+			
+			$data['new_button'] .= '
+			
+				<button type="button" class="add-reason '.$btn_class.'"><span class="fas fa-plus"></span></button>
+				<button type="button" class="refresh-dt '.$btn_class.'"><span class="fa fa-refresh"></span></button>';
+		}
+		if($module_access->dlod){
+			$data['new_button'] .= '<button type="button" class="print-dt '.$btn_class.'"><span class="fas fa-file-excel"></span></button>';
+			
+		}
+		$data['new_button'] .= '</div>';
+		
+		
+		if(!$module_access->view){redirect('admin');}
+		
+		$bc_access = $this->custom_lib->_get_data_access( array('userID' => $userID, 'statusID' => 1));
+		$where_in_field = FALSE;
+		$where_in = FALSE;
+		if(!empty($bc_access)){
+			$where_in_field = 'bcID';
+			$where_in = $bc_access;
+		}
+
+		$filter = array('statusID'	=>	1);
+
+		$data['title'] = 'Transaction Reason';
+		$data['menu_title'] = 'Master data';
+		$data['parent_title'] = 'Laboratory Config';
+
+		$data['userID'] = decode($info['userID']);
+		$data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
+
+		$data['content'] = $this->load->view('admin/reason_content', $data , TRUE);
+		$data['controller'] = $this->router->fetch_class();
+		$this->load->view('admin/templates', $data);
+	}
+
+	public function reasonGrid()
+	{
+		$info = $this->custom_lib->_require_login();
+		$userID = decode($info['userID']);
+		$module_access = $this->custom_lib->module_access('reason');
+
+		$draw   = intval($this->input->get("draw"));
+		$start  = intval($this->input->get("start"));
+		$length = intval($this->input->get("length"));
+		$data   = array();
+
+		$join = array(
+			'stats s'   => 'a.status_id = s.statusID',
+			'users u1'  => array('a.created_by = u1.userID'   => 'INNER'),
+			'users u2'  => array('a.updated_by = u2.userID'   => 'LEFT'),
+		);
+
+		$select = "a.*, 
+				a.status_id as displaystatusID, 
+				s.statDesc, 
+				CONCAT(u1.userFirstName, ' ', u1.userLastName) as createdByName, 
+				CONCAT(u2.userFirstName, ' ', u2.userLastName) as modifiedByName";
+
+		$recFound = $this->main->get_join_datatables(
+			'reasons a',
+			$join,
+			false,
+			'a.reason_name',
+			false,
+			$select,
+			false
+		);
+
+		$toggle = '';
+		$primary_action = '';
+
+		foreach ($recFound->result() as $r) {
+
+			if($r->displaystatusID == 1){
+				$badge = '<span class="badge badge-success">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-active text-success" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-on fa-lg"></span></a>';
+				}
+			} elseif($r->displaystatusID == 2){
+				$badge = '<span class="badge badge-warning">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-inactive text-warning" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-off fa-lg"></span></a>';
+				}
+			}
+
+			if($module_access->edit){
+				$primary_action = '<a href="#" class="edit-reason" data-id="'.encode($r->id).'"><span class="fas fa-pencil-alt fa-md"></span></a>';
+			}
+
+			$createdBy  = $r->createdByName;
+			$createdOn  = time_stamp_display($r->created_at);
+			$modifiedBy = $r->updated_by == '' ? '' : $r->modifiedByName;
+			$modifiedOn = $r->updated_by == '' ? '' : time_stamp_display($r->modified_at);
+
+			$data[] = array(
+				$r->reason_name,
+				$createdBy,
+				$createdOn,
+				$modifiedBy,
+				$modifiedOn,
+				$badge,
+				$primary_action.'&nbsp;'.$toggle
+			);
+		}
+
+		$output = array(
+			"draw"            => $draw,
+			"recordsTotal"    => $recFound->num_rows(),
+			"recordsFiltered" => $recFound->num_rows(),
+			"data"            => $data
+		);
+
+		echo json_encode($output);
+		exit();
+	}
+
+	public function add_reason()
+	{
+		$info = $this->custom_lib->_require_login();  
+
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {   
+			$reasonName = clean_data($this->input->post('reasonName'));
+
+			if (!empty($reasonName)) {
+				$check = $this->main->check_data('reasons', array('reason_name' =>  $reasonName));
+
+				if ($check == FALSE) {
+					$set = array(
+						'reason_name' => trim(strtoupper($reasonName)),
+						'status_id'    => 1,
+						'created_by'   => decode($info['userID']),
+						'created_at'   => date_now(),
+						'modified_at'  => date_now(),
+					);
+
+					$result = $this->main->insert_data('reasons', $set, TRUE);
+
+					if ($result['id']) {
+						$user_logs = array(
+							'userID'       => decode($info['userID']),
+							'userFullName' => $info['userFullName'],
+							'logTS'        => date_now(),
+							'page'         => 'Admin/add_reason',
+							'logDetail'    => 'Successfully added Reason ID:' . @$result['id']
+						);
+						$this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+							'success'       => true,
+							'successMsg'    => 'Reason added successfully.',
+							'rID'          => $result['id'],
+							'reasonName'   => trim(strtoupper($reasonName))
+						));
+					}
+
+				} else {
+					echo json_encode(array(
+						'success'    => false,
+						'successMsg' => 'Reason already exist.'
+					));
+				}
+
+			} else {
+				echo json_encode(array(
+					'success'    => false,
+					'successMsg' => 'Make sure all fields are filled.'
+				));
+			}
+
+		} else {
+			echo json_encode(array(
+				'success'    => false,
+				'successMsg' => 'Please contact your administrator.'
+			));
+		}
+	}
+
+	public function modal_reason()
+	{
+		$info = $this->custom_lib->_require_login();
+		$keyID = decode($info['current_keyID']);
+
+		$id = decode($this->input->post('id'));
+
+		$join = array(
+			'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
+		);
+		$check = $this->main->check_join('reasons a', $join, true);
+
+		echo json_encode($check); exit;
+		
+		if($check['result'] == TRUE){
+			$data['result'] = 1;
+			$data['info'] = array(
+				'reason_name' => $check['info']->reason_name,
+			);
+		}else{
+			$data['result'] = 0;
+		}
+
+		echo json_encode($data);
+
+	}
+
+	public function update_reason(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$reasonID = decode($this->input->post('id'));
+			$reasonName = clean_data($this->input->post('reasonName'));
+			if(!empty($reasonID && !empty($reasonName))){
+					$check = $this->main->check_data('reasons', array('reason_name' =>  $reasonName, 'id !=' => $reasonID));
+					if($check == FALSE){
+							$set = array(
+								'reason_name' => trim(strtoupper($reasonName)),
+								'updated_by' => decode($info['userID']),
+								'modified_at'   => date_now()
+							);
+							$result = $this->main->update_data('reasons', $set, array('id' => $reasonID));
+							if($result == TRUE){
+								$user_logs = array(
+									'userID'	=>	decode($info['userID']),
+									'userFullName' =>	$info['userFullName'],
+									'logTS'	=>	date_now(),
+									'page'	=>	'Admin/update_reason',
+									'logDetail'	=>	'Successfully updated Reason ID:'.@$reasonID
+								);
+								$this->main->user_logs($user_logs);
+								echo json_encode(array(
+									'success'       =>    true,
+									'successMsg'    =>    'Reason  successfully updated.'
+								));
+							}else{
+								echo json_encode(array(
+									'success'       =>    false,
+									'successMsg'    =>    'Opps. Please try again.'
+								));
+							}
+
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Reason  already exist.'
+			            ));
+					}
+
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Please make sure all required fields are filled.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	public function deactivate_reason(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$reasonID = decode(clean_data($this->input->post('id')));
+			if(!empty($reasonID)){
+				$check_reason = $this->main->check_data('reasons', array('id' => $reasonID, 'status_id' => 2), true);
+				if($check_reason['result'] == FALSE){
+					$set = array(
+						'status_id' => 2,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $reasonID);
+					$result = $this->main->update_data('reasons', $set, $where);
+					log_message('debug', 'Deactive Reason Update Result: ' . print_r($result, true));
+
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/deactivate_reason',
+							'logDetail'	=>	'Successfully deactivated Reason ID:'.@$reasonID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'Reason successfully deactivated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. Reason already inactive.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Reason ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	public function activate_reason(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$reasonID = decode(clean_data($this->input->post('id')));
+			if(!empty($reasonID)){
+				$check_reason = $this->main->check_data('reasons', array('id' => $reasonID, 'status_id' => 1), true);
+				if($check_reason['result'] == FALSE){
+					$set = array(
+						'status_id' => 1,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $reasonID);
+					$result = $this->main->update_data('reasons', $set, $where);
+					log_message('debug', 'Active Reason Update Result: ' . print_r($result, true));
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/activate_reason',
+							'logDetail'	=>	'Successfully activated Reason ID:'.@$reasonID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'Reason successfully activated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. Reason already active.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Reason ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+
+	// END OF REASON
+	
+	/*  
+	module: Plate Number Controller
+	desc: CRUD of Plate Number (Transaction)
+	date created: 2025-10-22
+	created by: James
+	Change Management #1
+		Date:
+		Description: Continuation of CRUD (Add, Edit, Deactivation, & Activation)
+		Modified By: 
+	*/
+	public function plate_number()
+	{
+		
+		$info = $this->custom_lib->_require_login();
+		$data['js_file'] = '';
+		$data['profile'] = $this->custom_lib->_get_profile();
+		$data['menuColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->menuColor;
+	    $data['tableColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->tableColor;
+	    $data['thColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->thColor;
+	    $data['btnColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->btnColor;
+	    
+	    $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+
+	    $keyID = decode($info['current_keyID']);
+	    $userID = decode($info['userID']);
+		
+		$data['available_access'] = $this->custom_lib->_get_available_access( array('userID' => decode($info['userID'])) );
+		$module_access = $this->custom_lib->module_access('plate-number');
+		$data['new_button'] = '<div class="row col-lg-12">';
+
+		$btn_class = 'btn btn-icon btn-sm btn-round btn-'.$data['btnColor'].' mr-2 mb-2';
+		if($module_access->add){
+			
+			$data['new_button'] .= '
+			
+				<button type="button" class="add-plate-number '.$btn_class.'"><span class="fas fa-plus"></span></button>
+				<button type="button" class="refresh-dt '.$btn_class.'"><span class="fa fa-refresh"></span></button>';
+		}
+		if($module_access->dlod){
+			$data['new_button'] .= '<button type="button" class="print-dt '.$btn_class.'"><span class="fas fa-file-excel"></span></button>';
+			
+		}
+		$data['new_button'] .= '</div>';
+		
+		
+		if(!$module_access->view){redirect('admin');}
+		
+		$bc_access = $this->custom_lib->_get_data_access( array('userID' => $userID, 'statusID' => 1));
+		$where_in_field = FALSE;
+		$where_in = FALSE;
+		if(!empty($bc_access)){
+			$where_in_field = 'bcID';
+			$where_in = $bc_access;
+		}
+
+		$filter = array('statusID'	=>	1);
+
+		$data['title'] = 'Plate Numbers';
+		$data['menu_title'] = 'Master data';
+		$data['parent_title'] = 'Laboratory Config';
+
+		$data['userID'] = decode($info['userID']);
+		$data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
+
+		$data['content'] = $this->load->view('admin/plate_number_content', $data , TRUE);
+		$data['controller'] = $this->router->fetch_class();
+		$this->load->view('admin/templates', $data);
+	}
+
+	public function plateNumberGrid()
+	{
+		$info = $this->custom_lib->_require_login();
+		$userID = decode($info['userID']);
+		$module_access = $this->custom_lib->module_access('plate-number');
+
+		$draw   = intval($this->input->get("draw"));
+		$start  = intval($this->input->get("start"));
+		$length = intval($this->input->get("length"));
+		$data   = array();
+
+		$join = array(
+			'stats s'   => 'a.status_id = s.statusID',
+			'users u1'  => array('a.created_by = u1.userID'   => 'INNER'),
+			'users u2'  => array('a.updated_by = u2.userID'   => 'LEFT'),
+		);
+
+		$select = "a.*, 
+				a.status_id as displaystatusID, 
+				s.statDesc, 
+				CONCAT(u1.userFirstName, ' ', u1.userLastName) as createdByName, 
+				CONCAT(u2.userFirstName, ' ', u2.userLastName) as modifiedByName";
+
+		$recFound = $this->main->get_join_datatables(
+			'plate_numbers a',
+			$join,
+			false,
+			'a.plate_number',
+			false,
+			$select,
+			false
+		);
+
+		$toggle = '';
+		$primary_action = '';
+
+		foreach ($recFound->result() as $r) {
+
+			if($r->displaystatusID == 1){
+				$badge = '<span class="badge badge-success">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-active text-success" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-on fa-lg"></span></a>';
+				}
+			} elseif($r->displaystatusID == 2){
+				$badge = '<span class="badge badge-warning">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-inactive text-warning" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-off fa-lg"></span></a>';
+				}
+			}
+
+			if($module_access->edit){
+				$primary_action = '<a href="#" class="edit-plate-number" data-id="'.encode($r->id).'"><span class="fas fa-pencil-alt fa-md"></span></a>';
+			}
+
+			$createdBy  = $r->createdByName;
+			$createdOn  = time_stamp_display($r->created_at);
+			$modifiedBy = $r->updated_by == '' ? '' : $r->modifiedByName;
+			$modifiedOn = $r->updated_by == '' ? '' : time_stamp_display($r->modified_at);
+
+			$data[] = array(
+				$r->plate_number,
+				$createdBy,
+				$createdOn,
+				$modifiedBy,
+				$modifiedOn,
+				$badge,
+				$primary_action.'&nbsp;'.$toggle
+			);
+		}
+
+		$output = array(
+			"draw"            => $draw,
+			"recordsTotal"    => $recFound->num_rows(),
+			"recordsFiltered" => $recFound->num_rows(),
+			"data"            => $data
+		);
+
+		echo json_encode($output);
+		exit();
+	}
+
+	public function add_plate_number()
+	{
+		$info = $this->custom_lib->_require_login();  
+
+		if ($_SERVER['REQUEST_METHOD'] == 'POST') {   
+			$plateNumber = clean_data($this->input->post('plateNumber'));
+
+			if (!empty($plateNumber)) {
+				$check = $this->main->check_data('plate_numbers', array('plate_number' =>  $plateNumber));
+
+				if ($check == FALSE) {
+					$set = array(
+						'plate_number' => trim(strtoupper($plateNumber)),
+						'status_id'    => 1,
+						'created_by'   => decode($info['userID']),
+						'created_at'   => date_now(),
+						'modified_at'  => date_now(),
+					);
+
+					$result = $this->main->insert_data('plate_numbers', $set, TRUE);
+
+					if ($result['id']) {
+						$user_logs = array(
+							'userID'       => decode($info['userID']),
+							'userFullName' => $info['userFullName'],
+							'logTS'        => date_now(),
+							'page'         => 'Admin/add_plate_number',
+							'logDetail'    => 'Successfully added Plate Number ID:' . @$result['id']
+						);
+						$this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+							'success'       => true,
+							'successMsg'    => 'Plate Number added successfully.',
+							'pnID'          => $result['id'],
+							'plateNumber'   => trim(strtoupper($plateNumber))
+						));
+					}
+
+				} else {
+					echo json_encode(array(
+						'success'    => false,
+						'successMsg' => 'Plate Number already exist.'
+					));
+				}
+
+			} else {
+				echo json_encode(array(
+					'success'    => false,
+					'successMsg' => 'Make sure all fields are filled.'
+				));
+			}
+
+		} else {
+			echo json_encode(array(
+				'success'    => false,
+				'successMsg' => 'Please contact your administrator.'
+			));
+		}
+	}
+
+	public function modal_plate_number()
+	{
+		$info = $this->custom_lib->_require_login();
+		$keyID = decode($info['current_keyID']);
+
+		$id = decode($this->input->post('id'));
+
+		$join = array(
+			'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
+		);
+		$check = $this->main->check_join('plate_numbers a', $join, true);
+
+		echo json_encode($check); exit;
+		
+		if($check['result'] == TRUE){
+			$data['result'] = 1;
+			$data['info'] = array(
+				'plate_number' => $check['info']->plate_number,
+			);
+		}else{
+			$data['result'] = 0;
+		}
+
+		echo json_encode($data);
+
+	}
+
+	public function update_plate_number(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$platenumberID = decode($this->input->post('id'));
+			$plateNumber = clean_data($this->input->post('plateNumber'));
+			if(!empty($platenumberID && !empty($plateNumber))){
+					$check = $this->main->check_data('plate_numbers', array('plate_number' =>  $plateNumber, 'id !=' => $platenumberID));
+					if($check == FALSE){
+							$set = array(
+								'plate_number' => trim(strtoupper($plateNumber)),
+								'updated_by' => decode($info['userID']),
+								'modified_at'   => date_now()
+							);
+							$result = $this->main->update_data('plate_numbers', $set, array('id' => $platenumberID));
+							if($result == TRUE){
+								$user_logs = array(
+									'userID'	=>	decode($info['userID']),
+									'userFullName' =>	$info['userFullName'],
+									'logTS'	=>	date_now(),
+									'page'	=>	'Admin/update_plate_number',
+									'logDetail'	=>	'Successfully updated Plate Number ID:'.@$platenumberID
+								);
+								$this->main->user_logs($user_logs);
+								echo json_encode(array(
+									'success'       =>    true,
+									'successMsg'    =>    'Plate Number  successfully updated.'
+								));
+							}else{
+								echo json_encode(array(
+									'success'       =>    false,
+									'successMsg'    =>    'Opps. Please try again.'
+								));
+							}
+
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Plate Number  already exist.'
+			            ));
+					}
+
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Please make sure all required fields are filled.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	public function deactivate_plate_number(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$platenumberID = decode(clean_data($this->input->post('id')));
+			if(!empty($platenumberID)){
+				$check_plate = $this->main->check_data('plate_numbers', array('id' => $platenumberID, 'status_id' => 2), true);
+				if($check_plate['result'] == FALSE){
+					$set = array(
+						'status_id' => 2,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $platenumberID);
+					$result = $this->main->update_data('plate_numbers', $set, $where);
+					log_message('debug', 'Deactive Plate Number Update Result: ' . print_r($result, true));
+
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/deactivate_plate_number',
+							'logDetail'	=>	'Successfully deactivated Plate Number ID:'.@$platenumberID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'Plate Number successfully deactivated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. Plate Number already inactive.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Plate Number ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	public function activate_plate_number(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$platenumberID = decode(clean_data($this->input->post('id')));
+			if(!empty($platenumberID)){
+				$check_plate = $this->main->check_data('plate_numbers', array('id' => $platenumberID, 'status_id' => 1), true);
+				if($check_plate['result'] == FALSE){
+					$set = array(
+						'status_id' => 1,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $platenumberID);
+					$result = $this->main->update_data('plate_numbers', $set, $where);
+					log_message('debug', 'Active Plate Number Update Result: ' . print_r($result, true));
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/activate_plate_number',
+							'logDetail'	=>	'Successfully activated Plate Number ID:'.@$platenumberID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'Plate Number successfully activated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. Plate Number already active.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Plate Number ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+
+	//END OF PLATE NUMBER CONTROLLER
+
+
 	/*  
 	module: Test Code Controller
 	desc: CRUD of Test Code (Transaction)
@@ -11309,7 +12683,7 @@ public function modal_batch_number(){
 
 		$data['userID'] = decode($info['userID']);
 		$data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-
+		$data['test_names'] = $this->main->get_data('test_names', ['status_id' => 1]);
 		$data['content'] = $this->load->view('admin/test_content', $data , TRUE);
 		$data['controller'] = $this->router->fetch_class();
 		$this->load->view('admin/templates', $data);
@@ -11328,6 +12702,7 @@ public function modal_batch_number(){
 
 		$join = array(
 			'stats s'   => 'a.status_id = s.statusID',
+			'test_names tn'   => 'a.test_name_id = tn.id',
 			'users u1'  => array('a.created_by = u1.userID'   => 'INNER'),
 			'users u2'  => array('a.updated_by = u2.userID'   => 'LEFT'),
 		);
@@ -11335,6 +12710,7 @@ public function modal_batch_number(){
 		$select = "a.*, 
 				a.status_id as displaystatusID, 
 				s.statDesc, 
+				tn.name as test_name, 
 				CONCAT(u1.userFirstName, ' ', u1.userLastName) as createdByName, 
 				CONCAT(u2.userFirstName, ' ', u2.userLastName) as modifiedByName";
 
@@ -11342,11 +12718,12 @@ public function modal_batch_number(){
 			'tests a',
 			$join,
 			false,
-			'a.test_name',
+			false,
 			false,
 			$select,
 			false
 		);
+
 
 		$toggle = '';
 		$primary_action = '';
@@ -11409,11 +12786,9 @@ public function modal_batch_number(){
 				$check_code = $this->main->check_data('tests', array('test_code' =>  $testCode));
 
 				if($check_code == FALSE){
-				   $check_name = $this->main->check_data('tests', array('test_name' =>  $testName));
-					if($check_name == FALSE){
 							$set = array(
 								'test_code' => trim(strtoupper($testCode)),
-								'test_name' => trim($testName),
+								'test_name_id' => $testName,
 								'status_id' => 1,
 								'created_by'    => decode($info['userID']),
 								'created_at'  => date_now(),
@@ -11440,12 +12815,6 @@ public function modal_batch_number(){
 								));
 							}
 
-							}else{
-							echo json_encode(array(
-								'success'       =>    false,
-								'successMsg'    =>    'Test Name Already exist.'
-							));
-						}
 
 					}else{
 						echo json_encode(array(
@@ -11469,33 +12838,69 @@ public function modal_batch_number(){
 		}	
 	}
 
-	public function modal_test(){
+	public function modal_test()
+	{
 		$info = $this->custom_lib->_require_login();
-		$keyID = decode($info['current_keyID']);
-
 		$id = decode($this->input->post('id'));
-
 		$join = array(
-			'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
-		);
-		$check_internal = $this->main->check_join('tests a', $join, true);
+				'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
+			);
 
-		echo json_encode($check_internal); exit;
-		
-		if($check_internal['result'] == TRUE){
+		$check_test = $this->main->check_join('tests a', $join, true);
+
+		if ($check_test['result'] == TRUE) {
+			$test_code = $check_test['info']->test_code;
+			$test_name_id = $check_test['info']->test_name_id;
+
+			$get_test_names = $this->main->get_data('test_names', ['status_id' => 1]);
+			$data_test_names = '<option value="">-- Select Test Name --</option>';
+
+			foreach ($get_test_names as $row) {
+				if ($row->id == $test_name_id) {
+					$data_test_names .= '<option value="' . $row->id . '" selected>' . $row->name . '</option>';
+				} else {
+					$data_test_names .= '<option value="' . $row->id . '">' . $row->name . '</option>';
+				}
+			}
+
 			$data['result'] = 1;
 			$data['info'] = array(
-				'test_code' => $check_internal['info']->test_code,
-				'test_name' => $check_internal['info']->test_name,
-				
+				'test_code'     => $test_code,
+				'test_name_id'  => $data_test_names,
 			);
-		}else{
+		} else {
 			$data['result'] = 0;
 		}
 
 		echo json_encode($data);
-
 	}
+
+	// public function modal_test(){
+	// 	$info = $this->custom_lib->_require_login();
+	// 	$keyID = decode($info['current_keyID']);
+
+	// 	$id = decode($this->input->post('id'));
+
+	// 	$join = array(
+	// 		'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
+	// 	);
+	// 	$check_test = $this->main->check_join('tests a', $join, true);
+
+		
+	// 	if($check_test['result'] == TRUE){
+	// 		$data['result'] = 1;
+	// 		$data['info'] = array(
+	// 			'test_code' => $check_test['info']->test_code,
+	// 			'test_name_id' => $check_test['info']->test_name_id,
+				
+	// 		);
+	// 	}else{
+	// 		$data['result'] = 0;
+	// 	}
+
+	// 	echo json_encode($data);
+
+	// }
 
 	public function update_test(){
 		$info = $this->custom_lib->_require_login();
@@ -11507,11 +12912,9 @@ public function modal_batch_number(){
 			if(!empty($testID && !empty($testCode)) && !empty($testName)){
 					$check_code = $this->main->check_data('tests', array('test_code' =>  $testCode, 'id !=' => $testID));
 					if($check_code == FALSE){
-						$check_name = $this->main->check_data('tests', array('test_name' =>  $testName, 'id !=' => $testID));
-						if($check_name == FALSE){
 							$set = array(
 								'test_code' => trim(strtoupper($testCode)),
-								'test_name' => trim($testName),
+								'test_name_id' => $testName,
 								'updated_by' => decode($info['userID']),
 								'modified_at'   => date_now()
 							);
@@ -11535,12 +12938,7 @@ public function modal_batch_number(){
 									'successMsg'    =>    'Opps. Please try again.'
 								));
 							}
-						}else{
-						echo json_encode(array(
-			            	'success'       =>    false,
-			            	'successMsg'    =>    'Opps. Test Name already exist.'
-			            ));
-					}
+					
 					}else{
 						echo json_encode(array(
 			            	'success'       =>    false,
@@ -11673,7 +13071,6 @@ public function modal_batch_number(){
             ));
 		}
 	}
-
 
 
 	//END OF TEST CODE CONTROLLER
@@ -12206,6 +13603,7 @@ public function modal_batch_number(){
 			'laboratories l'   => array('a.laboratory_id = l.id' => 'INNER'),
 			'tests t'   => array('a.test_id = t.id' => 'INNER'),
 			'test_parameters tp'   => array('a.test_param_id = tp.id' => 'INNER'),
+			'test_names tn'   => array('t.test_name_id = tn.id' => 'INNER'),
 			'test_methods tm'   => array('a.test_method_id = tm.id' => 'INNER'),
 			'analysts as'   => array('a.analyst_id = as.id' => 'INNER'),
 			'sample_types st'   => array('a.sample_type_id = st.id' => 'INNER'),
@@ -12220,7 +13618,7 @@ public function modal_batch_number(){
 				ltg.group_name as groupName, 
 				l.laboratory_name as labName, 
 				t.test_code as testCode, 
-				t.test_name as testName, 
+				tn.name as testName, 
 				tp.param_name as paramName, 
 				tm.method_name as methodName, 
 				as.analyst_name as analystName, 
@@ -12765,6 +14163,8 @@ public function modal_batch_number(){
 		exit();
 	}
 
+
+	
 	public function add_laboratories()
 	{
 		$info = $this->custom_lib->_require_login();

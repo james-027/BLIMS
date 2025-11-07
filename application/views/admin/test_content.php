@@ -54,10 +54,13 @@
                         </label>
                     </div>
                     <div class="form-group">
-                        <label for="exampleInputEmail1">Test Name: </label>
-                        <label for="" class="input-group">
-                            <input type="text" name="testName" class="form-control form-control-md" required="true">
-                        </label>
+                        <label for="testName">Select Test Name:</label>
+                        <select name="testName"  class="form-control form-control-md dynamic_dropdown"  required="true">
+                            <option value="">-- Test Name--</option>
+                            <?php foreach($test_names as $test_name): ?>
+                            <option value="<?= $test_name->id ?>"><?= $test_name->name ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
             
@@ -90,10 +93,13 @@
                         </label>
                     </div>
                     <div class="form-group">
-                        <label for="exampleInputEmail1">Test Name: </label>
-                        <label for="" class="input-group">
-                            <input type="text" name="testName" id="testName" class="form-control form-control-md" required="true">
-                        </label>
+                        <label for="testName">Select Test Name:</label>
+                        <select name="testName" id="testName" class="form-control form-control-md dynamic_dropdown" required>
+                            <option value="">-- Select Test Name --</option>
+                            <?php foreach($test_names as $test_name): ?>
+                            <option value="<?= $test_name->id ?>"><?= $test_name->name ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer">

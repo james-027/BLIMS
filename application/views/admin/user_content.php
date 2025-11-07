@@ -128,7 +128,7 @@
                     <div class="form-group">
                         <label for="exampleInputEmail1">System Key: </label>
                         <label for="" class="input-group">
-                            <select name="key-id[]" class="form-control form-control-md dynamic_dropdown key" required="true" multiple="multiple">
+                            <select name="key-id[]" class="form-control form-control-md dynamic_dropdown_no_order key" required="true" multiple="multiple">
                                 <option value="-1"> Select All</option>
                                 <?php foreach($key as $row):?>
                                     <option value="<?=encode($row->keyID)?>"><?=$row->keyCode . ' : ' . $row->coSDesc . ' - '. $row->buSDesc . ' [' . $row->bcCode .']' ?></option>
@@ -177,6 +177,7 @@
                             </select>
                         </label>
                     </div>
+
                     <br>
                     <div class="form-group">
                         <table class="table table-bordered table-striped table-hover nowrap" style="width:100%" id="tbl-module-access">
@@ -291,7 +292,7 @@
                     <div class="form-group">
                         <label for="exampleInputEmail1">System Key: </label>
                         <label for="" class="input-group">
-                            <select name="key-id[]" id="key-id" class="form-control form-control-md dynamic_dropdown key" required="true" multiple="multiple">
+                            <select name="key-id[]" id="key-id" class="form-control form-control-md dynamic_dropdown_no_order key" required="true" multiple="multiple">
                             </select>
                         </label>
                     </div>

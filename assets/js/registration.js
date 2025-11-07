@@ -23,10 +23,9 @@ $(document).ready(function(){
 
 const deliveryRadios = document.getElementsByName('deliveryType');
 const plateNumberGroup = document.getElementById('plateNumberGroup');
-const wayBillGroup = document.getElementById('wayBillNumber'); // input
-const driverGroup = document.getElementById('driverName'); // input
+const wayBillGroup = document.getElementById('wayBillNumber'); 
+const driverGroup = document.getElementById('driverName'); 
 
-// Optional: If you have labels to hide/show
 const wayBillLabel = document.querySelector("label[for='wayBillNumber']");
 const driverLabel = document.querySelector("label[for='driverName']");
 
@@ -58,7 +57,6 @@ deliveryRadios.forEach(radio => {
     });
 });
 
-// Optional: trigger initial state based on checked radio
 const checkedRadio = Array.from(deliveryRadios).find(r => r.checked);
 if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
 
@@ -66,58 +64,64 @@ if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
     let labSamplesCache = [];
 
 
-    
 
-function initializeSelect2(container = $('#sampleDetailsTable')) {
-    container.find('select').each(function() {
-        if (!$(this).hasClass('select2-hidden-accessible')) {
-            let $select = $(this);
-            let isPlateOrBatch = $select.hasClass('plate-select') || $select.hasClass('batch-select');
-
-            $select.select2({
+    function initializeSelect2(container = $('#sampleDetailsTable')) {
+        container.find('select').each(function() {
+            if (!$(this).hasClass('select2-hidden-accessible')) {
+                let $select = $(this);
+                let isPlateOrBatch = $select.hasClass('plate-select') || $select.hasClass('batch-select');
+                $select.select2({
                 theme: 'bootstrap4',
                 width: '100%',
                 placeholder: $select.find('option:first').text(),
                 allowClear: true,
-                dropdownParent: $('body'),
-                tags: isPlateOrBatch, 
-                language: {
-                    noResults: function() {
-                        if (isPlateOrBatch) return "No results found. Press Enter to add.";
-                        return "No results found";
-                    }
-                },
-                matcher: function(params, data) {
-                    if ($.trim(params.term) === '') return data;
-                    if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
-                        return data;
-                    }
-                    return null;
-                },
-                createTag: function(params) {
-                    if (!isPlateOrBatch) return null; 
-                    let term = $.trim(params.term);
-                    if (!term) return null;
+                dropdownParent: $select.closest('.table-responsive').length 
+                    ? $select.closest('.table-responsive') 
+                    : $(document.body),
+                tags: isPlateOrBatch,
+                    language: {
+                        noResults: function() {
+                            if (isPlateOrBatch) return "No results found. Press Enter to add.";
+                            return "No results found";
+                        }
+                    },
+                    matcher: function(params, data) {
+                        if ($.trim(params.term) === '') return data;
+                        if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
+                            return data;
+                        }
+                        return null;
+                    },
+                    createTag: function(params) {
+                        if (!isPlateOrBatch) return null;
+                        let term = $.trim(params.term);
+                        if (!term) return null;
 
-                    let exists = false;
-                    $select.find('option').each(function() {
-                        if ($(this).text().toLowerCase() === term.toLowerCase()) exists = true;
-                    });
-                    if (exists) return null;
+                        let exists = false;
+                        $select.find('option').each(function() {
+                            if ($(this).text().toLowerCase() === term.toLowerCase()) exists = true;
+                        });
+                        if (exists) return null;
 
-                    return {
-                        id: term,
-                        text: term,
-                        newTag: true
-                    };
-                },
-                insertTag: function(data, tag) {
-                    data.push(tag);
-                }
-            });
-        }
-    });
-}
+                        return {
+                            id: term,
+                            text: term,
+                            newTag: true
+                        };
+                    },
+                    insertTag: function(data, tag) {
+                        data.push(tag);
+                    },
+                    
+                });
+
+
+
+
+            }
+        });
+    }
+
 
     function populateRowDropdowns($row) {
         let $testSelect = $row.find('select[name="laboratoryTests[]"]');
@@ -134,9 +138,11 @@ function initializeSelect2(container = $('#sampleDetailsTable')) {
         $leadSelect.html('<option value="">Select Lead Time</option>');
     }
 
+    $.fn.select2.defaults.set("dropdownPosition", "below");
+
     initializeSelect2();
 
-
+    //DONT COPY THE ROW
     $(document).on('click', '.addRow', function () {
         let $tableBody = $('#sampleDetailsTable tbody');
         let $lastRow = $tableBody.find('tr:last');
@@ -146,7 +152,9 @@ function initializeSelect2(container = $('#sampleDetailsTable')) {
         $newRow.find('input[type="checkbox"]').prop('checked', false);
 
         $newRow.find('span.select2').remove();
-        $newRow.find('select').removeAttr('data-select2-id').removeClass('select2-hidden-accessible').removeAttr('tabindex aria-hidden');
+        $newRow.find('select').removeAttr('data-select2-id')
+            .removeClass('select2-hidden-accessible')
+            .removeAttr('tabindex aria-hidden');
 
         let newIndex = $tableBody.find('tr').length;
         $newRow.find('input[name^="coaRequired"]').attr('name', 'coaRequired[' + newIndex + ']');
@@ -155,23 +163,60 @@ function initializeSelect2(container = $('#sampleDetailsTable')) {
 
         let $plateSelect = $newRow.find('select[name="plateVanNumber[]"]');
         $plateSelect.empty().append('<option value="">Plate/Van</option>');
-        plateNumbers.forEach(p => $plateSelect.append(`<option value="${p.id}">${p.plate_number}</option>`));
+        plateNumbers.forEach(p => $plateSelect.append(`<option value="${p.plate_number}">${p.plate_number}</option>`));
 
         let $batchSelect = $newRow.find('select[name="batchLotNumber[]"]');
         $batchSelect.empty().append('<option value="">Batch/Lot Number</option>');
-        batchNumbers.forEach(b => $batchSelect.append(`<option value="${b.id}">${b.batch_number}</option>`));
+        batchNumbers.forEach(b => $batchSelect.append(`<option value="${b.batch_number}">${b.batch_number}</option>`));
 
         let $sampleSelect = $newRow.find('select[name="sampleName[]"]');
         $sampleSelect.empty().append('<option value="">Sample</option>');
         samples.forEach(s => $sampleSelect.append(`<option value="${s.id}">${s.sample_name}</option>`));
 
         let $supplierSelect = $newRow.find('select[name="shipmentSupplier[]"]');
-        $supplierSelect.empty().append('<option value="">Sample</option>');
+        $supplierSelect.empty().append('<option value="">Supplier</option>');
         suppliers.forEach(sp => $supplierSelect.append(`<option value="${sp.id}">${sp.supplier_name}</option>`));
 
         initializeSelect2($newRow);
         populateRowDropdowns($newRow);
     });
+
+
+    //COPY THE ADDED ROW
+    // $(document).on('click', '.addRow', function () {
+    //     let $clickedRow = $(this).closest('tr');
+    //     let $tableBody = $('#sampleDetailsTable tbody');
+
+    //     let $newRow = $clickedRow.clone(false, false);
+
+    //     $newRow.find('span.select2').remove();
+    //     $newRow.find('select').each(function () {
+    //         $(this)
+    //             .removeAttr('data-select2-id')
+    //             .removeClass('select2-hidden-accessible')
+    //             .removeAttr('tabindex aria-hidden');
+    //     });
+
+    //     $clickedRow.find('select').each(function (index) {
+    //         let val = $(this).val(); 
+    //         $newRow.find('select').eq(index).val(val);
+    //     });
+
+    //     $clickedRow.find('input[type="text"], input[type="date"], input[type="number"]').each(function (index) {
+    //         $newRow.find('input[type="text"], input[type="date"], input[type="number"]').eq(index).val($(this).val());
+    //     });
+
+    //     $clickedRow.find('input[type="checkbox"]').each(function (index) {
+    //         $newRow.find('input[type="checkbox"]').eq(index).prop('checked', $(this).prop('checked'));
+    //     });
+
+    //     let newIndex = $tableBody.find('tr').length;
+    //     $newRow.find('input[name^="coaRequired"]').attr('name', 'coaRequired[' + newIndex + ']');
+
+    //     $clickedRow.after($newRow);
+
+    //     initializeSelect2($newRow);
+    // });
 
 
 
@@ -274,8 +319,6 @@ function initializeSelect2(container = $('#sampleDetailsTable')) {
         });
     });
 
-
-
     $('#registrationForm').on('submit', function(e) {
         e.preventDefault();
 
@@ -296,7 +339,8 @@ function initializeSelect2(container = $('#sampleDetailsTable')) {
                 if (response.status === 'success') {
                     swal("Success!", response.message, "success");
                     setTimeout(function() {
-                        window.location.reload();
+                        window.location.href = baseUrl + controllerName;
+                        // window.location.reload();
                     }, 2000);
                 } else {
                     swal("Oops...", "Something went wrong!", "error");
@@ -309,8 +353,65 @@ function initializeSelect2(container = $('#sampleDetailsTable')) {
         });
     });
 
+    const $form = $('#registrationForm');
+    const $sampleSection = $('#sampleDetailsTable, #sampleDetailsTable select, #sampleDetailsTable input');
+    const $saveBtn = $('button[type="submit"]');
+    
+    disableSampleSection();
+
+    const headerFields = [
+        '#internalFeedmill',
+        // '#address',
+        '#nutritionist',
+        '#labLocation',
+    ];
+
+    headerFields.forEach(selector => {
+        $(selector).on('change keyup', validateHeaderFields);
+    });
+
+    function validateHeaderFields() {
+        let allFilled = true;
+
+        headerFields.forEach(selector => {
+            const val = $(selector).val()?.trim();
+            if (!val) allFilled = false;
+        });
+
+        if (allFilled) {
+            enableSampleSection();
+        } else {
+            disableSampleSection();
+        }
+    }
+
+    function disableSampleSection() {
+        $sampleSection.prop('disabled', true).addClass('bg-light');
+        $saveBtn.prop('disabled', true);
+        $('#sampleDetailsTable').css('opacity', 0.6);
+    }
+
+    function enableSampleSection() {
+        $sampleSection.prop('disabled', false).removeClass('bg-light');
+        $saveBtn.prop('disabled', false);
+        $('#sampleDetailsTable').css('opacity', 1);
+    }
 
 
+    document.getElementById('attachFile').addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+        const maxSize = 2 * 1024 * 1024; 
+        if (file.size > maxSize) {
+            alert("The file size exceeds 2 MB. Please choose a smaller file.");
+            this.value = ''; 
+        }
+    }
+});
+
+$(document).on('click', '#backToVerification', function() {
+    window.location.href = baseUrl + controllerName;
+});
 
 
 

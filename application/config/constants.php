@@ -91,37 +91,45 @@ defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest auto
 define('APP_HASH_NAME', 'apps#');
 define('APP_NAME', 'apps');
 
-define('APP_SESS_NAME', 'crish-sys-sess');
-define('APP_SESS_COOKIE_NAME', 'crishsysmgmt_session');
-define('APP_SESS_DIR', 'application\crish-sys-sess');
-define('APP_PORT', 718);
-define('APP_SUB_DIR', '/blims');
+//LOCAL DEVELOPMENT
 
-define('SYS_NAME', 'BLIMS');
-define('SYS_FULL_NAME', 'Bounty Laboratory Info Management');
-define('SYS_CUSTOM_GROUP_EMAIL', 'tmpe@bountyagro.com.ph');
-define('SYS_EMAIL', 'sys-notif@bountyagro.com.ph');
-define('SYS_EMAIL_PASS', 'B0unotifnt7');
-define('TEAM_NAME', 'CRISH Team');
-define('EMAIL_GREETINGS', 'Dear');
-define('CRIGHT_YEAR', '2023');
-define('SYS_FOOTER', 'BAVI &copy; '.CRIGHT_YEAR);
+// define('APP_SESS_NAME', 'crish-sys-sess');
+// define('APP_SESS_COOKIE_NAME', 'crishsysmgmt_session');
+// define('APP_SESS_DIR', 'application/crish-sys-sess');
+// define('APP_PORT', 718);
+// define('APP_SUB_DIR', '/blims');
 
-
-// define('DB_ONE', 'db_crish2');
-// define('DB_TWO', 'db_crew_incentives_logs');
+// define('DB_ONE', 'blims');
+// define('DB_TWO', 'blims_user_logs');
 // define('DB_HOSTNAME', 'localhost');
 // define('DB_UNAME', 'root');
-// define('DB_PASS', 'allayne');
+// define('DB_PASS', '');
 
+//QA AND PRODUCTION SERVER
 
-//LOCAL DEVELOPMENT
+define('APP_SESS_NAME', 'blims-sys-sess');
+define('APP_SESS_COOKIE_NAME', 'blimssysmgmt_session');
+define('APP_SESS_DIR', 'application\crish-sys-sess');
+define('APP_PORT', 8085);
+define('APP_SUB_DIR', '/blims_fmlab');
 
 define('DB_ONE', 'blims');
 define('DB_TWO', 'blims_user_logs');
-define('DB_HOSTNAME', 'localhost');
-define('DB_UNAME', 'root');
-define('DB_PASS', '');
+define('DB_HOSTNAME', '10.2.0.57');
+define('DB_UNAME', 'blims_user');
+define('DB_PASS', 'enf4s3?S');
+
+
+
+define('SYS_NAME', 'BLIMS');
+define('SYS_FULL_NAME', 'Bounty Laboratory Info Management');
+define('SYS_CUSTOM_GROUP_EMAIL', 'systemsupport@chookstogoinc.com.ph');
+define('SYS_EMAIL', 'noreply@chookstogoinc.com.ph');
+define('SYS_EMAIL_PASS', 'vmov kifv vqjn jkpd');
+define('TEAM_NAME', 'BLIMS Team');
+define('EMAIL_GREETINGS', 'Dear');
+define('CRIGHT_YEAR', '2025');
+define('SYS_FOOTER', 'BLIMS &copy; '.CRIGHT_YEAR);
 
 
 

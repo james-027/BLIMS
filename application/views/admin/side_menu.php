@@ -69,22 +69,30 @@
 
                 <?php
                 $parentLinkArray = array(
-                    array('1' => 'incentives'),
-                    array('1' => 'incentive-hurdles'),
+                  
                     array('1' => 'registration'),
+                    array('1' => 'verification'),
+                    array('1' => 'initialpreparation'),
+                    array('1' => 'finalpreparation'),
+                    array('1' => 'testexecution'),
+                    array('1' => 'datareview'),
                 );
                 $parentAliasArray = array(
-                    'incentives',
                     'registration',
+                    'verification',
+                    'initialpreparation',
+                    'finalpreparation',
+                    'testexecution',
+                    'datareview',
                     'incentive-hurdles',
                 );
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'prefix', 'fa-layer-group');
-
-
-                    echo menu_link_to_display('incentives', 'incentives', null, 1);
                     echo menu_link_to_display('registration', 'registration', null, 1);
-
-
+                    echo menu_link_to_display('verification', 'verification', null, 1);
+                    echo menu_link_to_display('initialpreparation', 'initialpreparation', null, 1);
+                    echo menu_link_to_display('finalpreparation', 'finalpreparation', null, 1);
+                    echo menu_link_to_display('testexecution', 'testexecution', null, 1);
+                    echo menu_link_to_display('datareview', 'datareview', null, 1);
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'suffix');
                 
                 $parentLinkArray = array(
@@ -105,12 +113,14 @@
                     array('2' => 'region'),
                     array('2' => 'users'),
                     array('2' => 'test-parameter'),
+                    array('2' => 'test-name'),
                     array('2' => 'test-method'), 
                     array('2' => 'ref-method'), 
                     array('2' => 'user-key'),
                     array('2' => 'user-roles'),
                     array('2' => 'batch-number'),
                     array('2' => 'plate-number'),
+                    array('2' => 'reason'),
                     array('2' => 'roles'),
                     array('2' => 'user-sloc'),
                     array('2' => 'sys-modules'),
@@ -118,7 +128,6 @@
                     array('2' => 'logs'),
                 );
                 $parentAliasArray = array(
-                    
                     'users',
                     'user_key',
                     'user_roles',
@@ -131,24 +140,25 @@
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Master Data', 1, 'prefix', 'fa-th-list');
                     $linkArray = array(
                                         'lab-test',
-                                        'laboratories',
                                         'analyst',
                                         'supplier',
                                         'batch-number',
                                         'plate-number',
+                                        'reason',
                                       );   
                     $aliasArray = array(
                                         'lab-test',
-                                        'laboratories',
                                         'analyst',
                                         'supplier',
                                         'batch-number',
                                         'plate-number',
+                                        'reason',
                                       );  
                     echo menu_link_to_display($linkArray, $aliasArray, 'Laboratory Config', 2, 'complex');
 
                     $linkArray = array(
                                         'test',
+                                        'test-name',
                                         'lab-test-group',
                                         'test-parameter',
                                         'test-method',
@@ -156,6 +166,7 @@
                                       );   
                     $aliasArray = array(
                                         'test',
+                                        'test-name',
                                         'lab-test-group',
                                         'test-parameter',
                                         'test-method',
@@ -186,8 +197,8 @@
                                       );  
 					echo menu_link_to_display($linkArray, $aliasArray, 'Nutritionist Config', 2, 'complex');
                     
-					$linkArray = array('branch', 'region');
-					$aliasArray = array('business_center', 'region');
+					$linkArray = array('laboratories','branch', 'region');
+					$aliasArray = array('laboratories','business_center', 'region');
 					echo menu_link_to_display($linkArray, $aliasArray, 'Location Config', 2, 'complex');
 
                     

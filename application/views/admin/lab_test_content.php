@@ -25,11 +25,11 @@
                                     <th>Analyst</th>
                                     <th>Test Method</th>
                                     <th>Type of Sample</th>
+                                    <th>Test Group</th>
                                     <th>Lead Time (Regular)</th>
                                     <th>Lead Time (Rush)</th>
-                                    <th>Reference Method</th>
                                     <th>Laboratory Location</th>
-                                    <th>Test Group</th>
+                                    <th>Reference Method</th>
                                     <th>Created By</th>
                                     <th>Created On</th>
                                     <th>Modified By</th>
@@ -115,7 +115,7 @@
                     </div>
                     <div class="form-group">
                         <label for="refMethod">Select Reference Method :</label>
-                        <select name="refMethod" id="refMethod" class="form-control form-control-md" required>
+                        <select name="refMethod" id="refMethod" class="form-control form-control-md " required>
                             <option value="">-- Select Reference Method --</option>
                             <?php foreach($ref_methods as $ref_method): ?>
                             <option value="<?= $ref_method->id ?>"><?= $ref_method->method_name ?></option>

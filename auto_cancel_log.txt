@@ -1,0 +1,22 @@
+PHP Notice:  Undefined index: HTTP_HOST in D:\xampp\htdocs\blims\application\config\config.php on line 31
+
+Notice: Undefined index: HTTP_HOST in D:\xampp\htdocs\blims\application\config\config.php on line 31
+
+A PHP Error was encountered
+
+Severity:    Notice
+Message:     Undefined index: HTTP_HOST
+Filename:    D:\xampp\htdocs\blims\application\config\config.php
+Line Number: 31
+
+Backtrace:
+	File: D:\xampp\htdocs\blims\application\config\config.php
+	Line: 31
+	Function: _error_handler
+
+	File: D:\xampp\htdocs\blims\index.php
+	Line: 315
+	Function: require_once
+
+
+[2025-10-29 19:11:52] Script already running. Exiting.
