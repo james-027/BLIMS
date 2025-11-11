@@ -174,24 +174,6 @@ $('#jobSearch').on('keyup', function() {
     });
     
 
-    let $wrapper = $('.wrapper');
-    let $minibutton = $('.toggle-sidebar');
-
-    if (!$wrapper.hasClass('sidebar_minimize')) {
-        $wrapper.addClass('sidebar_minimize');
-        $minibutton.addClass('toggled');
-        $minibutton.html('<i class="icon-options-vertical"></i>');
-        window.mini_sidebar = 1; 
-    }
-
-    $(document).on('click', '.toggle-details', function() {
-    const row = $(this).closest('tr');
-    const detailRow = $('#detail-' + row.data('id'));
-    const icon = $(this).find('i');
-
-    detailRow.slideToggle(200);
-    icon.toggleClass('fa-chevron-down fa-chevron-up');
-});
 
 
 

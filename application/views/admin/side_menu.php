@@ -38,7 +38,6 @@
                                     <span class="link-collapse">Notifications</span>
                                 </a>
                             </li>
-
                             <li>
                                 <a href="<?=base_url('admin/my-profile#change-pass')?>" class="refer-link">
                                     <span class="link-collapse">Change Password</span>
@@ -69,13 +68,13 @@
 
                 <?php
                 $parentLinkArray = array(
-                  
                     array('1' => 'registration'),
                     array('1' => 'verification'),
                     array('1' => 'initialpreparation'),
                     array('1' => 'finalpreparation'),
                     array('1' => 'testexecution'),
                     array('1' => 'datareview'),
+                    array('1' => 'resultverification'),
                 );
                 $parentAliasArray = array(
                     'registration',
@@ -84,7 +83,7 @@
                     'finalpreparation',
                     'testexecution',
                     'datareview',
-                    'incentive-hurdles',
+                    'resultverification',
                 );
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'prefix', 'fa-layer-group');
                     echo menu_link_to_display('registration', 'registration', null, 1);
@@ -93,6 +92,7 @@
                     echo menu_link_to_display('finalpreparation', 'finalpreparation', null, 1);
                     echo menu_link_to_display('testexecution', 'testexecution', null, 1);
                     echo menu_link_to_display('datareview', 'datareview', null, 1);
+                    echo menu_link_to_display('resultverification', 'resultverification', null, 1);
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'suffix');
                 
                 $parentLinkArray = array(

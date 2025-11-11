@@ -92,6 +92,36 @@ $(document).ready(function(){
             }
         });
     });
+    $('#resultVerificationForm').on('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            beforeSend: function() {
+                $('#loader-div').show();
+            },
+            success: function(response) {
+                $('#loader-div').hide();
+                if (response.status === 'success') {
+                    swal("Success!", response.message, "success");
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    swal("Oops...", "Something went wrong!", "error");
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#loader-div').hide();
+                swal("AJAX Error", error, "error");
+            }
+        });
+    });
 
     $('#testExecutionForm').on('submit', function(e) {
         e.preventDefault();
@@ -166,6 +196,55 @@ $(document).ready(function(){
         $('#countVerified').text(verified);
 
         $('#confirmModalData').modal('show');
+    });
+
+    $('#saveBtnResultVerification').on('click', function(e) {
+        e.preventDefault();
+
+        let approved = 0, disapproved = 0;
+        let missingRemarks = false;
+
+        $('.result-verification-status-select').each(function() {
+            let selectedText = $(this).find('option:selected').text().trim().toLowerCase();
+            let transDetailId = $(this).attr('id').replace('result_verifications','');
+            let remarkInput = $('input[name="result_verification_remarks['+transDetailId+']"]');
+
+            if (selectedText === 'approved') {
+                approved++;
+            } else if (selectedText === 'disapproved') {
+                disapproved++;
+                if (remarkInput.val().trim() === '') {
+                    missingRemarks = true;
+                    remarkInput.addClass('is-invalid'); 
+                } else {
+                    remarkInput.removeClass('is-invalid');
+                }
+            }
+        });
+
+        if (approved === 0 && disapproved === 0) {
+            swal("Warning!", "Please select Test Result before proceeding.", "warning");
+            return;
+        }
+
+        if (missingRemarks) {
+                let firstInvalid = $('.is-invalid').first();
+                
+
+                $('html, body').animate({
+                    scrollTop: firstInvalid.offset().top - 100 
+                }, 500);
+
+                firstInvalid.focus();
+            swal("Warning!", "Please enter remarks for all disapproved items.", "warning");
+            return false;
+        }
+
+
+        $('#countApproved').text(approved);
+        $('#countDisapproved').text(disapproved);
+
+        $('#confirmModalResultVerification').modal('show');
     });
 
 
@@ -341,7 +420,6 @@ $(document).ready(function(){
         $('#confirmModalTestExec').modal('show');
     });
 
-
     $('#confirmInitialSubmit').on('click', function() {
         $('#confirmModalInitial').modal('hide');
 
@@ -360,6 +438,14 @@ $(document).ready(function(){
 
 
          $('#dataReviewForm').submit();
+    });
+
+
+    $('#confirmResultVerificationSubmit').on('click', function() {
+        $('#confirmModalResultVerification').modal('hide');
+
+
+         $('#resultVerificationForm').submit();
     });
 
     $('#confirmTestExecSubmit').on('click', function() {
@@ -484,6 +570,7 @@ $(document).ready(function(){
         });
     });
 
+    
 
 
 });

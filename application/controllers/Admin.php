@@ -378,7 +378,6 @@ class Admin extends CI_Controller {
 
 		$info = $this->custom_lib->_require_login();
 		
-		
 		//get user type
 		$join = array('usertype b' => 'a.userTypeID = b.userTypeID');
 		$check_user = $this->main->check_join('users a', $join, $row_type=TRUE, $order=FALSE, $group=FALSE, $select=FALSE, array('userID' => $myID));
@@ -628,7 +627,7 @@ class Admin extends CI_Controller {
 
 		$data['upline'] = $this->main->get_data('users', array('statusID' => 1, 'userID >' => 0));
 
-		
+		$data['laboratories'] = $this->main->get_data('laboratories', ['status_id' => 1]);
 		//exit();
 
 		$data['userID'] = decode($info['userID']);
@@ -786,6 +785,7 @@ class Admin extends CI_Controller {
 			$password = clean_data($this->input->post('user-password'));
 			$emp_id = clean_data($this->input->post('user-employee-no'));
 			$keyID = clean_data($this->input->post('key-id'));
+			$labID = clean_data($this->input->post('lab-id'));
 			$sLocID = clean_data($this->input->post('sLoc-id'));
 			$userTypeID = clean_data($this->input->post('uType-id'));
 			$uplineID = clean_data($this->input->post('upline-id'));
@@ -869,7 +869,7 @@ class Admin extends CI_Controller {
 			}
 			
 			//check for required fields
-			if(!empty($userFirstName) && !empty($userLastName) && !empty($userEmail) && !empty($password) && !empty($emp_id) && !empty($userTypeID) && !empty($keyID)){
+			if(!empty($userFirstName) && !empty($userLastName) && !empty($userEmail) && !empty($password) && !empty($emp_id) && !empty($userTypeID) && !empty($keyID) && !empty($labID)){
 				$check_email = $this->main->check_data('users', array('userEmail' =>  $userEmail));
 				if($check_email == FALSE){
 					$check_mobile_no['result'] = FALSE;
@@ -999,6 +999,28 @@ class Admin extends CI_Controller {
 								if($result_bcpresetdtl_flag == FALSE){
 									$msg = '<div class="alert alert-danger">Error in User BC Enrollment Please Call for Support!</div>';
 								}
+
+
+								$result_labpresetdtl_flag=true;
+								$this->main->void_table('userslabs', array('userID' =>  $userID));
+								foreach($labID as $lab){
+									$labIDVal = decode($lab);
+									$set = array(
+										'userID' => $userID,
+										'laboratory_id' => $labIDVal,
+										'status_id' => 1,
+										'created_at' => date_now()
+									);
+									$result_lab = $this->main->insert_data('userslabs', $set, true);
+									if($result_lab == FALSE){
+										$result_labpresetdtl_flag=FALSE;
+									}
+								}
+								if($result_labpresetdtl_flag == FALSE){
+									$msg = '<div class="alert alert-danger">Error in User BC Enrollment Please Call for Support!</div>';
+								}
+
+
 								
 								$result_userkey=true;
 								if($result_usermodule == FALSE){
@@ -1140,6 +1162,23 @@ class Admin extends CI_Controller {
 				$selected = in_array($row->keyID, $userkeyID) ? 'selected' : '';
 				$data_key .= '<option value="' .encode($row->keyID) .'" ' . $selected. '>'. $row->keyCode . ' : ' . $row->coSDesc . ' - '. $row->buSDesc . ' [' . $row->bcCode .']' . '</option>';
 			}
+
+			$userLabIDs = array();
+			$get_user_lab = $this->main->get_data('userslabs', array('userID' => $id, 'status_id' => 1)); 
+
+			foreach($get_user_lab as $lab){
+				$userLabIDs[] = $lab->laboratory_id;
+			}
+
+			$get_lab = $this->main->get_data('laboratories', ['status_id' => 1]); 
+
+			$data_lab = '<option value="-1"> Select All</option>';
+
+			foreach($get_lab as $row){
+				$selected = in_array($row->id, $userLabIDs) ? 'selected' : '';
+				$data_lab .= '<option value="' . encode($row->id) . '" ' . $selected . '>' . $row->laboratory_name . '</option>';
+			}
+
 			
 			//get user SLocs
 			$uSlocID = array();	
@@ -1174,7 +1213,9 @@ class Admin extends CI_Controller {
 				
 				$data_upline .= '<option value="'.encode($row->userID).'" '. $selected .'>'. $uplineName .'</option>';
 			}
-			
+
+
+
 			//get user type
 			$filter = array('a.statusID' => 1, 'userTypeLevel >=' => decode($info['userTypeLevel']));
 			$join 	= array(
@@ -1245,6 +1286,7 @@ class Admin extends CI_Controller {
 				'keyID'		=>		$data_key,
 				'slocID'	=>		$data_sloc,
 				'uTypeID'	=>		$data_uType,
+				'labID' =>	 		$data_lab,
 				'uplineID'	=>		$data_upline,
 				'userTypeName'	=>		$userTypeName,
 				'mobileNumber'	=>		$check_user['info']->mobileNumber,
@@ -1270,6 +1312,7 @@ class Admin extends CI_Controller {
 			$userEmail = clean_data($this->input->post('user-email'));
 			$emp_id = clean_data($this->input->post('user-employee-no'));
 			$keyID = clean_data($this->input->post('key-id'));
+			$labID = clean_data($this->input->post('lab-id'));
 			$userModKeyID = clean_data($this->input->post('key-id'));
 			$sLocID = clean_data($this->input->post('sLoc-id'));
 			$userTypeID = clean_data($this->input->post('uType-id'));
@@ -1507,6 +1550,31 @@ class Admin extends CI_Controller {
 									$msg = '<div class="alert text-black alert-danger">Error in User BC Enrollment Please Call for Support!</div>';
 								}
 								
+
+
+								$result_labpresetdtl_flag=true;
+								$this->main->void_table('userslabs', array('userID' =>  $userID));
+								foreach($labID as $r){
+									$labID = decode($r);
+									$set = array(
+										'userID' => $userID,
+										'laboratory_id' => $labID,
+										'status_id' => 1,
+										'created_at' => date_now()
+									);
+									$result_lab = $this->main->insert_data('userslabs', $set, true);
+									if($result_lab == FALSE){
+										$result_labpresetdtl_flag=FALSE;
+									}
+								}
+								if($result_labpresetdtl_flag == FALSE){
+									$msg = '<div class="alert text-black alert-danger">Error in User BC Enrollment Please Call for Support!</div>';
+								}
+								
+
+
+
+
 								$result_userkey=true;
 								if($result_usermodule == FALSE){
 									$msg = '<div class="alert text-black alert-danger">Error in Updating User Modules! Please Call for Support!</div>';

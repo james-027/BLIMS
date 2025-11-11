@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 
-class DataReview extends CI_Controller {
+class ResultVerification extends CI_Controller {
 
 	public function __construct() {
     	parent::__construct();
@@ -17,9 +17,9 @@ class DataReview extends CI_Controller {
 
 
     /*  
-	module: Data Review Controller
-	desc: Creation of Data Review Controller
-	date created: 11-06-2025
+	module: Result Verification Controller
+	desc: Creation of Result Verification Controller
+	date created: 11-11-2025
 	created by: James
 	Change Management #1`
 	*/
@@ -39,14 +39,12 @@ class DataReview extends CI_Controller {
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
 
-        $data['title'] = 'Data Review';
+        $data['title'] = 'Result Verification';
         $data['menu_title'] = '';
         $data['parent_title'] = 'Transactional';
         $data['controller'] = $this->controller;
         $data['userID'] = $userID;
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-        $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
-        $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
         
         $this->db->select([
             'th.trans_id AS trans_id',
@@ -99,12 +97,12 @@ class DataReview extends CI_Controller {
                 INNER JOIN (
                     SELECT MAX(id) AS latest_id
                     FROM trans_timestamps
-                    WHERE trans_detail_status_id = 27
+                    WHERE trans_detail_status_id = 33
                     GROUP BY trans_detail_id
                 ) tt_max ON tt_latest.id = tt_max.latest_id
             ) tt", 'tt.trans_detail_id = td.trans_detail_id', 'left');
 
-        $this->db->where('td.trans_detail_status_id', 33);
+        $this->db->where('td.trans_detail_status_id', 36);
        $this->db->order_by('tt.latest_timestamp', 'DESC');
 
         $all_details = $this->db->get()->result_array();
@@ -142,9 +140,9 @@ class DataReview extends CI_Controller {
 
 
         $data['jobs'] = $jobs_indexed;
-        $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 4], false, 'statusID, statDesc', 'statDesc ASC');
-        $data['review_verifications'] = $this->main->get_data('stats', ['status_type_id' => 6], false, 'statusID, statDesc', 'statDesc ASC');
-        $data['content'] = $this->load->view('data_review/data_review_content', $data , TRUE);
+        $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
+        $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC');
+        $data['content'] = $this->load->view('result_verification/result_verification_content', $data , TRUE);
         $this->load->view('admin/templates', $data);
     }
 
@@ -208,13 +206,14 @@ class DataReview extends CI_Controller {
             ->set_output(json_encode($data));
     }
 
-    public function submit_data_review()
+    public function submit_result_veri()
     {
         $info   = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
-        $review_verifications = $this->input->post('review_verifications');
+        $result_verifications = $this->input->post('result_verifications');
+        $remarks      = $this->input->post('result_verification_remarks');
 
-        if (empty($review_verifications)) {
+        if (empty($result_verifications)) {
             echo json_encode([
                 'status'  => 'error',
                 'message' => 'No Final Prep data received.'
@@ -222,23 +221,22 @@ class DataReview extends CI_Controller {
             return;
         }
 
-        foreach ($review_verifications as $trans_detail_id => $reviewID) {
-            if (empty($reviewID)) continue;
+        foreach ($result_verifications as $trans_detail_id => $resultVeriID) {
+            if (empty($resultVeriID)) continue;
 
-            $reasonID = $reasons[$trans_detail_id] ?? null;
+            $remark   = $remarks[$trans_detail_id] ?? null;
 
-        
             $updateData = [
-                'review_verification_status_id' => $reviewID,
+                'test_result_id' => $resultVeriID,
                 'modified_at'    => date('Y-m-d H:i:s'),
                 'updated_by'     => $userID
             ];
 
-            if ((int)$reviewID === 35) {
+            if ((int)$resultVeriID === 16) {
                 $updateData['trans_detail_status_id'] = 27;
 
             }else{
-                $updateData['trans_detail_status_id'] = 36;
+                $updateData['trans_detail_status_id'] = 37;
             }
 
             $result_prep = $this->main->update_data(
@@ -248,10 +246,10 @@ class DataReview extends CI_Controller {
             );
 
             $statusText = '';
-                    if (!empty($reviewID)) {
+                    if (!empty($resultVeriID)) {
                         $statusRow = $this->db->select('statDesc')
                                             ->from('stats')
-                                            ->where('statusID', $reviewID)
+                                            ->where('statusID', $resultVeriID)
                                             ->get()
                                             ->row_array();
                         $statusText = $statusRow['statDesc'] ?? '';
@@ -263,8 +261,8 @@ class DataReview extends CI_Controller {
                     'userID'       => $userID,
                     'userFullName' => $info['userFullName'],
                     'logTS'        => date_now(),
-                    'page'         => 'FinalPreparation/submit_final_prep',
-                    'logDetail'    => 'Successfully Updated Final Prep ID:' . $trans_detail_id
+                    'page'         => 'ResultVerification/submit_result_veri',
+                    'logDetail'    => 'Successfully Updated Result Veri ID:' . $trans_detail_id
                 ]);
 
                 $detail = $this->db->where('trans_detail_id', $trans_detail_id)
@@ -276,14 +274,14 @@ class DataReview extends CI_Controller {
                     unset($historyData['id']);
                     $historyData['trans_detail_id'] = $trans_detail_id;
                     $historyData['detail_change'] = $statusText;
-                    $historyData['trans_detail_status_id'] = 33;
+                    $historyData['trans_detail_status_id'] = 36;
                     $historyData['created_by'] = $userID;
                     $historyData['created_at'] = date('Y-m-d H:i:s');
                     $this->main->insert_data('trans_history', $historyData);
 
                     $timestampData = [
                         'trans_detail_id'        => $trans_detail_id,
-                        'trans_detail_status_id' => 33,
+                        'trans_detail_status_id' => 36,
                         'status_id'              => 1,
                         'created_at'             => date('Y-m-d H:i:s'),
                         'created_by'             => $userID,
@@ -291,21 +289,30 @@ class DataReview extends CI_Controller {
                     $this->main->insert_data('trans_timestamps', $timestampData);
                 }
                 $statusText = '';
-                    if (!empty($reviewID)) {
+                    if (!empty($resultVeriID)) {
                         $statRow = $this->db->select('statDesc')
                                             ->from('stats')
-                                            ->where('statusID', $reviewID)
+                                            ->where('statusID', $resultVeriID)
                                             ->get()
                                             ->row_array();
                         $statusText = $statRow['statDesc'] ?? '';
                     } 
 
+                if (!empty($remark)) {
+                        $this->main->insert_data('trans_remarks', [
+                            'trans_detail_id'        => $trans_detail_id,
+                            'trans_detail_status_id' => 36,
+                            'remark'                 => $remark,
+                            'created_by'             => $userID,
+                            'created_at'             => date('Y-m-d H:i:s'),
+                        ]); 
+                }
                     
-                if ((int)$reviewID === 35) {
+                if ((int)$resultVeriID === 16) {
                     $timestampRow = $this->db->select('created_by')
                         ->from('trans_timestamps')
                         ->where('trans_detail_id', $trans_detail_id)
-                        ->where('trans_detail_status_id', 27)
+                        ->where('trans_detail_status_id', 33)
                         ->order_by('created_at', 'DESC')
                         ->get()
                         ->row_array();
@@ -331,14 +338,14 @@ class DataReview extends CI_Controller {
                                 ->row_array();
 
                             if (!empty($transHeader)) {
-                                $remark = "This is for Re-analysis";
+                                $remark = $remark;
                                 $this->email_format->generateEmailNotification(
                                     $transHeader,
                                     $trans_detail_id,
                                     $statusText,
                                     $remark,
                                     $recipient,
-                                    'Re-Analysis'
+                                    'Disapproved'
                                 );
 
                                 log_message('info', "Sent 'Failed' notification to {$recipient['userEmail']} for trans_detail_id {$trans_detail_id}");
@@ -354,11 +361,11 @@ class DataReview extends CI_Controller {
 
         echo json_encode([
             'status'  => 'success',
-            'message' => 'Data Review submitted successfully.'
+            'message' => 'Final Preparation submitted successfully.'
         ]);
     }
 
-	// END OF Data  Review CONTROLLER
+	// END OF Result Verification CONTROLLER
 
 
 

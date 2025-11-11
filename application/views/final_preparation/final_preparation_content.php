@@ -78,20 +78,21 @@
                                                 <td class="align-middle"><?= $detail['laboratory_tests'] ?? '-' ?></td>
                                                 <td class="align-middle"><?= $detail['param_name'] ?? '-' ?></td>
 
-                                            <td class="text-center align-middle">
-                                                <select name="analyticals[<?= $detail['trans_detail_id'] ?>]"
-                                                    class="form-control form-control-sm analytical-select dynamic_dropdown status-zfix"
-                                                    data-target="<?= $detail['trans_detail_id'] ?>"
-                                                    disabled>
-                                                    <option value="">Select Status</option>
-                                                    <?php foreach($analyticals as $analytical): ?>
-                                                        <option value="<?= $analytical->statusID ?>"
-                                                            <?= $detail['pre_analytical_id'] == $analytical->statusID ? 'selected' : '' ?>>
-                                                            <?= $analytical->statDesc ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </td>
+                                                <td class="align-middle" style="max-width: 200px;">
+                                                    <span>
+                                                        <?php
+                                                            $selectedAnalytical = 'No Status';
+                                                            foreach ($analyticals as $analytical) {
+                                                                if ($detail['pre_analytical_id'] == $analytical->statusID) {
+                                                                    $selectedAnalytical = $analytical->statDesc;
+                                                                    break;
+                                                                }
+                                                            }
+                                                            echo htmlspecialchars($selectedAnalytical, ENT_QUOTES, 'UTF-8');
+                                                        ?>
+                                                    </span>
+                                                </td>
+
 
                                             <td class="text-center align-middle">
                                                 <select  id="prepverification-<?= $detail['trans_detail_id'] ?>" name="prep_verifications[<?= $detail['trans_detail_id'] ?>]"

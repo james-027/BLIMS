@@ -63,6 +63,8 @@ class Login extends CI_Controller {
 			$password = clean_data($this->input->post('password'));
 			$empID = clean_data($this->input->post('empID'));
 
+		
+
 			$where = array('userEmail' => $email);
 			$redirect = '';
 			$join = array(

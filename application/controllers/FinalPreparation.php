@@ -324,171 +324,171 @@ class FinalPreparation extends CI_Controller {
 
 
 public function submit_final_prep_per_jo()
-{
-    $info   = $this->custom_lib->_require_login();
-    $userID = decode($info['userID']);
-    $prep_verifications = $this->input->post('prep_verifications');
-    $remarks            = $this->input->post('remarks');
+    {
+        $info   = $this->custom_lib->_require_login();
+        $userID = decode($info['userID']);
+        $prep_verifications = $this->input->post('prep_verifications');
+        $remarks            = $this->input->post('remarks');
 
-    if (empty($prep_verifications)) {
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'No Final Prep data received.'
-        ]);
-        return;
-    }
-
-    $failedTransByRecipient = []; // Step 1: Collect failed trans_detail_ids per recipient per JO
-
-    foreach ($prep_verifications as $trans_detail_id => $prepVeriID) {
-        if (empty($prepVeriID)) continue;
-
-        $remark = $remarks[$trans_detail_id] ?? null;
-
-        // Update trans_details
-        $updateData = [
-            'prep_verification_status_id' => $prepVeriID,
-            'modified_at'                 => date('Y-m-d H:i:s'),
-            'updated_by'                  => $userID
-        ];
-
-        if ((int)$prepVeriID === 23) {
-            $updateData['trans_detail_status_id'] = 24;
-        } else {
-            $updateData['trans_detail_status_id'] = 27;
-        }
-
-        $result_prep = $this->main->update_data(
-            'trans_details',
-            $updateData,
-            ['trans_detail_id' => $trans_detail_id]
-        );
-
-        // Get status text
-        $statusText = '';
-        if (!empty($prepVeriID)) {
-            $statRow = $this->db->select('statDesc')
-                                ->from('stats')
-                                ->where('statusID', $prepVeriID)
-                                ->get()
-                                ->row_array();
-            $statusText = $statRow['statDesc'] ?? '';
-        }
-
-        if (!empty($result_prep)) {
-            // Log user action
-            $this->main->user_logs([
-                'userID'       => $userID,
-                'userFullName' => $info['userFullName'],
-                'logTS'        => date_now(),
-                'page'         => 'FinalPreparation/submit_final_prep',
-                'logDetail'    => 'Successfully Updated Final Prep ID:' . $trans_detail_id
+        if (empty($prep_verifications)) {
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'No Final Prep data received.'
             ]);
+            return;
+        }
 
-            // Insert history & timestamps
-            $detail = $this->db->where('trans_detail_id', $trans_detail_id)
-                               ->get('trans_details')
-                               ->row_array();
-            if (!empty($detail)) {
-                $historyData = $detail;
-                unset($historyData['id']);
-                $historyData['trans_detail_id']        = $trans_detail_id;
-                $historyData['detail_change']          = $statusText;
-                $historyData['trans_detail_status_id'] = 26;
-                $historyData['created_by']             = $userID;
-                $historyData['created_at']             = date('Y-m-d H:i:s');
-                $this->main->insert_data('trans_history', $historyData);
+        $failedTransByRecipient = []; // Step 1: Collect failed trans_detail_ids per recipient per JO
 
-                $timestampData = [
-                    'trans_detail_id'        => $trans_detail_id,
-                    'trans_detail_status_id' => 26,
-                    'status_id'              => 1,
-                    'created_at'             => date('Y-m-d H:i:s'),
-                    'created_by'             => $userID,
-                ];
-                $this->main->insert_data('trans_timestamps', $timestampData);
-            }
+        foreach ($prep_verifications as $trans_detail_id => $prepVeriID) {
+            if (empty($prepVeriID)) continue;
 
-            // Insert remarks
-            if (!empty($remark)) {
-                $this->main->insert_data('trans_remarks', [
-                    'trans_detail_id'        => $trans_detail_id,
-                    'trans_detail_status_id' => 26,
-                    'remark'                 => $remark,
-                    'created_by'             => $userID,
-                    'created_at'             => date('Y-m-d H:i:s'),
-                ]);
-            }
+            $remark = $remarks[$trans_detail_id] ?? null;
 
-            // Only handle Failed status (prepVeriID = 23)
+            // Update trans_details
+            $updateData = [
+                'prep_verification_status_id' => $prepVeriID,
+                'modified_at'                 => date('Y-m-d H:i:s'),
+                'updated_by'                  => $userID
+            ];
+
             if ((int)$prepVeriID === 23) {
-                // Get recipient from timestamp
-                $timestampRow = $this->db->select('created_by')
-                                         ->from('trans_timestamps')
-                                         ->where('trans_detail_id', $trans_detail_id)
-                                         ->where('trans_detail_status_id', 24)
-                                         ->order_by('created_at', 'DESC')
-                                         ->get()
-                                         ->row_array();
-                if (empty($timestampRow)) continue;
+                $updateData['trans_detail_status_id'] = 24;
+            } else {
+                $updateData['trans_detail_status_id'] = 27;
+            }
 
-                $userFromTimestamp = (int) $timestampRow['created_by'];
+            $result_prep = $this->main->update_data(
+                'trans_details',
+                $updateData,
+                ['trans_detail_id' => $trans_detail_id]
+            );
 
-                $recipient = $this->db
-                    ->select('u.userID, u.userEmail, u.userFirstName, u.userLastName')
-                    ->from('users u')
-                    ->where('u.userID', $userFromTimestamp)
-                    ->where('u.userEmail IS NOT NULL AND u.userEmail !=', '')
-                    ->get()
-                    ->row_array();
-                if (empty($recipient)) continue;
+            // Get status text
+            $statusText = '';
+            if (!empty($prepVeriID)) {
+                $statRow = $this->db->select('statDesc')
+                                    ->from('stats')
+                                    ->where('statusID', $prepVeriID)
+                                    ->get()
+                                    ->row_array();
+                $statusText = $statRow['statDesc'] ?? '';
+            }
 
-                // Get Job Order info
-                $transHeader = $this->db
-                    ->select('th.trans_id, th.job_order_no')
-                    ->from('trans_headers th')
-                    ->join('trans_details td', 'td.trans_id = th.trans_id')
-                    ->where('td.trans_detail_id', $trans_detail_id)
-                    ->get()
-                    ->row_array();
-                if (empty($transHeader)) continue;
+            if (!empty($result_prep)) {
+                // Log user action
+                $this->main->user_logs([
+                    'userID'       => $userID,
+                    'userFullName' => $info['userFullName'],
+                    'logTS'        => date_now(),
+                    'page'         => 'FinalPreparation/submit_final_prep',
+                    'logDetail'    => 'Successfully Updated Final Prep ID:' . $trans_detail_id
+                ]);
 
-                // Group failed trans_detail_ids by recipient + Job Order
-                $key = $recipient['userID'] . '_' . $transHeader['job_order_no'];
-                if (!isset($failedTransByRecipient[$key])) {
-                    $failedTransByRecipient[$key] = [
-                        'recipient'        => $recipient,
-                        'transHeader'      => $transHeader,
-                        'trans_detail_ids' => []
+                // Insert history & timestamps
+                $detail = $this->db->where('trans_detail_id', $trans_detail_id)
+                                ->get('trans_details')
+                                ->row_array();
+                if (!empty($detail)) {
+                    $historyData = $detail;
+                    unset($historyData['id']);
+                    $historyData['trans_detail_id']        = $trans_detail_id;
+                    $historyData['detail_change']          = $statusText;
+                    $historyData['trans_detail_status_id'] = 26;
+                    $historyData['created_by']             = $userID;
+                    $historyData['created_at']             = date('Y-m-d H:i:s');
+                    $this->main->insert_data('trans_history', $historyData);
+
+                    $timestampData = [
+                        'trans_detail_id'        => $trans_detail_id,
+                        'trans_detail_status_id' => 26,
+                        'status_id'              => 1,
+                        'created_at'             => date('Y-m-d H:i:s'),
+                        'created_by'             => $userID,
                     ];
+                    $this->main->insert_data('trans_timestamps', $timestampData);
                 }
-                $failedTransByRecipient[$key]['trans_detail_ids'][] = $trans_detail_id;
+
+                // Insert remarks
+                if (!empty($remark)) {
+                    $this->main->insert_data('trans_remarks', [
+                        'trans_detail_id'        => $trans_detail_id,
+                        'trans_detail_status_id' => 26,
+                        'remark'                 => $remark,
+                        'created_by'             => $userID,
+                        'created_at'             => date('Y-m-d H:i:s'),
+                    ]);
+                }
+
+                // Only handle Failed status (prepVeriID = 23)
+                if ((int)$prepVeriID === 23) {
+                    // Get recipient from timestamp
+                    $timestampRow = $this->db->select('created_by')
+                                            ->from('trans_timestamps')
+                                            ->where('trans_detail_id', $trans_detail_id)
+                                            ->where('trans_detail_status_id', 24)
+                                            ->order_by('created_at', 'DESC')
+                                            ->get()
+                                            ->row_array();
+                    if (empty($timestampRow)) continue;
+
+                    $userFromTimestamp = (int) $timestampRow['created_by'];
+
+                    $recipient = $this->db
+                        ->select('u.userID, u.userEmail, u.userFirstName, u.userLastName')
+                        ->from('users u')
+                        ->where('u.userID', $userFromTimestamp)
+                        ->where('u.userEmail IS NOT NULL AND u.userEmail !=', '')
+                        ->get()
+                        ->row_array();
+                    if (empty($recipient)) continue;
+
+                    // Get Job Order info
+                    $transHeader = $this->db
+                        ->select('th.trans_id, th.job_order_no')
+                        ->from('trans_headers th')
+                        ->join('trans_details td', 'td.trans_id = th.trans_id')
+                        ->where('td.trans_detail_id', $trans_detail_id)
+                        ->get()
+                        ->row_array();
+                    if (empty($transHeader)) continue;
+
+                    // Group failed trans_detail_ids by recipient + Job Order
+                    $key = $recipient['userID'] . '_' . $transHeader['job_order_no'];
+                    if (!isset($failedTransByRecipient[$key])) {
+                        $failedTransByRecipient[$key] = [
+                            'recipient'        => $recipient,
+                            'transHeader'      => $transHeader,
+                            'trans_detail_ids' => []
+                        ];
+                    }
+                    $failedTransByRecipient[$key]['trans_detail_ids'][] = $trans_detail_id;
+                }
             }
         }
+
+        foreach ($failedTransByRecipient as $group) {
+            $recipient        = $group['recipient'];
+            $transHeader      = $group['transHeader'];
+            $trans_detail_ids = $group['trans_detail_ids'];
+
+            $this->email_format->generateEmailNotificationByJO(
+                $transHeader,
+                $trans_detail_ids, 
+                'Failed',         
+                $remark,              
+                $recipient,
+                'Failed'
+            );
+
+            log_message('info', "Sent 'Failed' notification to {$recipient['userEmail']} for trans_detail_ids: " . implode(',', $trans_detail_ids));
+        }
+
+        echo json_encode([
+            'status'  => 'success',
+            'message' => 'Final Preparation submitted successfully.'
+        ]);
     }
-
-    foreach ($failedTransByRecipient as $group) {
-        $recipient        = $group['recipient'];
-        $transHeader      = $group['transHeader'];
-        $trans_detail_ids = $group['trans_detail_ids'];
-
-        $this->email_format->generateEmailNotificationByJO(
-            $transHeader,
-            $trans_detail_ids, 
-            'Failed',         
-            $remark,              
-            $recipient,
-            'Failed'
-        );
-
-        log_message('info', "Sent 'Failed' notification to {$recipient['userEmail']} for trans_detail_ids: " . implode(',', $trans_detail_ids));
-    }
-
-    echo json_encode([
-        'status'  => 'success',
-        'message' => 'Final Preparation submitted successfully.'
-    ]);
-}
 
 
  

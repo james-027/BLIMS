@@ -137,6 +137,20 @@
                         </label>
                     </div>
 
+
+                    <div class="form-group">
+                        <label for="exampleInputEmail1">Laboratory Access: </label>
+                        <label for="" class="input-group">
+                            <select name="lab-id[]" class="form-control form-control-md dynamic_dropdown_no_order laboratory" multiple="multiple">
+                                <option value="-1"> Select All</option>
+                                <?php foreach($laboratories as $row):?>
+                                    <option value="<?=encode($row->id)?>"><?=$row->laboratory_name?></option>
+                                <?php endforeach;?>
+                            </select>
+                        </label>
+                    </div>
+
+
                     
                         
                     <div class="form-group">
@@ -296,8 +310,18 @@
                             </select>
                         </label>
                     </div>
+
+
+                    <div class="form-group">
+                        <label for="exampleInputEmail1">Laboratory Access: </label>
+                        <label for="" class="input-group">
+                            <select name="lab-id[]" id="lab-id" class="form-control form-control-md dynamic_dropdown_no_order lab" required="true" multiple="multiple">
+                            </select>
+                        </label>
+                    </div>
                         
                     
+                        
 
                     <div class="form-group">
                         <label>Immediate Superior:</label>

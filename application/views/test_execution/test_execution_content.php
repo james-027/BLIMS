@@ -50,7 +50,7 @@
                                                 <th style="width:250px;">Laboratory Code</th>
                                                 <th>Sample Name</th>
                                                 <th>Laboratory Tests</th>
-                                                <th>Lead Time</th>
+                                                <th style ="width:100px">Lead Time</th>
                                                 <th>Status</th>
                                                 <th>Lab Result</th>
                                                 <th>Remarks</th>
