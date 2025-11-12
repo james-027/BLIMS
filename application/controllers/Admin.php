@@ -193,12 +193,10 @@ class Admin extends CI_Controller {
 		// $module_access = $this->custom_lib->module_access('dashboard');
 		// if(!$module_access->view){redirect('admin/logout');}
 		//redirect('admin/dashboard/');
-
-		redirect('admin/dashboard/0');
+		redirect('admin/dashboard');
 	}
 
 	public function dashboard (){
-
 		
 		$info = $this->custom_lib->_require_login();
 		$data['js_file'] = '';

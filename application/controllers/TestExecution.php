@@ -75,16 +75,12 @@ class TestExecution extends CI_Controller {
         $this->db->join('tests t', 't.id = lt.test_id', 'left');
         $this->db->join('test_names tn', 'tn.id = t.test_name_id', 'left');
         $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
-
         if (!empty($data['lab_access'])) {
             $labIDs = array_column($data['lab_access'], 'laboratory_id');
             $this->db->where_in('th.laboratory_id', $labIDs);
         } else {
             $this->db->where('th.laboratory_id', 0); 
         }
-        
-        $this->db->group_by('td.trans_detail_id');
-
         $this->db->join("
             (
                 SELECT tr1.trans_detail_id, tr1.remark

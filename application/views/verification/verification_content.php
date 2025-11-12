@@ -57,15 +57,16 @@
                         <?php if (!$isViewOnly): ?>
                         <?php $jobAttachments = $attachments[$job['trans_id']] ?? []; ?>
                         <?php if (!empty($jobAttachments)): ?>
-                        <div class="mt-1">
-                            <strong class="text-white">Attachment:</strong>
-                            <?php foreach ($jobAttachments as $file): ?>
-                            <a href="<?= base_url('uploads/trans_attachments/'.$file['filename']) ?>" target="_blank"
-                                class="badge badge-light text-dark ml-1">
-                                <i class="fas fa-paperclip"></i> <?= $file['filename'] ?>
-                            </a>
-                            <?php endforeach; ?>
-                        </div>
+                            <div class="mt-1">
+                                <strong class="text-white">Attachment:</strong>
+                                <?php foreach ($jobAttachments as $file): ?>
+                                    <a href="<?= base_url('uploads/trans_attachments/'.$file['filename']) ?>" 
+                                    download="<?= $file['original_name'] . '.' . pathinfo($file['filename'], PATHINFO_EXTENSION) ?>"
+                                    class="badge badge-light text-dark ml-1">
+                                        <i class="fas fa-paperclip"></i> <?= $file['original_name'] . '.' . pathinfo($file['filename'], PATHINFO_EXTENSION) ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
                         <?php endif; ?>
                         <?php endif; ?>
                     </div>

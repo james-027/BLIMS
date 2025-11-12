@@ -97,10 +97,6 @@ class Registration extends CI_Controller {
         $this->db->join('plate_numbers p', 'p.id = td.plate_number_id', 'left');
         $this->db->join('batch_numbers b', 'b.id = td.batch_number_id', 'left');
         $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
-        $this->db->group_by('td.trans_detail_id');
-
-  
-
         $this->db->join("
             (
                 SELECT tr1.trans_detail_id, tr1.remark
@@ -129,8 +125,8 @@ class Registration extends CI_Controller {
             WHERE tr1.trans_detail_status_id = 20
         ) trr", 'trr.trans_detail_id = td.trans_detail_id', 'left');
 
-    // Join reasons table to get reason_name
-    $this->db->join('reasons r', 'r.id = trr.reason_id', 'left');
+        // Join reasons table to get reason_name
+        $this->db->join('reasons r', 'r.id = trr.reason_id', 'left');
 
 
         $this->db->where('th.created_by', $userID);
@@ -420,6 +416,7 @@ class Registration extends CI_Controller {
                     'trans_id'   => $header_result['id'],
                     'filename'   => $uploadData['file_name'],
                     'filepath'   => $uploadData['full_path'],
+                    'original_name'   => $originalName,
                     'status_id'  => 1,
                     'created_at' => date('Y-m-d H:i:s'),
                     'created_by' => $userID,

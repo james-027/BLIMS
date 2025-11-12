@@ -65,7 +65,6 @@
                         <p>Dashboard</p>
                     </a>
                 </li>
-
                 <?php
                 $parentLinkArray = array(
                     array('1' => 'registration'),
@@ -75,6 +74,7 @@
                     array('1' => 'testexecution'),
                     array('1' => 'datareview'),
                     array('1' => 'resultverification'),
+                    array('1' => 'reportrelease'),
                 );
                 $parentAliasArray = array(
                     'registration',
@@ -84,6 +84,7 @@
                     'testexecution',
                     'datareview',
                     'resultverification',
+                    'reportrelease',
                 );
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'prefix', 'fa-layer-group');
                     echo menu_link_to_display('registration', 'registration', null, 1);
@@ -93,6 +94,7 @@
                     echo menu_link_to_display('testexecution', 'testexecution', null, 1);
                     echo menu_link_to_display('datareview', 'datareview', null, 1);
                     echo menu_link_to_display('resultverification', 'resultverification', null, 1);
+                    echo menu_link_to_display('reportrelease', 'reportrelease', null, 1);
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'suffix');
                 
                 $parentLinkArray = array(

@@ -83,16 +83,12 @@ class InitialPreparation extends CI_Controller {
         $this->db->join('plate_numbers p', 'p.id = td.plate_number_id', 'left');
         $this->db->join('batch_numbers b', 'b.id = td.batch_number_id', 'left');
         $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
-
-   
         if (!empty($data['lab_access'])) {
             $labIDs = array_column($data['lab_access'], 'laboratory_id');
             $this->db->where_in('th.laboratory_id', $labIDs);
         } else {
             $this->db->where('th.laboratory_id', 0); 
         }
-        
-        $this->db->group_by('td.trans_detail_id');
         $this->db->join("
             (
                 SELECT tr1.trans_detail_id, tr1.remark
@@ -124,9 +120,6 @@ class InitialPreparation extends CI_Controller {
 
             $jobs[$jobId]['samples'][] = $row;
         }
-
-
-        
         $transIds = array_keys($jobs);
         $attachments = [];
         if (!empty($transIds)) {

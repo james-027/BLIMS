@@ -97,17 +97,12 @@ class Verification extends CI_Controller {
         $this->db->join('plate_numbers p', 'p.id = td.plate_number_id', 'left');
         $this->db->join('batch_numbers b', 'b.id = td.batch_number_id', 'left');
         $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
-
-
         if (!empty($data['lab_access'])) {
             $labIDs = array_column($data['lab_access'], 'laboratory_id');
             $this->db->where_in('th.laboratory_id', $labIDs);
         } else {
             $this->db->where('th.laboratory_id', 0); 
         }
-
-        $this->db->group_by('td.trans_detail_id');
-
         $this->db->join("
             (
                 SELECT tr1.trans_detail_id, tr1.remark
@@ -307,7 +302,7 @@ class Verification extends CI_Controller {
         $transIds = array_keys($verification_jobs);
         $attachments = [];
         if (!empty($transIds)) {
-            $this->db->select('trans_id, filename, filepath');
+            $this->db->select(['trans_id', 'filename', 'filepath', 'original_name']);
             $this->db->from('attachments');
             $this->db->where_in('trans_id', $transIds);
             $result = $this->db->get()->result_array();

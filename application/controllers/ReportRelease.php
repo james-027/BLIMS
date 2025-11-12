@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 
-class ResultVerification extends CI_Controller {
+class ReportRelease extends CI_Controller {
 
 	public function __construct() {
     	parent::__construct();
@@ -17,37 +17,35 @@ class ResultVerification extends CI_Controller {
 
 
     /*  
-	module: Result Verification Controller
-	desc: Creation of Result Verification Controller
-	date created: 11-11-2025
+	module: Report Release Controller
+	desc: Creation of Report Release Controller
+	date created: 11-12-2025
 	created by: James
 	Change Management #1`
 	*/
-
     public function index() 
     {
         $info = $this->custom_lib->_require_login();
         $data['js_file'] = 'assets/js/preparation.js?v=2.0';
         $data['profile'] = $this->custom_lib->_get_profile();
-        $userID = decode($info['userID']);
-        $theme = get_user_theme(['a.userID' => $userID], true);
-
-        $data['menuColor'] = $theme->menuColor;
-        $data['tableColor'] = $theme->tableColor;
-        $data['thColor'] = $theme->thColor;
-        $data['btnColor'] = $theme->btnColor;
+        $data['menuColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->menuColor;
+        $data['tableColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->tableColor;
+        $data['thColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->thColor;
+        $data['btnColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->btnColor;
 
         $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+        $userID = decode($info['userID']);
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
 
-        $data['title'] = 'Result Verification';
+        $data['title'] = 'Report Release';
         $data['menu_title'] = '';
         $data['parent_title'] = 'Transactional';
         $data['controller'] = $this->controller;
         $data['userID'] = $userID;
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-
+        $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
+        
         $this->db->select([
             'th.trans_id AS trans_id',
             'th.job_order_no',
@@ -57,9 +55,8 @@ class ResultVerification extends CI_Controller {
             'tp.param_name',
             'tn.name AS laboratory_tests',
             'td.lab_code AS lab_code',
-            'tr27.remark AS existing_remark',
-            'tr33.remark AS result_verification_remark',
-            'tt.latest_timestamp AS date_submitted',
+            'tr.remark AS existing_remark',
+            'tt.latest_timestamp  AS date_submitted',
         ]);
         $this->db->from('trans_details td');
         $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
@@ -88,22 +85,7 @@ class ResultVerification extends CI_Controller {
                 ) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id 
                     AND tr1.created_at = tr2.latest_created
                 WHERE tr1.trans_detail_status_id = 27
-            ) tr27", 'tr27.trans_detail_id = td.trans_detail_id', 'left');
-
-        $this->db->join("
-            (
-                SELECT tr1.trans_detail_id, tr1.remark
-                FROM trans_remarks tr1
-                INNER JOIN (
-                    SELECT trans_detail_id, MAX(created_at) AS latest_created
-                    FROM trans_remarks
-                    WHERE trans_detail_status_id = 36
-                    GROUP BY trans_detail_id
-                ) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id 
-                    AND tr1.created_at = tr2.latest_created
-                WHERE tr1.trans_detail_status_id = 36
-            ) tr33", 'tr33.trans_detail_id = td.trans_detail_id', 'left');
-
+            ) tr", 'tr.trans_detail_id = td.trans_detail_id', 'left');
         $this->db->join("
             (
                 SELECT tt_latest.trans_detail_id, tt_latest.created_at AS latest_timestamp
@@ -111,13 +93,13 @@ class ResultVerification extends CI_Controller {
                 INNER JOIN (
                     SELECT MAX(id) AS latest_id
                     FROM trans_timestamps
-                    WHERE trans_detail_status_id = 33
+                    WHERE trans_detail_status_id = 27
                     GROUP BY trans_detail_id
                 ) tt_max ON tt_latest.id = tt_max.latest_id
             ) tt", 'tt.trans_detail_id = td.trans_detail_id', 'left');
 
-        $this->db->where('td.trans_detail_status_id', 36);
-        $this->db->order_by('tt.latest_timestamp', 'DESC');
+        $this->db->where('td.trans_detail_status_id', 37);
+       $this->db->order_by('tt.latest_timestamp', 'DESC');
 
         $all_details = $this->db->get()->result_array();
 
@@ -137,6 +119,7 @@ class ResultVerification extends CI_Controller {
             $jobs[$jobId]['samples'][] = $row;
         }
 
+
         $transIds = array_keys($jobs);
         $attachments = [];
         if (!empty($transIds)) {
@@ -149,14 +132,13 @@ class ResultVerification extends CI_Controller {
             }
         }
 
-        $data['jobs'] = array_values($jobs);
-        $data['attachments'] = $attachments;
+        $jobs_indexed = array_values($jobs);
+
+        $data['jobs'] = $jobs_indexed;
         $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
-        $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC');
-        $data['content'] = $this->load->view('result_verification/result_verification_content', $data , TRUE);
+        $data['content'] = $this->load->view('report_release/report_release_content', $data , TRUE);
         $this->load->view('admin/templates', $data);
     }
-
 
     public function get_logs($trans_detail_id)
     {
@@ -218,14 +200,13 @@ class ResultVerification extends CI_Controller {
             ->set_output(json_encode($data));
     }
 
-    public function submit_result_veri()
+    public function submit_data_review()
     {
         $info   = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
-        $result_verifications = $this->input->post('result_verifications');
-        $remarks      = $this->input->post('result_verification_remarks');
+        $review_verifications = $this->input->post('review_verifications');
 
-        if (empty($result_verifications)) {
+        if (empty($review_verifications)) {
             echo json_encode([
                 'status'  => 'error',
                 'message' => 'No Final Prep data received.'
@@ -233,22 +214,23 @@ class ResultVerification extends CI_Controller {
             return;
         }
 
-        foreach ($result_verifications as $trans_detail_id => $resultVeriID) {
-            if (empty($resultVeriID)) continue;
+        foreach ($review_verifications as $trans_detail_id => $reviewID) {
+            if (empty($reviewID)) continue;
 
-            $remark   = $remarks[$trans_detail_id] ?? null;
+            $reasonID = $reasons[$trans_detail_id] ?? null;
 
+        
             $updateData = [
-                'test_result_id' => $resultVeriID,
+                'review_verification_status_id' => $reviewID,
                 'modified_at'    => date('Y-m-d H:i:s'),
                 'updated_by'     => $userID
             ];
 
-            if ((int)$resultVeriID === 16) {
+            if ((int)$reviewID === 35) {
                 $updateData['trans_detail_status_id'] = 27;
 
             }else{
-                $updateData['trans_detail_status_id'] = 37;
+                $updateData['trans_detail_status_id'] = 36;
             }
 
             $result_prep = $this->main->update_data(
@@ -258,10 +240,10 @@ class ResultVerification extends CI_Controller {
             );
 
             $statusText = '';
-                    if (!empty($resultVeriID)) {
+                    if (!empty($reviewID)) {
                         $statusRow = $this->db->select('statDesc')
                                             ->from('stats')
-                                            ->where('statusID', $resultVeriID)
+                                            ->where('statusID', $reviewID)
                                             ->get()
                                             ->row_array();
                         $statusText = $statusRow['statDesc'] ?? '';
@@ -273,8 +255,8 @@ class ResultVerification extends CI_Controller {
                     'userID'       => $userID,
                     'userFullName' => $info['userFullName'],
                     'logTS'        => date_now(),
-                    'page'         => 'ResultVerification/submit_result_veri',
-                    'logDetail'    => 'Successfully Updated Result Veri ID:' . $trans_detail_id
+                    'page'         => 'FinalPreparation/submit_final_prep',
+                    'logDetail'    => 'Successfully Updated Final Prep ID:' . $trans_detail_id
                 ]);
 
                 $detail = $this->db->where('trans_detail_id', $trans_detail_id)
@@ -286,14 +268,14 @@ class ResultVerification extends CI_Controller {
                     unset($historyData['id']);
                     $historyData['trans_detail_id'] = $trans_detail_id;
                     $historyData['detail_change'] = $statusText;
-                    $historyData['trans_detail_status_id'] = 36;
+                    $historyData['trans_detail_status_id'] = 33;
                     $historyData['created_by'] = $userID;
                     $historyData['created_at'] = date('Y-m-d H:i:s');
                     $this->main->insert_data('trans_history', $historyData);
 
                     $timestampData = [
                         'trans_detail_id'        => $trans_detail_id,
-                        'trans_detail_status_id' => 36,
+                        'trans_detail_status_id' => 33,
                         'status_id'              => 1,
                         'created_at'             => date('Y-m-d H:i:s'),
                         'created_by'             => $userID,
@@ -301,30 +283,21 @@ class ResultVerification extends CI_Controller {
                     $this->main->insert_data('trans_timestamps', $timestampData);
                 }
                 $statusText = '';
-                    if (!empty($resultVeriID)) {
+                    if (!empty($reviewID)) {
                         $statRow = $this->db->select('statDesc')
                                             ->from('stats')
-                                            ->where('statusID', $resultVeriID)
+                                            ->where('statusID', $reviewID)
                                             ->get()
                                             ->row_array();
                         $statusText = $statRow['statDesc'] ?? '';
                     } 
 
-                if (!empty($remark)) {
-                        $this->main->insert_data('trans_remarks', [
-                            'trans_detail_id'        => $trans_detail_id,
-                            'trans_detail_status_id' => 36,
-                            'remark'                 => $remark,
-                            'created_by'             => $userID,
-                            'created_at'             => date('Y-m-d H:i:s'),
-                        ]); 
-                }
                     
-                if ((int)$resultVeriID === 16) {
+                if ((int)$reviewID === 35) {
                     $timestampRow = $this->db->select('created_by')
                         ->from('trans_timestamps')
                         ->where('trans_detail_id', $trans_detail_id)
-                        ->where('trans_detail_status_id', 33)
+                        ->where('trans_detail_status_id', 27)
                         ->order_by('created_at', 'DESC')
                         ->get()
                         ->row_array();
@@ -350,14 +323,14 @@ class ResultVerification extends CI_Controller {
                                 ->row_array();
 
                             if (!empty($transHeader)) {
-                                $remark = $remark;
+                                $remark = "This is for Re-analysis";
                                 $this->email_format->generateEmailNotification(
                                     $transHeader,
                                     $trans_detail_id,
                                     $statusText,
                                     $remark,
                                     $recipient,
-                                    'Disapproved'
+                                    'Re-Analysis'
                                 );
 
                                 log_message('info', "Sent 'Failed' notification to {$recipient['userEmail']} for trans_detail_id {$trans_detail_id}");
@@ -373,11 +346,11 @@ class ResultVerification extends CI_Controller {
 
         echo json_encode([
             'status'  => 'success',
-            'message' => 'Result Verification submitted successfully.'
+            'message' => 'Report Release submitted successfully.'
         ]);
     }
 
-	// END OF Result Verification CONTROLLER
+	// END OF Report Release CONTROLLER
 
 
 

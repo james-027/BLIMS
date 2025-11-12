@@ -28,7 +28,7 @@ $port = APP_PORT;
 
 
 //LOCAL
-//$base_url2 = 'http://'.$_SERVER['HTTP_HOST'].APP_SUB_DIR;
+// $base_url2 = 'http://'.$_SERVER['HTTP_HOST'].APP_SUB_DIR;
 
 
 
