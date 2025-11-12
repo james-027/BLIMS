@@ -97,6 +97,10 @@ class Registration extends CI_Controller {
         $this->db->join('plate_numbers p', 'p.id = td.plate_number_id', 'left');
         $this->db->join('batch_numbers b', 'b.id = td.batch_number_id', 'left');
         $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
+        $this->db->group_by('td.trans_detail_id');
+
+  
+
         $this->db->join("
             (
                 SELECT tr1.trans_detail_id, tr1.remark

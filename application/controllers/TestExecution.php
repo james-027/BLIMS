@@ -81,6 +81,7 @@ class TestExecution extends CI_Controller {
         } else {
             $this->db->where('th.laboratory_id', 0); 
         }
+        $this->db->group_by('td.trans_detail_id');
         $this->db->join("
             (
                 SELECT tr1.trans_detail_id, tr1.remark

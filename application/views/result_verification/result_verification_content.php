@@ -22,8 +22,7 @@
             <div class="col-md-12">
                 <div class="card shadow-sm mb-3">
                     <div class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>" data-toggle="collapse"
-                        data-target="#job-<?= $jobIndex ?>" aria-expanded="true"
-                        style="cursor:pointer;">
+                        data-target="#job-<?= $jobIndex ?>" aria-expanded="true" style="cursor:pointer;">
 
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <h5 class="mb-0">
@@ -42,31 +41,35 @@
                         <div class="card-body p-0">
                             <div class="verification-section">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-hover table-striped mb-0 result_verification">
+                                    <table
+                                        class="table table-bordered table-hover table-striped mb-0 result_verification">
                                         <thead>
                                             <tr>
                                                 <th colspan="6"></th>
-                                                <th colspan="3" class="text-center bg-light">Test Execution</th>
-                                                <th colspan="1" class="text-center bg-light">Data Review</th>
-                                                <th colspan="2" class="text-center bg-light">Result Verification</th>
+                                                <th colspan="3" class="text-center bg-light" title="Test Execution">Test
+                                                    Execution</th>
+                                                <th colspan="1" class="text-center bg-light" title="Data Review">Data
+                                                    Review</th>
+                                                <th colspan="2" class="text-center bg-light"
+                                                    title="Result Verification">Result Verification</th>
                                             </tr>
                                             <tr>
-                                               <th rowspan="2" class="col-no">No.</th>
-                                                <th rowspan="2">Date Submitted</th>
-                                                <th rowspan="2" style="width:250px;">Laboratory Code</th>
-                                                <th rowspan="2">Sample Name</th>
-                                                <th rowspan="2"  title = "Laboratory Test">Laboratory Tests</th>
-                                            <th rowspan="2" class="col-lead-time" title="Lead Time">Lead Time</th>
-
-                                                <th>Status</th>
-                                                <th>Lab Result</th>
-                                                <th style="width:200px;">Remarks</th>
-
-                                                <th>Review Verification</th>
-
-                                                <th>Test Result</th>
-                                                <th style="width:300px;">Remarks</th>
+                                                <th rowspan="2" class="col-no" title="No.">No.</th>
+                                                <th rowspan="2" title="Date Submitted">Date Submitted</th>
+                                                <th rowspan="2" style="width:250px;" title="Laboratory Code">Laboratory
+                                                    Code</th>
+                                                <th rowspan="2" title="Sample Name">Sample Name</th>
+                                                <th rowspan="2" title="Laboratory Tests">Laboratory Tests</th>
+                                                <th rowspan="2" class="col-lead-time" title="Lead Time">Lead Time</th>
+                                                <th title="Test Execution Status">Status</th>
+                                                <th title="Laboratory Result">Lab Result</th>
+                                                <th style="width:200px;" title="Remarks for Test Execution">Remarks</th>
+                                                <th title="Data Review Verification">Review Verification</th>
+                                                <th title="Final Test Result">Test Result</th>
+                                                <th style="width:300px;" title="Remarks for Result Verification">Remarks
+                                                </th>
                                             </tr>
+
                                         </thead>
 
                                         <tbody>
@@ -96,8 +99,8 @@
                                                 <td class="align-middle"><?= $detail['laboratory_tests'] ?? '-' ?></td>
                                                 <td class="align-middle">
                                                     <?= $detail['lead_time'] ?? '-' ?>
-                                                    <input type="hidden" 
-                                                        name="lead_time[<?= $detail['trans_detail_id'] ?>]" 
+                                                    <input type="hidden"
+                                                        name="lead_time[<?= $detail['trans_detail_id'] ?>]"
                                                         value="<?= isset($detail['lead_time']) ? htmlspecialchars($detail['lead_time']) : '' ?>">
                                                 </td>
 
@@ -117,15 +120,15 @@
                                                 </td>
 
                                                 <td class="align-middle">
-                                                     <span><?= htmlspecialchars($detail['test_exec_lab_result'] ?? 'No Result', ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <span><?= htmlspecialchars($detail['test_exec_lab_result'] ?? 'No Result', ENT_QUOTES, 'UTF-8') ?></span>
                                                 </td>
 
                                                 <td class="align-middle" style="max-width: 200px;">
-                                                <span><?= htmlspecialchars($detail['existing_remark'] ?? 'No Remarks', ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <span><?= htmlspecialchars($detail['existing_remark'] ?? 'No Remarks', ENT_QUOTES, 'UTF-8') ?></span>
                                                 </td>
-                       
 
-                                                
+
+
                                                 <td class="align-middle" style="max-width: 200px;">
                                                     <span>
                                                         <?php
@@ -158,11 +161,12 @@
                                                     </select>
                                                 </td>
 
-                                            <td class="align-middle">
-                                                <input type="text" 
-                                                    name="result_verification_remarks[<?= $detail['trans_detail_id'] ?>]" 
-                                                    class="form-control form-control-sm" value="<?= htmlspecialchars($detail['result_verification_remark'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                                            </td>
+                                                <td class="align-middle">
+                                                    <input type="text"
+                                                        name="result_verification_remarks[<?= $detail['trans_detail_id'] ?>]"
+                                                        class="form-control form-control-sm"
+                                                        value="<?= htmlspecialchars($detail['result_verification_remark'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                                </td>
 
                                             </tr>
                                             <?php endforeach; ?>
@@ -202,8 +206,8 @@
     <?php endif; ?>
 </div>
 
-<div class="modal fade" id="confirmModalResultVerification" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel"
-    aria-hidden="true">
+<div class="modal fade" id="confirmModalResultVerification" tabindex="-1" role="dialog"
+    aria-labelledby="confirmModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
@@ -224,7 +228,7 @@
                         <div>Approved</div>
                         <div id="countApproved" style="font-size: 1.4rem;">0</div>
                     </div>
-                       <div class="status-box status-failed">
+                    <div class="status-box status-failed">
                         <div><i class="fas fa-times-circle fa-lg mb-1"></i></div>
                         <div>Disapproved</div>
                         <div id="countDisapproved" style="font-size: 1.4rem;">0</div>

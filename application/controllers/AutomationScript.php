@@ -25,28 +25,22 @@ class AutomationScript extends CI_Controller {
         $this->load->library('email_format');
     }
 
-    public function run_all()
+    public function run_minor_notif()
     {
         if (!$this->input->is_cli_request()) {
             echo "This script can only be run from CLI.\n";
             return;
         }
-
         echo "[".date('Y-m-d H:i:s')."] Automation Script started.\n";
-
         
         $this->check_overdue_lead_times();
 
         $this->auto_cancel_onhold_records();
 
-        $this->send_queue();
-
-
-
     }
 
 
-    public function send_queue()
+    public function send_queue01()
     {
         if (!$this->input->is_cli_request()) {
             echo "This script can only be run from CLI.\n";
@@ -55,7 +49,8 @@ class AutomationScript extends CI_Controller {
 
         $this->load->database();
 
-        echo "Email automation started...\n";
+        echo "[".date('Y-m-d H:i:s')."] Email automation Script started.\n";
+
 
         while (true) {
             $emails = $this->db->limit(10)->get_where('email_queues', ['status' => 0])->result_array();
@@ -105,6 +100,67 @@ class AutomationScript extends CI_Controller {
         }
     }
 
+       public function send_queue()
+    {
+        if (!$this->input->is_cli_request()) {
+            echo "This script can only be run from CLI.\n";
+            return;
+        }
+
+        $this->load->database();
+
+        echo "[".date('Y-m-d H:i:s')."] Email automation Script started.\n";
+
+        while (true) {
+            $emails = $this->db->limit(10)->get_where('email_queues', ['status' => 0])->result_array();
+
+            if (empty($emails)) {
+                echo "[".date('Y-m-d H:i:s')."] No emails in queue. Script ending.\n";
+                break; 
+            }
+
+            foreach ($emails as $email) {
+                $body = trim($email['body'] ?? '');
+                if (empty($body)) {
+                    echo "[".date('Y-m-d H:i:s')."] Skipping {$email['to_email']} — message empty\n";
+                    continue;
+                }
+
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = SYS_EMAIL;
+                    $mail->Password   = SYS_EMAIL_PASS;
+                    $mail->SMTPSecure = 'tls';
+                    $mail->Port       = 587;
+
+                    $mail->setFrom(SYS_EMAIL, 'Lab Information System');
+                    $mail->addAddress($email['to_email']);
+
+                    $mail->isHTML(true);
+                    $mail->Subject = $email['subject'];
+                    $mail->Body    = $body;
+
+                    if ($mail->send()) {
+                        echo "[".date('Y-m-d H:i:s')."] Email sent to {$email['to_email']}\n";
+
+                        $this->db->update('email_queues', [
+                            'status'  => 1,
+                            'sent_at' => date('Y-m-d H:i:s')
+                        ], ['id' => $email['id']]);
+                    }
+                } catch (Exception $e) {
+                    echo "[".date('Y-m-d H:i:s')."] Exception for {$email['to_email']}: " . $e->getMessage() . "\n";
+                }
+            }
+
+            sleep(10); // optional, can remove if you want to process immediately
+        }
+
+        echo "[".date('Y-m-d H:i:s')."] Email automation Script finished.\n";
+    }
 
 public function check_overdue_lead_times()
 {
@@ -146,7 +202,7 @@ public function check_overdue_lead_times()
             continue; // skip if no submission date
         }
 
-        $this->send_overdue_lead_time($lead_time, $date_submitted, $trans_detail_id);
+         $this->send_overdue_lead_time($lead_time, $date_submitted, $trans_detail_id);
     }
 }
 
@@ -158,6 +214,10 @@ public function check_overdue_lead_times()
                     if (empty($date_submitted[$trans_detail_id])) {
                         return;
                     }
+
+                 
+
+
                     $submitted_date = $date_submitted[$trans_detail_id];
                     $lead_days = (int) $lead_time[$trans_detail_id];
                     $today = date('Y-m-d');
@@ -166,8 +226,7 @@ public function check_overdue_lead_times()
        
 
                     if ($days_diff > $lead_days) {
-   
-
+                    
                         $lab_row = $this->db
                             ->select('th.laboratory_id')
                             ->from('trans_details td')
@@ -176,18 +235,15 @@ public function check_overdue_lead_times()
                             ->get()
                             ->row();
 
-
                         if ($lab_row) {
                             $lab_id = $lab_row->laboratory_id;
-                            
-
                             $recipients = $this->db
                             
-                                ->select('u.userID, u.userEmail, u.userFirstName, u.userLastName, u.userTypeId')
+                                ->select('u.userID, u.userEmail, u.userFirstName, u.userLastName, u.userTypeID')
                                 ->from('users u')
                                 ->join('userslabs ul', 'ul.userID = u.userID')
                                 ->where('ul.laboratory_id', $lab_id)
-                                ->where_in('u.userTypeId', [12, 1]) 
+                                ->where_in('u.userTypeID', [12, 1]) 
                                 ->where('u.userEmail IS NOT NULL AND u.userEmail !=', '') 
                                 ->get()
                                 ->result_array();
@@ -196,6 +252,7 @@ public function check_overdue_lead_times()
                                 log_message('warning', "No valid recipients found for lab_id: {$lab_id}");
                                 return;
                             }
+
 
                             $transHeader = $this->db
                                 ->select('th.trans_id, th.job_order_no, td.lab_code, u.userEmail as requester_email, u.userFirstName, u.userLastName')
@@ -215,6 +272,7 @@ public function check_overdue_lead_times()
                             $remark = "Lab test has exceeded its allowed lead time of {$lead_days} days.";
 
                             foreach ($recipients as $recipient) {
+
                                 log_message('info', "Queuing LeadTimeExceeded email for {$recipient['userEmail']} ({$recipient['userFirstName']} {$recipient['userLastName']})");
 
                                 $this->email_format->generateEmailNotification(

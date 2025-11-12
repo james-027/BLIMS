@@ -15,13 +15,15 @@
         </div>
     </div>
 
-    <form method="post" action="<?=base_url($controller.'/submit_initial_prep')?>" enctype="multipart/form-data" id="initialPreparationForm">
+    <form method="post" action="<?=base_url($controller.'/submit_initial_prep')?>" enctype="multipart/form-data"
+        id="initialPreparationForm">
         <?php foreach($jobs as $jobIndex => $job): ?>
         <div class="row justify-content-center mt-4">
             <div class="col-md-12">
                 <div class="card shadow-sm mb-3">
                     <div class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>" data-toggle="collapse"
-                        data-target="#job-<?= $jobIndex ?>"  aria-expanded="<?= $jobIndex === 0 ? 'true' : 'false' ?>" style="cursor:pointer;">
+                        data-target="#job-<?= $jobIndex ?>" aria-expanded="<?= $jobIndex === 0 ? 'true' : 'false' ?>"
+                        style="cursor:pointer;">
 
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <h5 class="mb-0">
@@ -44,17 +46,18 @@
                                     <table class="table table-bordered table-hover table-striped mb-0 verification">
                                         <thead>
                                             <tr>
-                                                <th style="width:50px;">No.</th>
-                                                <th style="width:250px;">Laboratory Code</th>
-                                                <th>Sample Name</th>
-                                                <th style="width:120px;">Production Date</th>
-                                                <th>Shipment Supplier</th>
-                                                <th>Plate / Van Number</th>
-                                                <th>Batch / Lot Number</th>
-                                                <th>Type of Sample</th>
-                                                <th>Laboratory Tests</th>
-                                                <th>Test Parameter</th>
-                                                <th>Pre Analytical Process</th>
+                                                <th style="width:50px;" title="No.">No.</th>
+                                                <th style="width:250px;" title="Laboratory Code">Laboratory Code</th>
+                                                <th title="Sample Name">Sample Name</th>
+                                                <th style="width:120px;" title="Production Date">Production Date</th>
+                                                <th title="Shipment Supplier">Shipment Supplier</th>
+                                                <th title="Plate / Van Number">Plate / Van Number</th>
+                                                <th title="Batch / Lot Number">Batch / Lot Number</th>
+                                                <th title="Type of Sample">Type of Sample</th>
+                                                <th title="Laboratory Tests">Laboratory Tests</th>
+                                                <th title="Test Parameter">Test Parameter</th>
+                                                <th title="Pre Analytical Process">Pre Analytical Process</th>
+
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -78,27 +81,27 @@
                                                 <td class="align-middle"><?= $detail['laboratory_tests'] ?? '-' ?></td>
                                                 <td class="align-middle"><?= $detail['param_name'] ?? '-' ?></td>
 
-                                            <td class="text-center align-middle">
-                                                <select name="analyticals[<?= $detail['trans_detail_id'] ?>]"
-                                                    class="form-control form-control-sm analytical-select dynamic_dropdown status-zfix"
-                                                    data-target="<?= $detail['trans_detail_id'] ?>"
-                                                    required>
-                                                    <option value="">Select Status</option>
-                                                    <?php foreach($analyticals as $analytical): ?>
+                                                <td class="text-center align-middle">
+                                                    <select name="analyticals[<?= $detail['trans_detail_id'] ?>]"
+                                                        class="form-control form-control-sm analytical-select dynamic_dropdown status-zfix"
+                                                        data-target="<?= $detail['trans_detail_id'] ?>" required>
+                                                        <option value="">Select Status</option>
+                                                        <?php foreach($analyticals as $analytical): ?>
                                                         <option value="<?= $analytical->statusID ?>"
                                                             <?= $detail['pre_analytical_id'] == $analytical->statusID ? 'selected' : '' ?>>
                                                             <?= $analytical->statDesc ?>
                                                         </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </td>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </td>
 
 
                                             </tr>
                                             <?php endforeach; ?>
                                             <?php else: ?>
                                             <tr>
-                                                <td colspan="10" class="text-center text-muted">No samples available</td>
+                                                <td colspan="10" class="text-center text-muted">No samples available
+                                                </td>
                                             </tr>
                                             <?php endif; ?>
                                         </tbody>
@@ -115,7 +118,8 @@
         <div class="row justify-content-end mt-3">
             <div class="col-md-12 d-flex justify-content-end gap-2">
                 <button type="button" id="saveBtnInitial" class="btn btn-success mr-2">Save</button>
-                <button type="button" class="btn btn-danger" onclick="window.location.href='<?= base_url('initialpreparation') ?>';">Cancel</button>
+                <button type="button" class="btn btn-danger"
+                    onclick="window.location.href='<?= base_url('initialpreparation') ?>';">Cancel</button>
             </div>
         </div>
 

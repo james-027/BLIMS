@@ -15,13 +15,15 @@
         </div>
     </div>
 
-    <form method="post" action="<?=base_url($controller.'/submit_final_prep')?>" enctype="multipart/form-data" id="finalPreparationForm">
+    <form method="post" action="<?=base_url($controller.'/submit_final_prep')?>" enctype="multipart/form-data"
+        id="finalPreparationForm">
         <?php foreach($jobs as $jobIndex => $job): ?>
         <div class="row justify-content-center mt-4">
             <div class="col-md-12">
                 <div class="card shadow-sm mb-3">
                     <div class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>" data-toggle="collapse"
-                        data-target="#job-<?= $jobIndex ?>" aria-expanded="<?= $jobIndex === 0 ? 'true' : 'false' ?>"  style="cursor:pointer;">
+                        data-target="#job-<?= $jobIndex ?>" aria-expanded="<?= $jobIndex === 0 ? 'true' : 'false' ?>"
+                        style="cursor:pointer;">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <h5 class="mb-0">
                                 Job Order No:
@@ -42,19 +44,20 @@
                                     <table class="table table-bordered table-hover table-striped mb-0 verification">
                                         <thead>
                                             <tr>
-                                                <th style="width:50px;">No.</th>
-                                                <th style="width:250px;">Laboratory Code</th>
-                                                <th>Sample Name</th>
-                                                <th style="width:120px;">Production Date</th>
-                                                <th>Shipment Supplier</th>
-                                                <th>Plate / Van Number</th>
-                                                <th>Batch / Lot Number</th>
-                                                <th>Type of Sample</th>
-                                                <th>Laboratory Tests</th>
-                                                <th>Test Parameter</th>
-                                                <th>Pre Analytical Analyst</th>
-                                                <th>Preparation Verification</th>
-                                                <th>Remarks</th>
+                                                <th style="width:50px;" title="No.">No.</th>
+                                                <th style="width:250px;" title="Laboratory Code">Laboratory Code</th>
+                                                <th title="Sample Name">Sample Name</th>
+                                                <th style="width:120px;" title="Production Date">Production Date</th>
+                                                <th title="Shipment Supplier">Shipment Supplier</th>
+                                                <th title="Plate / Van Number">Plate / Van Number</th>
+                                                <th title="Batch / Lot Number">Batch / Lot Number</th>
+                                                <th title="Type of Sample">Type of Sample</th>
+                                                <th title="Laboratory Tests">Laboratory Tests</th>
+                                                <th title="Test Parameter">Test Parameter</th>
+                                                <th title="Pre Analytical Analyst">Pre Analytical Analyst</th>
+                                                <th title="Preparation Verification">Preparation Verification</th>
+                                                <th title="Remarks">Remarks</th>
+
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -94,33 +97,35 @@
                                                 </td>
 
 
-                                            <td class="text-center align-middle">
-                                                <select  id="prepverification-<?= $detail['trans_detail_id'] ?>" name="prep_verifications[<?= $detail['trans_detail_id'] ?>]"
-                                                    class="form-control form-control-sm verification-select dynamic_dropdown status-zfix"
-                                                    data-target="#prepverification-<?= $detail['trans_detail_id'] ?>"
-                                                    required>
-                                                    <option value="">Select Verification</option>
-                                                    <?php foreach($prep_verifications as $prep_verification): ?>
+                                                <td class="text-center align-middle">
+                                                    <select id="prepverification-<?= $detail['trans_detail_id'] ?>"
+                                                        name="prep_verifications[<?= $detail['trans_detail_id'] ?>]"
+                                                        class="form-control form-control-sm verification-select dynamic_dropdown status-zfix"
+                                                        data-target="#prepverification-<?= $detail['trans_detail_id'] ?>"
+                                                        required>
+                                                        <option value="">Select Verification</option>
+                                                        <?php foreach($prep_verifications as $prep_verification): ?>
                                                         <option value="<?= $prep_verification->statusID ?>"
                                                             <?= $detail['prep_verification_status_id'] == $prep_verification->statusID ? 'selected' : '' ?>>
                                                             <?= $prep_verification->statDesc ?>
                                                         </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </td>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </td>
 
-                                            <td class="align-middle">
+                                                <td class="align-middle">
                                                     <input type="text" name="remarks[<?= $detail['trans_detail_id'] ?>]"
                                                         class="form-control form-control-sm"
                                                         value="<?= htmlspecialchars($detail['existing_remark'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                                            </td>
+                                                </td>
 
 
                                             </tr>
                                             <?php endforeach; ?>
                                             <?php else: ?>
                                             <tr>
-                                                <td colspan="10" class="text-center text-muted">No samples available</td>
+                                                <td colspan="10" class="text-center text-muted">No samples available
+                                                </td>
                                             </tr>
                                             <?php endif; ?>
                                         </tbody>
@@ -137,7 +142,8 @@
         <div class="row justify-content-end mt-3">
             <div class="col-md-12 d-flex justify-content-end gap-2">
                 <button type="button" id="saveBtnFinal" class="btn btn-success mr-2">Save</button>
-                <button type="button" class="btn btn-danger" onclick="window.location.href='<?= base_url('finalpreparation') ?>';">Cancel</button>
+                <button type="button" class="btn btn-danger"
+                    onclick="window.location.href='<?= base_url('finalpreparation') ?>';">Cancel</button>
             </div>
         </div>
 
@@ -167,7 +173,7 @@
 
             <div class="modal-body">
                 <p class="text-center font-weight-bold mb-3 text-dark">Status Summary</p>
-                
+
                 <div class="status-summary">
                     <div class="status-box status-passed">
                         <div><i class="fas fa-check-circle fa-lg mb-1"></i></div>
