@@ -149,14 +149,15 @@
                                                     <?php endif; ?>
                                                 </td>
 
-                                                <td class="align-middle text-center">
-                                                    <a href="" 
-                                                    class="btn btn-sm btn-primary" 
-                                                    title="Download COA PDF" 
-                                                >
-                                                        <i class="fa fa-file-pdf-o"></i> Download COA
-                                                    </a>
-                                                </td>
+                                           <td class="align-middle text-center">
+                                            <a href="<?= base_url('coa/generate_pdf') ?>" 
+                                            class="btn btn-sm btn-primary" 
+                                            title="Download COA PDF" 
+                                            >
+                                                <i class="fa fa-file-pdf-o"></i> Download COA
+                                            </a>
+                                        </td>
+
 
                                                 <td class="align-middle text-center">
                                                     <button type="button"

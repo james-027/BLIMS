@@ -114,6 +114,8 @@
                     array('2' => 'animal-feed'),
                     array('2' => 'region'),
                     array('2' => 'users'),
+                    array('2' => 'professions'),
+                    array('2' => 'user-professions'),
                     array('2' => 'test-parameter'),
                     array('2' => 'test-name'),
                     array('2' => 'test-method'), 
@@ -138,6 +140,8 @@
                     'sys_modules',
                     'system_key',
                     'logs',
+                    'professions',
+                    'user-professions',
                 );
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Master Data', 1, 'prefix', 'fa-th-list');
                     $linkArray = array(
@@ -220,6 +224,8 @@
                         'user-key',
                         'user-sloc',
                         'roles',
+                        'professions',
+                        'user-professions',
                     );
                     $aliasArray = array(
                         'users',
@@ -227,6 +233,8 @@
                         'user_key',
                         'user_sloc',
                         'roles',
+                        'professions',
+                        'user-professions',
                     );
                     echo menu_link_to_display($linkArray, $aliasArray, 'Users Config', 2, 'complex');
 

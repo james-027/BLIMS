@@ -60,13 +60,13 @@ class Registration extends CI_Controller {
         $data['controller'] = $this->controller;
         $data['userID'] = $userID;
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-       $data['test_statuses'] = $this->main->get_data(
-            'stats',
-            "status_type_id = 3 OR statusID = 25",
-            false,
-            'statusID, statDesc',
-            'statDesc ASC'
-            );
+        $data['test_statuses'] = $this->main->get_data(
+                'stats',
+                "status_type_id = 3 OR statusID = 25",
+                false,
+                'statusID, statDesc',
+                'statDesc ASC'
+                );
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
         $this->db->select([
             'th.trans_id AS trans_id',
@@ -98,9 +98,6 @@ class Registration extends CI_Controller {
         $this->db->join('batch_numbers b', 'b.id = td.batch_number_id', 'left');
         $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
         $this->db->group_by('td.trans_detail_id');
-
-  
-
         $this->db->join("
             (
                 SELECT tr1.trans_detail_id, tr1.remark
@@ -128,15 +125,11 @@ class Registration extends CI_Controller {
                   AND tr1.created_at = tr2.latest_created
             WHERE tr1.trans_detail_status_id = 20
         ) trr", 'trr.trans_detail_id = td.trans_detail_id', 'left');
-
-        // Join reasons table to get reason_name
         $this->db->join('reasons r', 'r.id = trr.reason_id', 'left');
-
-
         $this->db->where('th.created_by', $userID);
         $this->db->order_by('th.trans_id', 'DESC');
-
         $all_details = $this->db->get()->result_array();
+
 
         $verification_jobs = [];
         foreach ($all_details as $row) {

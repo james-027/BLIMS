@@ -9799,6 +9799,412 @@ private function _read_excel($filePath)
 
 
 	/*  
+	module: Profession  Controller
+	desc: CRUD of Profession (Transaction)
+	date created: 2025-11-14
+	created by: James
+	Change Management #1
+		Date:
+		Description: Continuation of CRUD (Add, Edit, Deactivation, & Activation)
+		Modified By: 
+	*/
+	public function professions()
+	{
+		$info = $this->custom_lib->_require_login();
+		$data['js_file'] = '';
+		$data['profile'] = $this->custom_lib->_get_profile();
+		$data['menuColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->menuColor;
+	    $data['tableColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->tableColor;
+	    $data['thColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->thColor;
+	    $data['btnColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->btnColor;
+	    
+	    $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+
+	    $keyID = decode($info['current_keyID']);
+	    $userID = decode($info['userID']);
+		
+		$data['available_access'] = $this->custom_lib->_get_available_access( array('userID' => decode($info['userID'])) );
+		$module_access = $this->custom_lib->module_access('professions');
+		$data['new_button'] = '<div class="row col-lg-12">';
+
+		$btn_class = 'btn btn-icon btn-sm btn-round btn-'.$data['btnColor'].' mr-2 mb-2';
+		if($module_access->add){
+			
+			$data['new_button'] .= '
+			
+				<button type="button" class="add-professions '.$btn_class.'"><span class="fas fa-plus"></span></button>
+				<button type="button" class="refresh-dt '.$btn_class.'"><span class="fa fa-refresh"></span></button>';
+		}
+		if($module_access->dlod){
+			$data['new_button'] .= '<button type="button" class="print-dt '.$btn_class.'"><span class="fas fa-file-excel"></span></button>';
+			
+		}
+		$data['new_button'] .= '</div>';
+		
+		
+		if(!$module_access->view){redirect('admin');}
+		
+		$bc_access = $this->custom_lib->_get_data_access( array('userID' => $userID, 'statusID' => 1));
+		$where_in_field = FALSE;
+		$where_in = FALSE;
+		if(!empty($bc_access)){
+			$where_in_field = 'bcID';
+			$where_in = $bc_access;
+		}
+
+		$filter = array('statusID'	=>	1);
+
+		$data['title'] = 'Professions';
+		$data['menu_title'] = 'Master data';
+		$data['parent_title'] = 'Users Config';
+
+		$data['userID'] = decode($info['userID']);
+		$data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
+
+		$data['content'] = $this->load->view('admin/profession_content', $data , TRUE);
+		$this->load->view('admin/templates', $data);
+	}
+
+	public function professionGrid()
+	{
+		$info = $this->custom_lib->_require_login();
+		$userID = decode($info['userID']);
+		$module_access = $this->custom_lib->module_access('professions');
+
+		$draw   = intval($this->input->get("draw"));
+		$start  = intval($this->input->get("start"));
+		$length = intval($this->input->get("length"));
+		$data   = array();
+
+		$join = array(
+			'stats s'   => 'a.status_id = s.statusID',
+			'users u1'  => array('a.created_by = u1.userID'   => 'INNER'),
+			'users u2'  => array('a.updated_by = u2.userID'   => 'LEFT'),
+		);
+
+		$select = "a.*, 
+				a.status_id as displaystatusID, 
+				s.statDesc, 
+				CONCAT(u1.userFirstName, ' ', u1.userLastName) as createdByName, 
+				CONCAT(u2.userFirstName, ' ', u2.userLastName) as modifiedByName";
+
+		$recFound = $this->main->get_join_datatables(
+			'professions a',
+			$join,
+			false,
+			'a.name',
+			false,
+			$select,
+			false
+		);
+
+		$toggle = '';
+		$primary_action = '';
+
+		foreach ($recFound->result() as $r) {
+
+			if($r->displaystatusID == 1){
+				$badge = '<span class="badge badge-success">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-active text-success" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-on fa-lg"></span></a>';
+				}
+			} elseif($r->displaystatusID == 2){
+				$badge = '<span class="badge badge-warning">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-inactive text-warning" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-off fa-lg"></span></a>';
+				}
+			}
+
+			if($module_access->edit){
+				$primary_action = '<a href="#" class="edit-professions" data-id="'.encode($r->id).'"><span class="fas fa-pencil-alt fa-md"></span></a>';
+			}
+
+			$createdBy  = $r->createdByName;
+			$createdOn  = time_stamp_display($r->created_at);
+			$modifiedBy = $r->updated_by == '' ? '' : $r->modifiedByName;
+			$modifiedOn = $r->updated_by == '' ? '' : time_stamp_display($r->modified_at);
+
+			$data[] = array(
+				$r->name,
+				$createdBy,
+				$createdOn,
+				$modifiedBy,
+				$modifiedOn,
+				$badge,
+				$primary_action.'&nbsp;'.$toggle
+			);
+		}
+
+		$output = array(
+			"draw"            => $draw,
+			"recordsTotal"    => $recFound->num_rows(),
+			"recordsFiltered" => $recFound->num_rows(),
+			"data"            => $data
+		);
+
+		echo json_encode($output);
+		exit();
+	}
+
+
+	public function add_professions()
+	{
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+
+			$professionName = clean_data($this->input->post('professionName'));
+
+			if(!empty($professionName)){
+				$check = $this->main->check_data('professions', array('name' =>  $professionName));
+					if($check == FALSE){
+						$set = array(
+							'name' => trim(strtoupper($professionName)),
+							'status_id' => 1,
+							'created_by'    => decode($info['userID']),
+                            'created_at'  => date_now(),
+                            'modified_at'  => date_now(),
+						);
+
+						$result = $this->main->insert_data('professions', $set, TRUE);
+
+						if($result['id']){
+							$user_logs = array(
+								'userID'	=>	decode($info['userID']),
+								'userFullName' =>	$info['userFullName'],
+								'logTS'	=>	date_now(),
+								'page'	=>	'Admin/add_profession',
+								'logDetail'	=>	'Successfully added Profession ID:'.@$result['id']
+							);
+					        $this->main->user_logs($user_logs);
+
+							echo json_encode(array(
+			                	'success'       =>    true,
+			                	'successMsg'    =>    'Profession added successfully.',
+			                	'tnID' => $result['id'],
+			                	'professionName' => trim(strtoupper($professionName))
+			                ));
+						}
+					}else{
+						echo json_encode(array(
+		                	'success'       =>    false,
+		                	'successMsg'    =>    'Profession already exist.'
+		                ));
+					}
+				
+			}else{
+				echo json_encode(array(
+                	'success'       =>    false,
+                	'successMsg'    =>    'Make sure all fields are filled.'
+                ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Please contact your administrator.'
+            ));
+		}	
+	}
+
+	public function modal_professions(){
+		$info = $this->custom_lib->_require_login();
+		$keyID = decode($info['current_keyID']);
+
+		$id = decode($this->input->post('id'));
+
+		$join = array(
+			'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
+		);
+		$check = $this->main->check_join('professions a', $join, true);
+
+		echo json_encode($check); exit;
+		
+		if($check['result'] == TRUE){
+			$data['result'] = 1;
+			$data['info'] = array(
+				'name' => $check['info']->name,
+				
+			);
+		}else{
+			$data['result'] = 0;
+		}
+
+		echo json_encode($data);
+
+	}
+
+	public function update_professions(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$professionID = decode($this->input->post('id'));
+			$professionName = clean_data($this->input->post('professionName'));
+
+			if(!empty($professionID && !empty($professionName))){
+					$check = $this->main->check_data('professions', array('name' =>  $professionName, 'id !=' => $professionID));
+					if($check == FALSE){
+						$set = array(
+							'name' => trim(strtoupper($professionName)),
+							'updated_by' => decode($info['userID']),
+                            'modified_at'   => date_now()
+						);
+						$result = $this->main->update_data('professions', $set, array('id' => $professionID));
+						if($result == TRUE){
+							$user_logs = array(
+								'userID'	=>	decode($info['userID']),
+								'userFullName' =>	$info['userFullName'],
+								'logTS'	=>	date_now(),
+								'page'	=>	'Admin/update_profession',
+								'logDetail'	=>	'Successfully updated Test Name ID:'.@$professionID
+							);
+					        $this->main->user_logs($user_logs);
+							echo json_encode(array(
+				            	'success'       =>    true,
+				            	'successMsg'    =>    'Profession successfully updated.'
+				            ));
+						}else{
+							echo json_encode(array(
+				            	'success'       =>    false,
+				            	'successMsg'    =>    'Opps. Please try again.'
+				            ));
+						}
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Profession already exist.'
+			            ));
+					}
+
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Please make sure all required fields are filled.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	public function deactivate_professions(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$professionID = decode(clean_data($this->input->post('id')));
+			if(!empty($professionID)){
+				$check = $this->main->check_data('professions', array('id' => $professionID, 'status_id' => 2), true);
+				if($check['result'] == FALSE){
+					$set = array(
+						'status_id' => 2,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $professionID);
+					$result = $this->main->update_data('professions', $set, $where);
+					log_message('debug', 'Deactive Profession Update Result: ' . print_r($result, true));
+
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/deactivate_profession',
+							'logDetail'	=>	'Successfully deactivated Profession ID:'.@$professionID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'Profession successfully deactivated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. Profession already inactive.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Profession ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	public function activate_professions(){
+		$info = $this->custom_lib->_require_login();
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$professionID = decode(clean_data($this->input->post('id')));
+			if(!empty($professionID)){
+				$check = $this->main->check_data('professions', array('id' => $professionID, 'status_id' => 1), true);
+				if($check['result'] == FALSE){
+					$set = array(
+						'status_id' => 1,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $professionID);
+					$result = $this->main->update_data('professions', $set, $where);
+					log_message('debug', 'Active Profession Update Result: ' . print_r($result, true));
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/activate_profession',
+							'logDetail'	=>	'Successfully activated Profession ID:'.@$professionID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'Profession successfully activated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. Profession already active.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Profession ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+	//END OF Profession CONTROLLER
+
+
+
+	/*  
 	module: Test Method Controller
 	desc: CRUD of Test Method (Transaction)
 	date created: 2025-10-10
@@ -12875,7 +13281,7 @@ private function _read_excel($filePath)
 
 								echo json_encode(array(
 									'success'       =>    true,
-									'successMsg'    =>    'Nutritionist added successfully.',
+									'successMsg'    =>    'Test Code added successfully.',
 									'testID' => $result['id'],
 									'testCode' => trim(strtoupper($testCode))
 								));
@@ -12940,33 +13346,6 @@ private function _read_excel($filePath)
 
 		echo json_encode($data);
 	}
-
-	// public function modal_test(){
-	// 	$info = $this->custom_lib->_require_login();
-	// 	$keyID = decode($info['current_keyID']);
-
-	// 	$id = decode($this->input->post('id'));
-
-	// 	$join = array(
-	// 		'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
-	// 	);
-	// 	$check_test = $this->main->check_join('tests a', $join, true);
-
-		
-	// 	if($check_test['result'] == TRUE){
-	// 		$data['result'] = 1;
-	// 		$data['info'] = array(
-	// 			'test_code' => $check_test['info']->test_code,
-	// 			'test_name_id' => $check_test['info']->test_name_id,
-				
-	// 		);
-	// 	}else{
-	// 		$data['result'] = 0;
-	// 	}
-
-	// 	echo json_encode($data);
-
-	// }
 
 	public function update_test(){
 		$info = $this->custom_lib->_require_login();
@@ -13138,10 +13517,437 @@ private function _read_excel($filePath)
 		}
 	}
 
-
 	//END OF TEST CODE CONTROLLER
 	
 	
+		/*  
+	module: User Professions Controller
+	desc: CRUD of User Professions (Transaction)
+	date created: 2025-11-14
+	created by: James
+	Change Management #1
+		Date:
+		Description: Continuation of CRUD (Add, Edit, Deactivation, & Activation)
+		Modified By: 
+	*/
+	public function user_professions()
+	{
+		
+		$info = $this->custom_lib->_require_login();
+		$data['js_file'] = '';
+		$data['profile'] = $this->custom_lib->_get_profile();
+		$data['menuColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->menuColor;
+	    $data['tableColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->tableColor;
+	    $data['thColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->thColor;
+	    $data['btnColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->btnColor;
+	    
+	    $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+
+	    $keyID = decode($info['current_keyID']);
+	    $userID = decode($info['userID']);
+		
+		$data['available_access'] = $this->custom_lib->_get_available_access( array('userID' => decode($info['userID'])) );
+		$module_access = $this->custom_lib->module_access('user-professions');
+		$data['new_button'] = '<div class="row col-lg-12">';
+
+		$btn_class = 'btn btn-icon btn-sm btn-round btn-'.$data['btnColor'].' mr-2 mb-2';
+		if($module_access->add){
+			
+			$data['new_button'] .= '
+			
+				<button type="button" class="add-user-professions '.$btn_class.'"><span class="fas fa-plus"></span></button>
+				<button type="button" class="refresh-dt '.$btn_class.'"><span class="fa fa-refresh"></span></button>';
+		}
+		if($module_access->dlod){
+			$data['new_button'] .= '<button type="button" class="print-dt '.$btn_class.'"><span class="fas fa-file-excel"></span></button>';
+			
+		}
+		$data['new_button'] .= '</div>';
+		
+		
+		if(!$module_access->view){redirect('admin');}
+		
+		$bc_access = $this->custom_lib->_get_data_access( array('userID' => $userID, 'statusID' => 1));
+		$where_in_field = FALSE;
+		$where_in = FALSE;
+		if(!empty($bc_access)){
+			$where_in_field = 'bcID';
+			$where_in = $bc_access;
+		}
+
+		$filter = array('statusID'	=>	1);
+
+		$data['title'] = 'User Professions';
+		$data['menu_title'] = 'Master data';
+		$data['parent_title'] = 'Users Config';
+
+		$data['userID'] = decode($info['userID']);
+		$data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
+		$data['professions'] = $this->main->get_data('professions', ['status_id' => 1]);
+		$data['users'] = $this->main->get_data('users', ['statusID' => 1]);
+		$data['content'] = $this->load->view('admin/user_professions_content', $data , TRUE);
+		$data['controller'] = $this->router->fetch_class();
+		$this->load->view('admin/templates', $data);
+	}
+
+	public function userProfessionsGrid()
+	{
+		$info = $this->custom_lib->_require_login();
+		$userID = decode($info['userID']);
+		$module_access = $this->custom_lib->module_access('user-professions');
+
+		$draw   = intval($this->input->get("draw"));
+		$start  = intval($this->input->get("start"));
+		$length = intval($this->input->get("length"));
+		$data   = array();
+
+		$join = array(
+			'stats s'   => 'a.status_id = s.statusID',
+			'professions p'   => 'a.profession_id = p.id',
+			'users u1'  => array('a.created_by = u1.userID'   => 'INNER'),
+			'users u2'  => array('a.updated_by = u2.userID'   => 'LEFT'),
+			'users u3'  => array('a.userID = u3.userID'   => 'INNER'),
+		);
+
+		$select = "a.*, 
+				a.status_id as displaystatusID, 
+				s.statDesc, 
+				p.name as profession_name, 
+				CONCAT(u1.userFirstName, ' ', u1.userLastName) as createdByName, 
+				CONCAT(u2.userFirstName, ' ', u2.userLastName) as modifiedByName,
+				CONCAT(u3.userFirstName, ' ', u3.userLastName) as userProfessionName"
+				;
+
+		$recFound = $this->main->get_join_datatables(
+			'user-professions a',
+			$join,
+			false,
+			false,
+			false,
+			$select,
+			false
+		);
+
+
+		$toggle = '';
+		$primary_action = '';
+
+		foreach ($recFound->result() as $r) {
+
+			if($r->displaystatusID == 1){
+				$badge = '<span class="badge badge-success">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-active text-success" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-on fa-lg"></span></a>';
+				}
+			} elseif($r->displaystatusID == 2){
+				$badge = '<span class="badge badge-warning">'.$r->statDesc.'</span>';
+				if($module_access->act){
+					$toggle = '<a href="#" class="toggle-inactive text-warning" data-id="' . encode($r->id) . '"><span class="fas fa-toggle-off fa-lg"></span></a>';
+				}
+			}
+
+			if($module_access->edit){
+				$primary_action = '<a href="#" class="edit-test" data-id="'.encode($r->id).'"><span class="fas fa-pencil-alt fa-md"></span></a>';
+			}
+
+			$createdBy  = $r->createdByName;
+			$createdOn  = time_stamp_display($r->created_at);
+			$modifiedBy = $r->updated_by == '' ? '' : $r->modifiedByName;
+			$modifiedOn = $r->updated_by == '' ? '' : time_stamp_display($r->modified_at);
+
+			$data[] = array(
+				$r->userProfessionName,
+				$r->profession_name,
+				$r->license_valid,
+				$r->license_no,
+				$createdBy,
+				$createdOn,
+				$modifiedBy,
+				$modifiedOn,
+				$badge,
+				$primary_action.'&nbsp;'.$toggle
+			);
+		}
+
+		$output = array(
+			"draw"            => $draw,
+			"recordsTotal"    => $recFound->num_rows(),
+			"recordsFiltered" => $recFound->num_rows(),
+			"data"            => $data
+		);
+
+		echo json_encode($output);
+		exit();
+	}
+	
+	public function add_user_professions()
+	{
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$userName = clean_data($this->input->post('userID'));
+			$professionName = clean_data($this->input->post('professionID'));
+
+			if(!empty($userName) && !empty($professionName)){
+							$set = array(
+								'userID' => $userName,
+								'profession_id' => $professionName,
+								'status_id' => 1,
+								'created_by'    => decode($info['userID']),
+								'created_at'  => date_now(),
+								'modified_at'  => date_now(),
+							);
+
+							$result = $this->main->insert_data('user_professions', $set, TRUE);
+
+							if($result['id']){
+								$user_logs = array(
+									'userID'	=>	decode($info['userID']),
+									'userFullName' =>	$info['userFullName'],
+									'logTS'	=>	date_now(),
+									'page'	=>	'Admin/user_professions',
+									'logDetail'	=>	'Successfully added User Professions ID:'.@$result['id']
+								);
+								$this->main->user_logs($user_logs);
+
+								echo json_encode(array(
+									'success'       =>    true,
+									'successMsg'    =>    'User Profession added successfully.',
+									'testID' => $result['id'],
+									'userName' => $userName
+								));
+							}
+			}else{
+				echo json_encode(array(
+                	'success'       =>    false,
+                	'successMsg'    =>    'Make sure all fields are filled.'
+                ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Please contact your administrator.'
+            ));
+		}	
+	}
+
+	public function modal_user_professions()
+	{
+		$info = $this->custom_lib->_require_login();
+		$id = decode($this->input->post('id'));
+		$join = array(
+				'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
+			);
+
+		$check_prof = $this->main->check_join('user_professions a', $join, true);
+
+		if ($check_prof['result'] == TRUE) {
+			$userID = $check_prof['info']->userID;
+			$profession_id = $check_prof['info']->profession_id;
+
+			$get_users = $this->main->get_data('users', ['statusID' => 1]);
+			$data_users = '<option value="">-- Select Test Name --</option>';
+			foreach ($get_users as $row) {
+				$fullName = $row->userFirstName . " " . $row->userLastName;
+
+				if ($row->userID == $profession_id) {
+					$data_users .= '<option value="' . $row->userID . '" selected>' . $fullName . '</option>';
+				} else {
+					$data_users .= '<option value="' . $row->userID . '">' . $fullName . '</option>';
+				}
+			}
+
+			$get_professions = $this->main->get_data('professions', ['status_id' => 1]);
+			$data_professions = '<option value="">-- Select Test Name --</option>';
+
+			foreach ($get_professions as $row) {
+				if ($row->id == $test_name_id) {
+					$data_professions .= '<option value="' . $row->id . '" selected>' . $row->name . '</option>';
+				} else {
+					$data_professions .= '<option value="' . $row->id . '">' . $row->name . '</option>';
+				}
+			}
+
+			$data['result'] = 1;
+			$data['info'] = array(
+				'userID'     => $data_users,
+				'profession_id'  => $data_professions,
+			);
+		} else {
+			$data['result'] = 0;
+		}
+
+		echo json_encode($data);
+	}
+
+	public function update_user_professions(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$userProfID = decode($this->input->post('id'));
+			$userID = clean_data($this->input->post('userID'));
+			$professionID = clean_data($this->input->post('professionID'));
+			if(!empty($userProfID && !empty($userID)) && !empty($professionID)){
+							$set = array(
+								'userID' => $userID,
+								'profession_id' => $professionID,
+								'updated_by' => decode($info['userID']),
+								'modified_at'   => date_now()
+							);
+							$result = $this->main->update_data('user_professions', $set, array('id' => $userProfID));
+							if($result == TRUE){
+								$user_logs = array(
+									'userID'	=>	decode($info['userID']),	
+									'userFullName' =>	$info['userFullName'],
+									'logTS'	=>	date_now(),
+									'page'	=>	'Admin/update_user_professions',
+									'logDetail'	=>	'Successfully updated User Profession ID:'.@$userProfID
+								);
+								$this->main->user_logs($user_logs);
+								echo json_encode(array(
+									'success'       =>    true,
+									'successMsg'    =>    'User Profession successfully updated.'
+								));
+							}else{
+								echo json_encode(array(
+									'success'       =>    false,
+									'successMsg'    =>    'Opps. Please try again.'
+								));
+							}
+					
+				
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. Please make sure all required fields are filled.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+				'success'       =>    false,
+				'successMsg'    =>    'Opps. Please contact system administrator.'
+			));	
+		}
+	}
+
+	public function deactivate_user_professions(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$userProfID = decode(clean_data($this->input->post('id')));
+			if(!empty($userProfID)){
+				$check = $this->main->check_data('user_professions', array('id' => $userProfID, 'status_id' => 2), true);
+				if($check['result'] == FALSE){
+					$set = array(
+						'status_id' => 2,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $userProfID);
+					$result = $this->main->update_data('user_professions', $set, $where);
+					log_message('debug', 'Deactive User Professions Update Result: ' . print_r($result, true));
+
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/deactivate_test',
+							'logDetail'	=>	'Successfully deactivated User Professions  ID:'.@$userProfID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'User Professions successfully deactivated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps.User Professions  already inactive.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. User Professions  ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	public function activate_user_professions(){
+		$info = $this->custom_lib->_require_login();
+
+		if($_SERVER['REQUEST_METHOD'] == 'POST'){
+			$userProfID = decode(clean_data($this->input->post('id')));
+			if(!empty($userProfID)){
+				$check = $this->main->check_data('user_professions', array('id' => $userProfID, 'status_id' => 1), true);
+				if($check['result'] == FALSE){
+					$set = array(
+						'status_id' => 1,
+						'updated_by' => decode($info['userID']),
+                        'modified_at'   => date_now()
+					);
+					$where = array('id' => $userProfID);
+					$result = $this->main->update_data('user_professions', $set, $where);
+					log_message('debug', 'Active User Profession Update Result: ' . print_r($result, true));
+					if($result == TRUE){
+			            $user_logs = array(
+							'userID'	=>	decode($info['userID']),
+							'userFullName' =>	$info['userFullName'],
+							'logTS'	=>	date_now(),
+							'page'	=>	'Admin/activate_user_professions',
+							'logDetail'	=>	'Successfully activated User Profession ID:'.@$userProfID
+						);
+				        $this->main->user_logs($user_logs);
+
+						echo json_encode(array(
+			            	'success'       =>    true,
+			            	'successMsg'    =>    'User Profession successfully activated.'
+			            ));
+					}else{
+						echo json_encode(array(
+			            	'success'       =>    false,
+			            	'successMsg'    =>    'Opps. Please try again.'
+			            ));
+					}
+				}else{
+					echo json_encode(array(
+		            	'success'       =>    false,
+		            	'successMsg'    =>    'Opps. User Profession already active.'
+		            ));
+				}
+			}else{
+				echo json_encode(array(
+	            	'success'       =>    false,
+	            	'successMsg'    =>    'Opps. User Profession ID required.'
+	            ));
+			}
+		}else{
+			echo json_encode(array(
+            	'success'       =>    false,
+            	'successMsg'    =>    'Opps. Please contact system administrator.'
+            ));
+		}
+	}
+
+	//END OF User Professions CONTROLLER
+	
+
+
+
 	/*  
 	module: Animal Nutritionist Controller
 	desc: CRUD of Animal Nutritionist (Transaction)

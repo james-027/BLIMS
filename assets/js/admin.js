@@ -6180,6 +6180,246 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
     //END OF TEST NAME SCRIPT
 
 
+    
+    //PROFESSION SCRIPT
+
+    $(document).on('click', '.add-professions', function(e){
+        var formID = '#add-professions';
+        var modalID = '#modal-add-professions';
+        $(modalID).modal({show:true});
+        $(formID)[0].reset();
+        $(formID).find('select').val('').trigger('change');
+    });
+
+    var professionGrid = $('#tbl-professions').DataTable({
+        "pagingType": "full",
+        "language": {
+            "emptyTable":     "No data available",
+            "lengthMenu":     "Show _MENU_ entries",
+            "info":           "Displaying _START_ to _END_ of _TOTAL_ entries",
+            "infoEmpty":      "Displaying 0 to 0 of 0 entries",
+            'search': '<i class="fa fa-search" aria-hidden="true"></i>',
+            "paginate": {
+                "first":      '<i class="fas fa-fast-backward"></i>',
+                "last":       '<i class="fas fa-fast-forward"></i>',
+                "next":       '<i class="fas fa-step-forward"></i>',
+                "previous":   '<i class="fas fa-step-backward"></i>'
+            },
+        },
+        "responsive": true,
+        "columnDefs": [
+            { responsivePriority: 1, targets: 0 },
+            { responsivePriority: 2, targets: -1 },
+            { responsivePriority: 3, targets: 1 },
+            { responsivePriority: 4, targets: -2 }
+        ],
+        "order": [],
+        select : true,
+        "lengthMenu": [[10, 50, 100, 500, 1000, -1], [10, 50, 100, 500, 1000, "All"]],
+        "ajax": {
+            url : base_url+'admin/professionGrid',
+            type : 'GET'
+        },
+        buttons: [
+            {
+                extend: 'excel',
+                messageTop: 'Run Date : '+date,
+                customize: function( xlsx ) {
+                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                },
+                autoFilter: true
+            }
+        ]
+    });
+
+    $(document).on('click', '.refresh-dt', function(e){
+        
+        professionGrid.ajax.reload(null, false);
+    });
+
+    $(document).on('click', '.print-dt', function(e){
+        
+        professionGrid.button( '.buttons-excel' ).trigger();
+        //alert('hello');
+    });
+
+    $(document).on('submit', '#add-professions', function(event){  
+
+        event.preventDefault();
+        var formID = '#add-professions';
+        var modalID = '#modal-add-professions';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/add-professions/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    professionGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('click', '.edit-professions', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/modal-professions/',
+            data: {id:id},
+            method: 'POST',
+            success:function(response){
+                var parse_response = JSON.parse(response);
+                if(parse_response['result'] == 1){
+                    $('#update-professions').find('#id').val(id);
+                    $('#update-professions').find('#professionName').val(parse_response['info'].name);
+                    $('#modal-edit-professions').modal({show:true});
+                }else{
+                    console.log('Error please contact your administrator.');
+                }
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#update-professions', function(event){  
+        event.preventDefault();
+        var formID = '#update-professions';
+        var modalID = '#modal-edit-professions';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/update-professions/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    professionGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('click', '.toggle-inactive', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#activate-professions').find('#id').val(id);
+        $('#activate-professions').find('#val').html(val);
+        $('#modal-active-professions').modal({show:true});
+    });
+
+    $(document).on('click', '.toggle-active', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#deactivate-professions').find('#id').val(id);
+        $('#deactivate-professions').find('#val').html(val);
+        $('#modal-deactivate-professions').modal({show:true});
+    });
+    
+    $(document).on('submit', '#deactivate-professions', function(event){  
+        event.preventDefault();
+        var formID = '#deactivate-professions';
+        var modalID = '#modal-deactivate-professions';
+        
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/deactivate-professions/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    professionGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#activate-professions', function(event){  
+        event.preventDefault();
+        var formID = '#activate-professions';
+        var modalID = '#modal-active-professions';
+
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/activate-professions/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                     professionGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    //END OF PROFESSION SCRIPT
+
+
+
+
+
     //TEST METHOD SCRIPT
 
     $(document).on('click', '.add-test-method', function(e){
