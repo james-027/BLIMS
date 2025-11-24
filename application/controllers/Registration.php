@@ -81,7 +81,7 @@ class Registration extends CI_Controller {
             'tp.param_name',
             'p.plate_number',
             'b.batch_number',
-            'td.lab_code AS lab_code',
+            'td.ext_lab_code AS lab_code',
             'tr.remark AS existing_remark',
              'r.reason_name AS latest_reason'
         ]);
@@ -176,8 +176,6 @@ class Registration extends CI_Controller {
         $this->load->view('admin/templates', $data);
     }
 
-
-
     public function sample_registration(){
 		$alias = $this->alias;
 		$info = $this->custom_lib->_require_login();
@@ -226,8 +224,6 @@ class Registration extends CI_Controller {
 		$this->load->view('admin/templates', $data);
 	}
 
-	
-
 	public function get_commercial_feeds($internalID = null)
 	{
 		if (!$internalID) {
@@ -245,7 +241,6 @@ class Registration extends CI_Controller {
 
 		echo json_encode($feeds);
 	}
-
 
 	public function get_lab_tests($laboratory_id = null)
 	{
@@ -283,7 +278,6 @@ class Registration extends CI_Controller {
 		]);
 	}
 
-
 	public function get_lead_times()
 	{
 		$laboratoryId = $this->input->get('laboratory_id');
@@ -315,7 +309,6 @@ class Registration extends CI_Controller {
 
 		echo json_encode($response);
 	}
-
 
     public function submit_registration()
     {
@@ -434,10 +427,27 @@ class Registration extends CI_Controller {
         $commercialID    = $this->input->post('commercialFeed') ?: null;
         $internalID      = $this->input->post('internalFeedmill');
 
+
+            // $this->db->select('lab_code');
+            // $this->db->like('lab_code', "-$mmyy-", 'both');
+            // $this->db->order_by('trans_detail_id', 'DESC');
+            // $this->db->limit(1);
+            // $last = $this->db->get('trans_details')->row();
+            // if ($last && preg_match('/(\d{4})$/', $last->lab_code, $matches)) {
+            //     $lastIncrement = (int)$matches[1];
+            // } else {
+            //     $lastIncrement = 0;
+            // }
+
+            // // Increment for this new job order
+            // $increment = str_pad($lastIncrement + 1, 4, '0', STR_PAD_LEFT);
+
+
             $mmyy = date('my');
+            $sampleIncrements = [];  
 
             $this->db->select('lab_code');
-            $this->db->like('lab_code', "-$mmyy-", 'both');
+            $this->db->like('lab_code', "$mmyy-", 'both'); 
             $this->db->order_by('trans_detail_id', 'DESC');
             $this->db->limit(1);
             $last = $this->db->get('trans_details')->row();
@@ -447,9 +457,6 @@ class Registration extends CI_Controller {
             } else {
                 $lastIncrement = 0;
             }
-
-            // Increment for this new job order
-            $increment = str_pad($lastIncrement + 1, 4, '0', STR_PAD_LEFT);
 
 
         foreach ($sampleNames as $index => $sampleID) {
@@ -494,11 +501,22 @@ class Registration extends CI_Controller {
                 }
             }
 
+            $testRow = $this->db->get_where('tests', ['id' => $testID])->row();
+            $testCode = $testRow ? $testRow->test_code : 'XXXX';
+
             $sampleRow = $this->db->get_where('samples', ['id' => $sampleID])->row();
             $sampleCode = $sampleRow ? $sampleRow->sample_code : 'XXXX';
 
-            $testRow = $this->db->get_where('tests', ['id' => $testID])->row();
-            $testCode = $testRow ? $testRow->test_code : 'XXXX';
+            
+            if (isset($sampleIncrements[$sampleCode])) {
+                $increment = $sampleIncrements[$sampleCode];
+            } else {
+                $lastIncrement++;
+                $increment = str_pad($lastIncrement, 4, '0', STR_PAD_LEFT);
+                $sampleIncrements[$sampleCode] = $increment;
+            }
+
+  
 
             $feedmillCode = null;
             if (!empty($commercialID)) {
@@ -511,6 +529,7 @@ class Registration extends CI_Controller {
             }
 
             $laboratoryCode = "$feedmillCode-$mmyy-$sampleCode-$testCode-$increment";
+            $ext_lab_code = "$feedmillCode-$mmyy-$increment";
 
             $coa_flag = isset($coaRequired[$index]) ? 'Y' : 'N';
 
@@ -526,6 +545,7 @@ class Registration extends CI_Controller {
                 'lead_time'          => $leadTimeTypes[$index] ?: null,
                 'coa_flag'           => $coa_flag,
                 'lab_code'           => $laboratoryCode,
+                'ext_lab_code'       => $ext_lab_code,
                 'created_at'         => date('Y-m-d H:i:s'),
                 'created_by'         => $userID,
                 'trans_detail_status_id' => 20

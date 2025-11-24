@@ -150,3 +150,10 @@ define('EMAIL_SKIN', '3333cc');
 define('EMAIL_SKIN_FONT_COLOR', 'ffffff');
 define('EMAIL_TABLE_HDR_FILL_COLOR', '24248f');
 define('EMAIL_TABLE_HDR_FONT_COLOR', 'ffffff');
+
+
+define('PDF_PRODU_EFFECT', 'September 12, 2025');
+define('PDF_DOCU_PRODU_CODE', 'PFMQA-COA Rev. 2');
+
+define('PDF_MAMBATANGAN_EFFECT', 'September 29, 2025');
+define('PDF_DOCU_MAMBATANGAN_CODE', 'MMCQA-COA Rev. 0');

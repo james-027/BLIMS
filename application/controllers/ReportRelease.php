@@ -23,130 +23,143 @@ class ReportRelease extends CI_Controller {
 	created by: James
 	Change Management #1`
 	*/
-public function index() 
-{
-    $info = $this->custom_lib->_require_login();
-    $data['js_file'] = 'assets/js/preparation.js?v=2.0';
-    $data['profile'] = $this->custom_lib->_get_profile();
-    $data['menuColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->menuColor;
-    $data['tableColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->tableColor;
-    $data['thColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->thColor;
-    $data['btnColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->btnColor;
+    public function index() 
+    {
+        $info = $this->custom_lib->_require_login();
+        $data['js_file'] = 'assets/js/preparation.js?v=2.0';
+        $data['profile'] = $this->custom_lib->_get_profile();
+        $data['menuColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->menuColor;
+        $data['tableColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->tableColor;
+        $data['thColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->thColor;
+        $data['btnColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->btnColor;
 
-    $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
-    $userID = decode($info['userID']);
-    $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
-    $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
+        $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+        $userID = decode($info['userID']);
+        $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
+        $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
 
-    $data['title'] = 'Report Release';
-    $data['menu_title'] = '';
-    $data['parent_title'] = 'Transactional';
-    $data['controller'] = $this->controller;
-    $data['userID'] = $userID;
-    $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-    $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
-    
-    $this->db->select([
-        'th.trans_id AS trans_id',
-        'th.job_order_no',
-        'td.*',
-        's.sample_name',
-        'st.sample_type_name',
-        'tp.param_name',
-        'tn.name AS laboratory_tests',
-        'td.lab_code AS lab_code',
-        'tr.remark AS existing_remark',
-        'tt.latest_timestamp AS date_submitted',
-        'CONCAT(us.userFirstName, " ", us.userLastName) AS client_name',
-        'n.nutritionist_name AS nutritionist_name'
-    ]);
-    $this->db->from('trans_details td');
-    $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
-    $this->db->join('samples s', 's.id = td.sample_id', 'left');
-    $this->db->join('sample_types st', 'st.id = td.sample_type_id', 'left');
-    $this->db->join('lab_tests lt', 'lt.test_id = td.lab_test_id AND lt.laboratory_id = th.laboratory_id', 'inner');
-    $this->db->join('test_parameters tp', 'tp.id = lt.test_param_id', 'left');
-    $this->db->join('tests t', 't.id = lt.test_id', 'left');
-    $this->db->join('test_names tn', 'tn.id = t.test_name_id', 'left');
-    $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
-    $this->db->join('users us', 'us.userID = th.client_id', 'left');
-    $this->db->join('nutritionists n', 'n.id = th.nutritionist_id', 'left');
+        $data['title'] = 'Report Release';
+        $data['menu_title'] = '';
+        $data['parent_title'] = 'Transactional';
+        $data['controller'] = $this->controller;
+        $data['userID'] = $userID;
+        $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
+        $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
+        
+        $this->db->select([
+            'th.trans_id AS trans_id',
+            'th.job_order_no',
+            'th.laboratory_id',
+            'td.*',
+            's.sample_name',
+            'st.sample_type_name',
+            'tp.param_name',
+            'tn.name AS laboratory_tests',
+            'td.ext_lab_code AS lab_code',
+            'tr.remark AS existing_remark',
+            'tt.latest_timestamp AS date_submitted',
+            'CONCAT(us.userFirstName, " ", us.userLastName) AS client_name',
+            'n.nutritionist_name AS nutritionist_name'
+        ]);
+        $this->db->from('trans_details td');
+        $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
+        $this->db->join('samples s', 's.id = td.sample_id', 'left');
+        $this->db->join('sample_types st', 'st.id = td.sample_type_id', 'left');
+        $this->db->join('lab_tests lt', 'lt.test_id = td.lab_test_id AND lt.laboratory_id = th.laboratory_id', 'inner');
+        $this->db->join('test_parameters tp', 'tp.id = lt.test_param_id', 'left');
+        $this->db->join('tests t', 't.id = lt.test_id', 'left');
+        $this->db->join('test_names tn', 'tn.id = t.test_name_id', 'left');
+        $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
+        $this->db->join('users us', 'us.userID = th.client_id', 'left');
+        $this->db->join('nutritionists n', 'n.id = th.nutritionist_id', 'left');
 
-    if (!empty($data['lab_access'])) {
-        $labIDs = array_column($data['lab_access'], 'laboratory_id');
-        $this->db->where_in('th.laboratory_id', $labIDs);
-    } else {
-        $this->db->where('th.laboratory_id', 0);
-    }
+        if (!empty($data['lab_access'])) {
+            $labIDs = array_column($data['lab_access'], 'laboratory_id');
+            $this->db->where_in('th.laboratory_id', $labIDs);
+        } else {
+            $this->db->where('th.laboratory_id', 0);
+        }
 
-    $this->db->group_by('td.trans_detail_id');
-    $this->db->join("
-        (
-            SELECT tr1.trans_detail_id, tr1.remark
-            FROM trans_remarks tr1
-            INNER JOIN (
-                SELECT trans_detail_id, MAX(created_at) AS latest_created
-                FROM trans_remarks
-                WHERE trans_detail_status_id = 27
-                GROUP BY trans_detail_id
-            ) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id 
-                AND tr1.created_at = tr2.latest_created
-            WHERE tr1.trans_detail_status_id = 27
-        ) tr", 'tr.trans_detail_id = td.trans_detail_id', 'left');
+        $this->db->group_by('td.trans_detail_id');
+        $this->db->join("
+            (
+                SELECT tr1.trans_detail_id, tr1.remark
+                FROM trans_remarks tr1
+                INNER JOIN (
+                    SELECT trans_detail_id, MAX(created_at) AS latest_created
+                    FROM trans_remarks
+                    WHERE trans_detail_status_id = 27
+                    GROUP BY trans_detail_id
+                ) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id 
+                    AND tr1.created_at = tr2.latest_created
+                WHERE tr1.trans_detail_status_id = 27
+            ) tr", 'tr.trans_detail_id = td.trans_detail_id', 'left');
 
-    $this->db->join("
+        $this->db->join("
+            (
+                SELECT tt_latest.trans_detail_id, tt_latest.created_at AS latest_timestamp
+                FROM trans_timestamps tt_latest
+                INNER JOIN (
+                    SELECT MAX(id) AS latest_id
+                    FROM trans_timestamps
+                    WHERE trans_detail_status_id = 36
+                    GROUP BY trans_detail_id
+                ) tt_max ON tt_latest.id = tt_max.latest_id
+            ) tt", 'tt.trans_detail_id = td.trans_detail_id', 'left');
+
+        $this->db->join("
         (
             SELECT tt_latest.trans_detail_id, tt_latest.created_at AS latest_timestamp
             FROM trans_timestamps tt_latest
             INNER JOIN (
                 SELECT MAX(id) AS latest_id
                 FROM trans_timestamps
-                WHERE trans_detail_status_id = 27
+                WHERE trans_detail_status_id = 37
                 GROUP BY trans_detail_id
-            ) tt_max ON tt_latest.id = tt_max.latest_id
-        ) tt", 'tt.trans_detail_id = td.trans_detail_id', 'left');
+            ) tt_max_latest ON tt_latest.id = tt_max_latest.latest_id
+        ) tt_latest", 'tt_latest.trans_detail_id = td.trans_detail_id', 'left');
 
-    $this->db->where('td.trans_detail_status_id', 37);
-    $this->db->order_by('tt.latest_timestamp', 'DESC');
+       $this->db->where('td.trans_detail_status_id', 37);
+       $this->db->order_by('tt_latest.latest_timestamp', 'DESC');
 
-    $all_details = $this->db->get()->result_array();
+        $all_details = $this->db->get()->result_array();
 
-    $jobs = [];
-    foreach ($all_details as $row) {
-        $jobId = $row['trans_id'];
-        if (!isset($jobs[$jobId])) {
-            $jobs[$jobId] = [
-                'job_order_no' => $row['job_order_no'],
-                'lab_code' => $row['lab_code'],
-                'client_name' => $row['client_name'] ?? 'N/A',
-                'nutritionist_name' => $row['nutritionist_name'] ?? 'N/A',
-                'samples' => []
-            ];
+        $jobs = [];
+        foreach ($all_details as $row) {
+            $jobId = $row['trans_id'];
+            if (!isset($jobs[$jobId])) {
+                $jobs[$jobId] = [
+                    'job_order_no' => $row['job_order_no'],
+                    'lab_code' => $row['lab_code'],
+                    'client_name' => $row['client_name'] ?? 'N/A',
+                    'nutritionist_name' => $row['nutritionist_name'] ?? 'N/A',
+                    'samples' => []
+                ];
+            }
+
+            $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
+            $jobs[$jobId]['samples'][] = $row;
         }
 
-        $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
-        $jobs[$jobId]['samples'][] = $row;
-    }
-
-    $transIds = array_keys($jobs);
-    $attachments = [];
-    if (!empty($transIds)) {
-        $this->db->select('trans_id, filename, filepath');
-        $this->db->from('attachments');
-        $this->db->where_in('trans_id', $transIds);
-        $result = $this->db->get()->result_array();
-        foreach ($result as $attachment) {
-            $attachments[$attachment['trans_id']][] = $attachment;
+        $transIds = array_keys($jobs);
+        $attachments = [];
+        if (!empty($transIds)) {
+            $this->db->select('trans_id, filename, filepath');
+            $this->db->from('attachments');
+            $this->db->where_in('trans_id', $transIds);
+            $result = $this->db->get()->result_array();
+            foreach ($result as $attachment) {
+                $attachments[$attachment['trans_id']][] = $attachment;
+            }
         }
+
+        $jobs_indexed = array_values($jobs);
+
+        $data['jobs'] = $jobs_indexed;
+        $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
+        $data['content'] = $this->load->view('report_release/report_release_content', $data , TRUE);
+        $this->load->view('admin/templates', $data);
     }
-
-    $jobs_indexed = array_values($jobs);
-
-    $data['jobs'] = $jobs_indexed;
-    $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
-    $data['content'] = $this->load->view('report_release/report_release_content', $data , TRUE);
-    $this->load->view('admin/templates', $data);
-}
 
     public function get_logs($trans_detail_id)
     {
@@ -163,7 +176,7 @@ public function index()
         $select = "
             th.trans_history_id,
             th.trans_detail_id,
-            td.lab_code AS labCode,
+            td.ext_lab_code AS labCode,
             thd.job_order_no AS jo,
             s.statDesc AS module,
             th.detail_change AS action,
@@ -208,147 +221,121 @@ public function index()
             ->set_output(json_encode($data));
     }
 
-    public function submit_data_review()
+    public function submit_for_release()
     {
-        $info   = $this->custom_lib->_require_login();
-        $userID = decode($info['userID']);
-        $review_verifications = $this->input->post('review_verifications');
+        $info      = $this->custom_lib->_require_login();
+        $userID    = decode($info['userID']);
+        $releasing = $this->input->post('releasing');
 
-        if (empty($review_verifications)) {
-            echo json_encode([
-                'status'  => 'error',
-                'message' => 'No Final Prep data received.'
-            ]);
-            return;
+        $groups = [];
+        $labs   = []; 
+
+        foreach ($releasing as $trans_detail_id => $releaseID) {
+            if (empty($releaseID)) continue;
+
+            $detail = $this->main->get_data('trans_details', ['trans_detail_id' => $trans_detail_id], true);
+            if (!$detail) continue;
+
+            $trans_id = $detail->trans_id;
+            $groups[$trans_id][$detail->sample_id][] = $trans_detail_id;
+
+            if (!isset($labs[$trans_id])) {
+                $header = $this->main->get_data('trans_headers', ['trans_id' => $trans_id], true);
+                $labs[$trans_id] = $header->laboratory_id ?? null;
+            }
         }
 
-        foreach ($review_verifications as $trans_detail_id => $reviewID) {
-            if (empty($reviewID)) continue;
+        $lab_sequences = [];
 
-            $reasonID = $reasons[$trans_detail_id] ?? null;
+        foreach ($groups as $trans_id => $samples) {
+            $laboratory_id = $labs[$trans_id] ?? null;
+            if (!$laboratory_id) continue;
 
-        
-            $updateData = [
-                'review_verification_status_id' => $reviewID,
-                'modified_at'    => date('Y-m-d H:i:s'),
-                'updated_by'     => $userID
-            ];
+            if (!isset($lab_sequences[$laboratory_id])) {
+                $headers = $this->main->get_data('trans_headers', ['laboratory_id' => $laboratory_id], false);
+                $released_items = [];
 
-            if ((int)$reviewID === 35) {
-                $updateData['trans_detail_status_id'] = 27;
-
-            }else{
-                $updateData['trans_detail_status_id'] = 36;
-            }
-
-            $result_prep = $this->main->update_data(
-                'trans_details',
-                $updateData,
-                ['trans_detail_id' => $trans_detail_id]
-            );
-
-            $statusText = '';
-                    if (!empty($reviewID)) {
-                        $statusRow = $this->db->select('statDesc')
-                                            ->from('stats')
-                                            ->where('statusID', $reviewID)
-                                            ->get()
-                                            ->row_array();
-                        $statusText = $statusRow['statDesc'] ?? '';
-            }
-
-
-            if (!empty($result_prep)) {
-                $this->main->user_logs([
-                    'userID'       => $userID,
-                    'userFullName' => $info['userFullName'],
-                    'logTS'        => date_now(),
-                    'page'         => 'FinalPreparation/submit_final_prep',
-                    'logDetail'    => 'Successfully Updated Final Prep ID:' . $trans_detail_id
-                ]);
-
-                $detail = $this->db->where('trans_detail_id', $trans_detail_id)
-                                ->get('trans_details')
-                                ->row_array();
-
-                if (!empty($detail)) {
-                    $historyData = $detail;
-                    unset($historyData['id']);
-                    $historyData['trans_detail_id'] = $trans_detail_id;
-                    $historyData['detail_change'] = $statusText;
-                    $historyData['trans_detail_status_id'] = 33;
-                    $historyData['created_by'] = $userID;
-                    $historyData['created_at'] = date('Y-m-d H:i:s');
-                    $this->main->insert_data('trans_history', $historyData);
-
-                    $timestampData = [
-                        'trans_detail_id'        => $trans_detail_id,
-                        'trans_detail_status_id' => 33,
-                        'status_id'              => 1,
-                        'created_at'             => date('Y-m-d H:i:s'),
-                        'created_by'             => $userID,
-                    ];
-                    $this->main->insert_data('trans_timestamps', $timestampData);
-                }
-                $statusText = '';
-                    if (!empty($reviewID)) {
-                        $statRow = $this->db->select('statDesc')
-                                            ->from('stats')
-                                            ->where('statusID', $reviewID)
-                                            ->get()
-                                            ->row_array();
-                        $statusText = $statRow['statDesc'] ?? '';
-                    } 
-
-                    
-                if ((int)$reviewID === 35) {
-                    $timestampRow = $this->db->select('created_by')
-                        ->from('trans_timestamps')
-                        ->where('trans_detail_id', $trans_detail_id)
-                        ->where('trans_detail_status_id', 27)
-                        ->order_by('created_at', 'DESC')
-                        ->get()
-                        ->row_array();
-
-                    if (!empty($timestampRow)) {
-                        $userFromTimestamp = (int) $timestampRow['created_by'];
-
-                        $recipient = $this->db
-                            ->select('u.userID, u.userEmail, u.userFirstName, u.userLastName, u.userTypeId')
-                            ->from('users u')
-                            ->where('u.userID', $userFromTimestamp)
-                            ->where('u.userEmail IS NOT NULL AND u.userEmail !=', '')
-                            ->get()
-                            ->row_array();
-
-                        if (!empty($recipient)) {
-                            $transHeader = $this->db
-                                ->select('th.trans_id, th.job_order_no, td.lab_code')
-                                ->from('trans_headers th')
-                                ->join('trans_details td', 'td.trans_id = th.trans_id')
-                                ->where('td.trans_detail_id', $trans_detail_id)
-                                ->get()
-                                ->row_array();
-
-                            if (!empty($transHeader)) {
-                                $remark = "This is for Re-analysis";
-                                $this->email_format->generateEmailNotification(
-                                    $transHeader,
-                                    $trans_detail_id,
-                                    $statusText,
-                                    $remark,
-                                    $recipient,
-                                    'Re-Analysis'
-                                );
-
-                                log_message('info', "Sent 'Failed' notification to {$recipient['userEmail']} for trans_detail_id {$trans_detail_id}");
-                            }
-                        } else {
-                            log_message('warning', "No valid recipient found for userID {$userFromTimestamp} in Failed notification.");
+                if (!empty($headers)) {
+                    foreach ($headers as $h) {
+                        $tds = $this->main->get_data('trans_details', ['trans_id' => $h->trans_id, 'is_released' => 1], false);
+                        if (!empty($tds)) {
+                            $released_items = array_merge($released_items, $tds);
                         }
                     }
                 }
+                $year = date('y'); 
+                if (!empty($released_items)) {
+                    $existing_sequences = array_map(function ($r) use ($year) {
+                        $num = $r->release_ref_number ?? '00000';
+                        $parts = explode('-', $num);
+                        return ($parts[0] == $year) ? (int)$parts[2] : 0;
+                    }, $released_items);
 
+                    $lab_sequences[$laboratory_id][$year] = max($existing_sequences);
+                } else {
+                    $lab_sequences[$laboratory_id][$year] = 0;
+                }
+            }
+
+            $lab_code = $this->main->get_data('laboratories', ['id' => $laboratory_id], true)->identifier_code ?? 'LAB';
+
+            foreach ($samples as $sample_id => $trans_details) {
+                $lab_sequences[$laboratory_id][$year]++;
+                $sequence_padded = str_pad($lab_sequences[$laboratory_id][$year], 5, '0', STR_PAD_LEFT);
+                $release_ref_number = "{$year}-{$lab_code}-{$sequence_padded}";
+
+                foreach ($trans_details as $trans_detail_id) {
+                    $updateData = [
+                        'is_released'        => 1,
+                        'modified_at'        => date('Y-m-d H:i:s'),
+                        'is_released_time'   => date('Y-m-d H:i:s'),
+                        'updated_by'         => $userID,
+                        'release_ref_number' => $release_ref_number
+                    ];
+
+                    $result_releasing = $this->main->update_data(
+                        'trans_details',
+                        $updateData,
+                        ['trans_detail_id' => $trans_detail_id]
+                    );
+
+
+                    if (!empty($result_releasing)) {
+                            $this->main->user_logs([
+                                'userID'       => $userID,
+                                'userFullName' => $info['userFullName'],
+                                'logTS'        => date_now(),
+                                'page'         => 'ReportRelease/submit_for_release',
+                                'logDetail'    => 'Successfully Updated Report Release ID:' . $trans_detail_id
+                            ]);
+
+                            $detail = $this->db->where('trans_detail_id', $trans_detail_id)
+                                            ->get('trans_details')
+                                            ->row_array();
+
+                            if (!empty($detail)) {
+                                $historyData = $detail;
+                                unset($historyData['id']);
+                                $historyData['trans_detail_id'] = $trans_detail_id;
+                                $historyData['detail_change'] = "COA RELEASED";
+                                $historyData['trans_detail_status_id'] = 37;
+                                $historyData['created_by'] = $userID;
+                                $historyData['created_at'] = date('Y-m-d H:i:s');
+                                $this->main->insert_data('trans_history', $historyData);
+
+                                $timestampData = [
+                                    'trans_detail_id'        => $trans_detail_id,
+                                    'trans_detail_status_id' => 37,
+                                    'status_id'              => 1,
+                                    'created_at'             => date('Y-m-d H:i:s'),
+                                    'created_by'             => $userID,
+                                ];
+                                $this->main->insert_data('trans_timestamps', $timestampData);
+                            }
+                    }
+                        
+
+                }
             }
         }
 
@@ -357,6 +344,9 @@ public function index()
             'message' => 'Report Release submitted successfully.'
         ]);
     }
+
+
+
 
 	// END OF Report Release CONTROLLER
 

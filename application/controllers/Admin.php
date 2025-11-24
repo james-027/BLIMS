@@ -13584,6 +13584,7 @@ private function _read_excel($filePath)
 		$data['userID'] = decode($info['userID']);
 		$data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
 		$data['professions'] = $this->main->get_data('professions', ['status_id' => 1]);
+		$data['laboratories'] = $this->main->get_data('laboratories', ['status_id' => 1]);
 		$data['users'] = $this->main->get_data('users', ['statusID' => 1]);
 		$data['content'] = $this->load->view('admin/user_professions_content', $data , TRUE);
 		$data['controller'] = $this->router->fetch_class();
@@ -13619,7 +13620,7 @@ private function _read_excel($filePath)
 				;
 
 		$recFound = $this->main->get_join_datatables(
-			'user-professions a',
+			'user_professions a',
 			$join,
 			false,
 			false,
@@ -13633,7 +13634,6 @@ private function _read_excel($filePath)
 		$primary_action = '';
 
 		foreach ($recFound->result() as $r) {
-
 			if($r->displaystatusID == 1){
 				$badge = '<span class="badge badge-success">'.$r->statDesc.'</span>';
 				if($module_access->act){
@@ -13647,7 +13647,7 @@ private function _read_excel($filePath)
 			}
 
 			if($module_access->edit){
-				$primary_action = '<a href="#" class="edit-test" data-id="'.encode($r->id).'"><span class="fas fa-pencil-alt fa-md"></span></a>';
+				$primary_action = '<a href="#" class="edit-user-professions" data-id="'.encode($r->id).'"><span class="fas fa-pencil-alt fa-md"></span></a>';
 			}
 
 			$createdBy  = $r->createdByName;
@@ -13658,8 +13658,8 @@ private function _read_excel($filePath)
 			$data[] = array(
 				$r->userProfessionName,
 				$r->profession_name,
-				$r->license_valid,
 				$r->license_no,
+				$r->license_valid,
 				$createdBy,
 				$createdOn,
 				$modifiedBy,
@@ -13687,11 +13687,16 @@ private function _read_excel($filePath)
 		if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$userName = clean_data($this->input->post('userID'));
 			$professionName = clean_data($this->input->post('professionID'));
+			$LicenseNo = clean_data($this->input->post('LicenseNo'));
+			$ValidUntil = clean_data($this->input->post('ValidUntil'));
+			$laboratories = $this->input->post('laboratories');
 
 			if(!empty($userName) && !empty($professionName)){
 							$set = array(
 								'userID' => $userName,
 								'profession_id' => $professionName,
+								'license_no' => trim(strtoupper($LicenseNo )),
+								'license_valid' => $ValidUntil,
 								'status_id' => 1,
 								'created_by'    => decode($info['userID']),
 								'created_at'  => date_now(),
@@ -13701,6 +13706,16 @@ private function _read_excel($filePath)
 							$result = $this->main->insert_data('user_professions', $set, TRUE);
 
 							if($result['id']){
+
+								if (!empty($laboratories) && is_array($laboratories)) {
+									foreach ($laboratories as $lab_id) {
+										$this->main->insert_data('user_signatories_labs', [
+											'user_profession_id' => $result['id'],
+											'laboratory_id'      => $lab_id,
+										]);
+									}
+								}
+
 								$user_logs = array(
 									'userID'	=>	decode($info['userID']),
 									'userFullName' =>	$info['userFullName'],
@@ -13731,47 +13746,36 @@ private function _read_excel($filePath)
 		}	
 	}
 
-	public function modal_user_professions()
-	{
+	public function modal_user_professions() {
 		$info = $this->custom_lib->_require_login();
+		$keyID = decode($info['current_keyID']);
+
 		$id = decode($this->input->post('id'));
+
 		$join = array(
-				'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
-			);
+			'stats b' => 'a.status_id = b.statusID and a.id = "'.$id.'"',
+		);
+		$check_professions = $this->main->check_join('user_professions a', $join, true);
 
-		$check_prof = $this->main->check_join('user_professions a', $join, true);
 
-		if ($check_prof['result'] == TRUE) {
-			$userID = $check_prof['info']->userID;
-			$profession_id = $check_prof['info']->profession_id;
 
-			$get_users = $this->main->get_data('users', ['statusID' => 1]);
-			$data_users = '<option value="">-- Select Test Name --</option>';
-			foreach ($get_users as $row) {
-				$fullName = $row->userFirstName . " " . $row->userLastName;
+		if ($check_professions['result'] == TRUE) {
+			$userProfID = $check_professions['info']->id;
 
-				if ($row->userID == $profession_id) {
-					$data_users .= '<option value="' . $row->userID . '" selected>' . $fullName . '</option>';
-				} else {
-					$data_users .= '<option value="' . $row->userID . '">' . $fullName . '</option>';
-				}
-			}
-
-			$get_professions = $this->main->get_data('professions', ['status_id' => 1]);
-			$data_professions = '<option value="">-- Select Test Name --</option>';
-
-			foreach ($get_professions as $row) {
-				if ($row->id == $test_name_id) {
-					$data_professions .= '<option value="' . $row->id . '" selected>' . $row->name . '</option>';
-				} else {
-					$data_professions .= '<option value="' . $row->id . '">' . $row->name . '</option>';
-				}
-			}
+			$assigned_labs = $this->db->select('laboratory_id')
+									->from('user_signatories_labs')
+									->where('user_profession_id', $userProfID)
+									->get()
+									->result_array();
+			$assigned_lab_ids = array_column($assigned_labs, 'laboratory_id');
 
 			$data['result'] = 1;
 			$data['info'] = array(
-				'userID'     => $data_users,
-				'profession_id'  => $data_professions,
+				'userID' => $check_professions['info']->userID,
+				'profession_id' => $check_professions['info']->profession_id, 
+				'license_no' => $check_professions['info']->license_no,
+				'license_valid' => $check_professions['info']->license_valid,
+				'labs' => $assigned_lab_ids
 			);
 		} else {
 			$data['result'] = 0;
@@ -13782,20 +13786,35 @@ private function _read_excel($filePath)
 
 	public function update_user_professions(){
 		$info = $this->custom_lib->_require_login();
-
 		if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$userProfID = decode($this->input->post('id'));
 			$userID = clean_data($this->input->post('userID'));
 			$professionID = clean_data($this->input->post('professionID'));
+			$LicenseNo = clean_data($this->input->post('LicenseNo'));
+			$ValidUntil = clean_data($this->input->post('ValidUntil'));
+			$labs = $this->input->post('laboratories') ?? [];
 			if(!empty($userProfID && !empty($userID)) && !empty($professionID)){
 							$set = array(
 								'userID' => $userID,
 								'profession_id' => $professionID,
+								'license_no' => trim(strtoupper($LicenseNo )),
+								'license_valid' => $ValidUntil,
 								'updated_by' => decode($info['userID']),
 								'modified_at'   => date_now()
 							);
 							$result = $this->main->update_data('user_professions', $set, array('id' => $userProfID));
 							if($result == TRUE){
+							$this->db->where('user_profession_id', $userProfID)->delete('user_signatories_labs');
+
+							    if (!empty($labs) && is_array($labs)) {
+									foreach ($labs as $lab_id) {
+										$insertLab = [
+											'user_profession_id' => $userProfID,
+											'laboratory_id' => $lab_id
+										];
+										$this->main->insert_data('user_signatories_labs', $insertLab);
+									}
+								}
 								$user_logs = array(
 									'userID'	=>	decode($info['userID']),	
 									'userFullName' =>	$info['userFullName'],

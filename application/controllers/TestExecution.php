@@ -53,9 +53,9 @@ class TestExecution extends CI_Controller {
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
-  
-        $all_details = $this->main->get_trans_details($data,27,26); // data , TEST EXECUTION STATUS , FINAL PREP STATUS, 
-
+        $test_exec_status = 27;
+        $final_prep = 26;
+        $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep); // data , TEST EXECUTION STATUS , FINAL PREP STATUS, 
         $jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -109,7 +109,7 @@ class TestExecution extends CI_Controller {
         $select = "
             th.trans_history_id,
             th.trans_detail_id,
-            td.lab_code AS labCode,
+            td.ext_lab_code AS labCode,
             thd.job_order_no AS jo,
             s.statDesc AS module,
             th.detail_change AS action,
@@ -153,154 +153,6 @@ class TestExecution extends CI_Controller {
             ->set_content_type('application/json')
             ->set_output(json_encode($data));
     }
-
-    public function submit_test_exec01()
-    {
-        $info   = $this->custom_lib->_require_login();
-        $userID = decode($info['userID']);
-        $test_status = $this->input->post('test_status');
-        $date_submitted = $this->input->post('date_submitted');
-        $lab_results      = $this->input->post('lab_results');
-        $remarks      = $this->input->post('remarks');
-        $lead_time     = $this->input->post('lead_time');
-
-   
-
-        foreach ($date_submitted as $key => $value) {
-        if (!empty($value)) {
-            $date_submitted[$key] = date('Y-m-d', strtotime($value));
-        }
-        }
-     
-  
-     
-
-        if (empty($test_status)) {
-            echo json_encode([
-                'status'  => 'error',
-                'message' => 'No Final Prep data received.'
-            ]);
-            return;
-        }
-
-        foreach ($test_status as $trans_detail_id => $testExecID) {
-            if (empty($testExecID)) continue;
-
-            $reasonID = $reasons[$trans_detail_id] ?? null;
-            $remark   = $remarks[$trans_detail_id] ?? null;
-            $lab_result = $lab_results[$trans_detail_id] ?? null;
-
-
-            $updateData = [
-                'test_exec_status_id' => $testExecID,
-                'test_exec_lab_result' => $lab_result,
-                'modified_at'    => date('Y-m-d H:i:s'),
-                'updated_by'     => $userID
-            ];
-
-            if ((int)$testExecID === 29) {
-                $updateData['trans_detail_status_id'] = 27;
-            }else{
-                $updateData['trans_detail_status_id'] = 33;
-            }
-
-            $result_prep = $this->main->update_data(
-                'trans_details',
-                $updateData,
-                ['trans_detail_id' => $trans_detail_id]
-            );
-
-            $statusText = '';
-                if (!empty($testExecID)) {
-                        $statRow = $this->db->select('statDesc')
-                                            ->from('stats')
-                                            ->where('statusID', $testExecID)
-                                            ->get()
-                                            ->row_array();
-                        $statusText = $statRow['statDesc'] ?? '';
-                } 
-
-            if (!empty($result_prep)) {
-                $this->main->user_logs([
-                    'userID'       => $userID,
-                    'userFullName' => $info['userFullName'],
-                    'logTS'        => date_now(),
-                    'page'         => 'TestExecution/submit_test_exec',
-                    'logDetail'    => 'Successfully Updated Test Exec Prep ID:' . $trans_detail_id
-                ]);
-
-                $detail = $this->db->where('trans_detail_id', $trans_detail_id)
-                                ->get('trans_details')
-                                ->row_array();
-
-                if (!empty($detail)) {
-                    $historyData = $detail;
-                    unset($historyData['id']);
-                    $historyData['trans_detail_id'] = $trans_detail_id;
-                    $historyData['trans_detail_status_id'] = 27;
-                    $historyData['detail_change'] = $statusText;
-                    $historyData['created_by'] = $userID;
-                    $historyData['created_at'] = date('Y-m-d H:i:s');
-                    $this->main->insert_data('trans_history', $historyData);
-
-                    $timestampData = [
-                        'trans_detail_id'        => $trans_detail_id,
-                        'trans_detail_status_id' => 27,
-                        'status_id'              => 1,
-                        'created_at'             => date('Y-m-d H:i:s'),
-                        'created_by'             => $userID,
-                    ];
-                    $this->main->insert_data('trans_timestamps', $timestampData);
-                }
-
-
-                if (!empty($remark)) {
-                        $this->main->insert_data('trans_remarks', [
-                            'trans_detail_id'        => $trans_detail_id,
-                            'trans_detail_status_id' => 27,
-                            'remark'                 => $remark,
-                            'created_by'             => $userID,
-                            'created_at'             => date('Y-m-d H:i:s'),
-                        ]); 
-                }
-                    
-                if ((int)$testExecID === 23) {
-
-                    $timestampRow = $this->db->select('created_by')
-                        ->from('trans_timestamps')
-                        ->where('trans_detail_id', $trans_detail_id)
-                        ->where('trans_detail_status_id', 24)
-                        ->order_by('created_at', 'DESC')
-                        ->get()
-                        ->row_array();
-
-                    if (!empty($timestampRow)) {
-                        $userFromTimestamp = $timestampRow['created_by'];
-                        $this->db->select('th.trans_id, th.job_order_no, td.lab_code, u.userEmail as requester_email, u.userFirstName, u.userLastName');
-                        $this->db->from('trans_headers th');
-                        $this->db->join('trans_details td', 'td.trans_id = th.trans_id');
-                        $this->db->join('users u', 'u.userID = ' . (int) $userFromTimestamp, 'left');
-                        $this->db->where('td.trans_detail_id', $trans_detail_id);
-                        $transHeader = $this->db->get()->row_array();
-                        $this->email_format->generateEmailNotification(
-                            $transHeader,
-                            $trans_detail_id,
-                            $statusText,
-                            $remark,
-                            $userFromTimestamp,
-                            'Failed'
-                        );
-                    }
-                }
-            }
-        }
-
-        echo json_encode([
-            'status'  => 'success',
-            'message' => 'Test Execution and Data Entry submitted successfully.'
-        ]);
-    }
-
 
     public function submit_test_exec()
     {

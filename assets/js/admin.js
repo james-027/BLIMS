@@ -8076,6 +8076,293 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
 
     //END OF TEST CODE SCRIPT
 
+
+
+
+        // USER PROFESSION SCRIPT
+
+    $(document).on('click', '.add-user-professions', function(e){
+        var formID = '#add-user-professions';
+        var modalID = '#modal-add-user-professions';
+        $(modalID).modal({show:true});
+        $(formID)[0].reset();
+        $(formID).find('select').val('').trigger('change');
+    });
+
+
+
+
+    var userprofessionsGrid = $('#tbl-user-professions').DataTable({
+        "pagingType": "full",
+        "language": {
+            "emptyTable":     "No data available",
+            "lengthMenu":     "Show _MENU_ entries",
+            "info":           "Displaying _START_ to _END_ of _TOTAL_ entries",
+            "infoEmpty":      "Displaying 0 to 0 of 0 entries",
+            'search': '<i class="fa fa-search" aria-hidden="true"></i>',
+            "paginate": {
+                "first":      '<i class="fas fa-fast-backward"></i>',
+                "last":       '<i class="fas fa-fast-forward"></i>',
+                "next":       '<i class="fas fa-step-forward"></i>',
+                "previous":   '<i class="fas fa-step-backward"></i>'
+            },
+        },
+        "responsive": true,
+        "columnDefs": [
+            { responsivePriority: 1, targets: 0 },
+            { responsivePriority: 2, targets: -1 },
+            { responsivePriority: 3, targets: 1 },
+            { responsivePriority: 4, targets: -2 }
+        ],
+        "order": [],
+        select : true,
+        "lengthMenu": [[10, 50, 100, 500, 1000, -1], [10, 50, 100, 500, 1000, "All"]],
+        "ajax": {
+            url : base_url+'admin/userProfessionsGrid',
+            type : 'GET'
+        },
+        buttons: [
+            {
+                extend: 'excel',
+                messageTop: 'Run Date : '+date,
+                customize: function( xlsx ) {
+                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                },
+                autoFilter: true
+            }
+        ]
+    });
+
+    $(document).on('click', '.refresh-dt', function(e){
+        
+        userprofessionsGrid.ajax.reload(null, false);
+    });
+
+    $(document).on('click', '.print-dt', function(e){
+        
+        userprofessionsGrid.button( '.buttons-excel' ).trigger();
+        //alert('hello');
+    });
+
+    $(document).on('submit', '#add-user-professions', function(event){  
+        event.preventDefault();
+        var formID = '#add-user-professions';
+        var modalID = '#modal-add-user-professions';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/add-user-professions/',
+            method:'POST',
+            data: $(formID).serialize(), 
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    userprofessionsGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    // $(document).on('click', '.edit-user-professions', function(e) {
+    //     e.preventDefault();
+    //     var id = $(this).attr('data-id');   
+        
+        
+    //     $('#loader-div').removeClass('loaded');
+
+    //     $.ajax({
+    //         url: base_url + 'admin/modal-user-professions/',
+    //         data: { id: id },
+    //         method: 'POST',
+    //         success: function(response) {
+    //             var parse_response = JSON.parse(response);
+    //             if (parse_response['result'] == 1) {
+    //                 $('#update-user-professions').find('#id').val(id);
+    //                 $('#update-user-professions').find('#edit_userID').val(parse_response['info'].userID).trigger('change'); 
+    //                 $('#update-user-professions').find('#professionID').val(parse_response['info'].profession_id);
+    //                 $('#update-user-professions').find('#LicenseNo').val(parse_response['info'].license_no);
+    //                 $('#update-user-professions').find('#ValidUntil').val(parse_response['info'].license_valid);
+                    
+    //                 $('#modal-edit-user-professions').modal({ show: true });
+    //             } else {
+    //                 console.log('Error please contact your administrator.');
+    //             }
+
+    //             $('#loader-div').addClass('loaded');
+    //         }
+    //     });
+    // });
+
+
+    $(document).on('click', '.edit-user-professions', function(e) {
+    e.preventDefault();
+    var id = $(this).attr('data-id');   
+    
+    $('#loader-div').removeClass('loaded');
+
+    $.ajax({
+        url: base_url + 'admin/modal-user-professions/',
+        data: { id: id },
+        method: 'POST',
+        success: function(response) {
+            var parse_response = JSON.parse(response);
+            if (parse_response['result'] == 1) {
+                var form = $('#update-user-professions');
+                form.find('#id').val(id);
+                form.find('#edit_userID').val(parse_response['info'].userID).trigger('change'); 
+                form.find('#professionID').val(parse_response['info'].profession_id);
+                form.find('#LicenseNo').val(parse_response['info'].license_no);
+                form.find('#ValidUntil').val(parse_response['info'].license_valid);
+                var assignedLabs = (parse_response['info'].labs || []).map(String); 
+                        form.find('input[name="laboratories[]"]').each(function(){
+                        var labId = $(this).val(); 
+                        $(this).prop('checked', assignedLabs.includes(labId));
+                    });
+                $('#modal-edit-user-professions').modal({ show: true });
+            } else {
+                console.log('Error please contact your administrator.');
+            }
+
+            $('#loader-div').addClass('loaded');
+        }
+    });
+});
+
+
+    $(document).on('submit', '#update-user-professions', function(event){  
+        event.preventDefault();
+        var formID = '#update-user-professions';
+        var modalID = '#modal-edit-user-professions';
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/update-user-professions/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();
+                    $(modalID).modal('hide');
+                    $(modalID).on('hidden.bs.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                    userprofessionsGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });   
+
+    $(document).on('click', '.toggle-inactive', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#activate-user-professions').find('#id').val(id);
+        $('#activate-user-professions').find('#val').html(val);
+        $('#modal-active-user-professions').modal({show:true});
+    });
+
+    $(document).on('click', '.toggle-active', function(e){
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        var val = $(this).attr('data-val');
+        
+        $('#deactivate-user-professions').find('#id').val(id);
+        $('#deactivate-user-professions').find('#val').html(val);
+        $('#modal-deactivate-user-professions').modal({show:true});
+    });
+    
+    $(document).on('submit', '#deactivate-user-professions', function(event){  
+        event.preventDefault();
+        var formID = '#deactivate-user-professions';
+        var modalID = '#modal-deactivate-user-professions';
+        
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/deactivate-user-professions/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                    userprofessionsGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+    $(document).on('submit', '#activate-user-professions', function(event){  
+        event.preventDefault();
+        var formID = '#activate-user-professions';
+        var modalID = '#modal-active-user-professions';
+
+        $('#loader-div').removeClass('loaded');
+        $.ajax({
+            url: base_url + 'admin/activate-user-professions/',
+            method:'POST',
+            data: $(formID).serialize(),
+            dataType:"json",
+            success:function(data)  
+            {
+                if(!data.success){
+                    showAlertError(data.successMsg);
+                } else {
+                    $(formID)[0].reset();  
+                    $(modalID).modal('hide');
+                     userprofessionsGrid.ajax.reload(null, false);
+                    showSuccess(data.successMsg);
+                }
+                $('#loader-div').addClass('loaded');
+            },
+            error:function(xhr, textStatus, errorThrown){
+                showError('Error in Saving!');
+                console.log(xhr.responseText);
+                $('#loader-div').addClass('loaded');
+            }
+        });
+    });
+
+
+
+    //END OF TEST CODE SCRIPT
+
+
     
     // TRANSACTION REASON SCRIPT
 

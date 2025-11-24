@@ -19,6 +19,7 @@ $(document).ready(function(){
                     swal("Success!", response.message, "success");
                     setTimeout(function() {
                         window.location.reload();
+                         window.scrollTo(0, 0);
                     }, 2000);
                 } else {
                     swal("Oops...", "Something went wrong!", "error");
@@ -81,6 +82,7 @@ $(document).ready(function(){
                     swal("Success!", response.message, "success");
                     setTimeout(function() {
                         window.location.reload();
+                         window.scrollTo(0, 0);
                     }, 2000);
                 } else {
                     swal("Oops...", "Something went wrong!", "error");
@@ -92,6 +94,45 @@ $(document).ready(function(){
             }
         });
     });
+
+  $('#releaseForm').on('submit', function(e) {
+        e.preventDefault();
+
+        var formData = new FormData(this);
+        $('.select-releasing[data-prechecked="1"]').each(function() {
+            var name = $(this).attr('name');
+            formData.delete(name);
+        });
+
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            beforeSend: function() {
+                $('#loader-div').show();
+            },
+            success: function(response) {
+                $('#loader-div').hide();
+                if (response.status === 'success') {
+                    swal("Success!", response.message, "success");
+                    setTimeout(function() {
+                        window.location.reload();
+                        window.scrollTo(0, 0);
+                    }, 2000);
+                } else {
+                    swal("Oops...", "Something went wrong!", "error");
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#loader-div').hide();
+                swal("AJAX Error", error, "error");
+            }
+        });
+    });
+
     $('#resultVerificationForm').on('submit', function(e) {
         e.preventDefault();
         var formData = new FormData(this);
@@ -111,6 +152,7 @@ $(document).ready(function(){
                     swal("Success!", response.message, "success");
                     setTimeout(function() {
                         window.location.reload();
+                         window.scrollTo(0, 0);
                     }, 2000);
                 } else {
                     swal("Oops...", "Something went wrong!", "error");
@@ -142,6 +184,7 @@ $(document).ready(function(){
                     swal("Success!", response.message, "success");
                     setTimeout(function() {
                         window.location.reload();
+                         window.scrollTo(0, 0);
                     }, 2000);
                 } else {
                     swal("Oops...", "Something went wrong!", "error");
@@ -174,6 +217,27 @@ $(document).ready(function(){
 
         $('#confirmModalInitial').modal('show');
     });
+
+    $('#saveBtnRelease').on('click', function(e) {
+        e.preventDefault();
+
+        let countRelease = 0;
+
+        $('.select-releasing').each(function() {
+            if ($(this).is(':checked') && !$(this).data('prechecked')) {
+                countRelease++;
+            }
+        });
+
+        if (countRelease === 0) {
+            swal("No new selections!", "You haven’t selected any new checkboxes. Only new selections can be saved.", "info");
+            return;
+        }
+
+        $('#countRelease').text(countRelease);
+        $('#confirmModalRelease').modal('show');
+    });
+
 
 
     $('#saveBtnData').on('click', function(e) {
@@ -441,6 +505,13 @@ $(document).ready(function(){
     });
 
 
+    $('#confirmReleaseSubmit').on('click', function() {
+        $('#confirmModalRelease').modal('hide');
+         $('#releaseForm').submit();
+    });
+
+
+
     $('#confirmResultVerificationSubmit').on('click', function() {
         $('#confirmModalResultVerification').modal('hide');
 
@@ -454,44 +525,79 @@ $(document).ready(function(){
         $('#testExecutionForm').submit();
     });
 
+// $('#jobSearch').on('keyup', function() {
+//     let searchVal = $(this).val().toLowerCase().trim();
+//     let column = $('#searchColumn').val();
 
-    $('#jobSearch').on('keyup', function() {
-        let value = $(this).val().toLowerCase().trim();
-        let matchFoundOverall = false; 
+//     $('#jobsContainer .card').each(function() {
+//         let card = $(this);
+//         let match = false;
 
-        $('.card').each(function() {
-            let card = $(this);
-            let matchFound = false;
-            let jobOrder = card.find('.card-header h5').text().toLowerCase();
+//         if (column === 'all') {
+//             // search header + table
+//             if (card.text().toLowerCase().includes(searchVal)) {
+//                 match = true;
+//             }
+//         } else if (column === 'nutritionist_name') {
+//             let val = card.find('.nutritionist_name').text().toLowerCase();
+//             if (val.includes(searchVal)) match = true;
+//         } else if (column === 'client_name') {
+//             let val = card.find('.client_name').text().toLowerCase();
+//             if (val.includes(searchVal)) match = true;
+//         } else {
+//             // table td search
+//             card.find('table tbody tr').each(function() {
+//                 let td = $(this).find('td.' + column);
+//                 if (td.length && td.text().toLowerCase().includes(searchVal)) {
+//                     match = true;
+//                     return false;
+//                 }
+//             });
+//         }
 
-            card.find('tbody tr').each(function() {
-                let rowText = $(this).text().toLowerCase();
-                if (rowText.includes(value) || jobOrder.includes(value)) {
-                    $(this).show();
-                    matchFound = true;
-                } else {
-                    $(this).hide();
-                }
-            });
+//         card.toggle(match);
+//     });
+// });
 
-            if (matchFound) {
-                card.show();
-                matchFoundOverall = true;
+
+$('#jobSearch').on('keyup', function() {
+    let value = $(this).val().toLowerCase().trim();
+    let matchFoundOverall = false; 
+
+    $('.card').each(function() {
+        let card = $(this);
+        let matchFound = false;
+        let jobOrder = card.find('.card-header h5').text().toLowerCase();
+
+        card.find('tbody tr').each(function() {
+            let rowText = $(this).text().toLowerCase();
+            if (rowText.includes(value) || jobOrder.includes(value)) {
+                $(this).show();
+                matchFound = true;
             } else {
-                card.hide();
+                $(this).hide();
             }
         });
 
-        $('#noResultsMessage').remove();
-
-        if (!matchFoundOverall && value !== '') {
-            $('.page-inner').append(`
-                <div id="noResultsMessage" class="text-center text-muted mt-4">
-                    <h5><i class="fas fa-search"></i> No matching item found.</h5>
-                </div>
-            `);
+        if (matchFound) {
+            card.show();
+            matchFoundOverall = true;
+        } else {
+            card.hide();
         }
     });
+
+    $('#noResultsMessage').remove();
+
+    if (!matchFoundOverall && value !== '') {
+        $('.page-inner').append(`
+            <div id="noResultsMessage" class="text-center text-muted mt-4">
+                <h5><i class="fas fa-search"></i> No matching item found.</h5>
+            </div>
+        `);
+    }
+});
+
 
     $('#clearSearch').on('click', function() {
         $('#jobSearch').val('');
@@ -569,6 +675,31 @@ $(document).ready(function(){
             }
         });
     });
+
+    document.querySelectorAll('.select-all-btn').forEach(btn => {
+        btn.addEventListener('click', function(event) {
+            event.stopPropagation(); // prevent collapse
+
+            let jobId = this.dataset.job;
+            let checkboxes = document.querySelectorAll(jobId + " input[type='checkbox']");
+
+            let enabledCheckboxes = Array.from(checkboxes).filter(cb => !cb.disabled);
+
+            let allChecked = enabledCheckboxes.every(cb => cb.checked);
+
+            enabledCheckboxes.forEach(cb => cb.checked = !allChecked);
+
+            if (allChecked) {
+                this.innerHTML = '<i class="fas fa-check-square mr-1"></i> Select All';
+                this.classList.remove("btn-success");
+            } else {
+                this.innerHTML = '<i class="fas fa-times mr-1"></i> Unselect All';
+                this.classList.add("btn-success");
+            }
+        });
+    });
+
+
 
     
 

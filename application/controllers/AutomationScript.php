@@ -162,73 +162,78 @@ class AutomationScript extends CI_Controller {
         echo "[".date('Y-m-d H:i:s')."] Email automation Script finished.\n";
     }
 
-public function check_overdue_lead_times()
-{
-    echo "[" . date('Y-m-d H:i:s') . "] Checking for overdue lead times...\n";
-
-    $this->db->select('td.trans_detail_id, td.lead_time, tt_latest.created_at AS date_submitted');
-    $this->db->from('trans_details td');
-
-    // Join only where the latest trans_timestamps record has status 26
-    $this->db->join("
-        (
-            SELECT 
-                tt1.trans_detail_id, 
-                tt1.created_at, 
-                tt1.trans_detail_status_id
-            FROM trans_timestamps tt1
-            INNER JOIN (
-                SELECT 
-                    trans_detail_id, 
-                    MAX(id) AS latest_id
-                FROM trans_timestamps
-                GROUP BY trans_detail_id
-            ) tt2 ON tt1.id = tt2.latest_id
-            WHERE tt1.trans_detail_status_id = 26
-        ) tt_latest
-    ", 'tt_latest.trans_detail_id = td.trans_detail_id', 'inner');
-
-    // only check records that have a defined lead time
-    $this->db->where('td.lead_time IS NOT NULL');
-
-    $details = $this->db->get()->result_array();
-
-    foreach ($details as $detail) {
-        $trans_detail_id = $detail['trans_detail_id'];
-        $lead_time = [$trans_detail_id => $detail['lead_time']];
-        $date_submitted = [$trans_detail_id => $detail['date_submitted']];
-
-        if (empty($date_submitted[$trans_detail_id])) {
-            continue; // skip if no submission date
-        }
-
-         $this->send_overdue_lead_time($lead_time, $date_submitted, $trans_detail_id);
-    }
-}
-
-
-
-
-    public function send_overdue_lead_time($lead_time, $date_submitted, $trans_detail_id)
+    public function check_overdue_lead_times()
     {
+        echo "[" . date('Y-m-d H:i:s') . "] Checking for overdue lead times...\n";
+
+        $this->db->select('td.trans_detail_id, td.lead_time, tt_latest.created_at AS date_submitted,tt_latest.lead_ts_window_start AS date_roundoff');
+        $this->db->from('trans_details td');
+
+        // Join only where the latest trans_timestamps record has status 26
+        $this->db->join("
+            (
+                SELECT 
+                    tt1.trans_detail_id, 
+                    tt1.created_at, 
+                    tt1.lead_ts_window_start, 
+                    tt1.trans_detail_status_id
+                FROM trans_timestamps tt1
+                INNER JOIN (
+                    SELECT 
+                        trans_detail_id, 
+                        MAX(id) AS latest_id
+                    FROM trans_timestamps
+                    GROUP BY trans_detail_id
+                ) tt2 ON tt1.id = tt2.latest_id
+                WHERE tt1.trans_detail_status_id = 26
+            ) tt_latest
+        ", 'tt_latest.trans_detail_id = td.trans_detail_id', 'inner');
+
+        // only check records that have a defined lead time
+        $this->db->where('td.lead_time IS NOT NULL');
+
+        $details = $this->db->get()->result_array();
+
+        foreach ($details as $detail) {
+            $trans_detail_id = $detail['trans_detail_id'];
+            $lead_time = [$trans_detail_id => $detail['lead_time']];
+            $date_submitted = [$trans_detail_id => $detail['date_submitted']];
+            $date_roundoff = [$trans_detail_id => $detail['date_roundoff']];
+
+            if (empty($date_submitted[$trans_detail_id])) {
+                continue; // skip if no submission date
+            }
+
+            $this->send_overdue_lead_time($lead_time, $date_submitted, $trans_detail_id,$date_roundoff);
+
+        
+
+        }
+    }
+
+    public function send_overdue_lead_time($lead_time, $date_submitted, $trans_detail_id,$date_roundoff)
+    {
+
+
                     if (empty($date_submitted[$trans_detail_id])) {
                         return;
                     }
 
-                 
+                  if($date_roundoff){
+                     $submitted_date = $date_roundoff[$trans_detail_id];
+                  }else{
+                     $submitted_date = $date_submitted[$trans_detail_id];
+                    
+                  }
 
-
-                    $submitted_date = $date_submitted[$trans_detail_id];
                     $lead_days = (int) $lead_time[$trans_detail_id];
                     $today = date('Y-m-d');
                     $days_diff = (strtotime($today) - strtotime($submitted_date)) / (60 * 60 * 24);
 
-       
 
                     if ($days_diff > $lead_days) {
-                    
                         $lab_row = $this->db
-                            ->select('th.laboratory_id')
+                            ->select('th.laboratory_id, td.lead_time_identifier')
                             ->from('trans_details td')
                             ->join('trans_headers th', 'th.trans_id = td.trans_id')
                             ->where('td.trans_detail_id', $trans_detail_id)
@@ -271,19 +276,35 @@ public function check_overdue_lead_times()
                             $statusText = 'Lead Time Exceeded';
                             $remark = "Lab test has exceeded its allowed lead time of {$lead_days} days.";
 
-                            foreach ($recipients as $recipient) {
+                            if(!$lab_row->lead_time_identifier){
 
-                                log_message('info', "Queuing LeadTimeExceeded email for {$recipient['userEmail']} ({$recipient['userFirstName']} {$recipient['userLastName']})");
+                                $allEmailsSent = true;
 
-                                $this->email_format->generateEmailNotification(
-                                    $transHeader,
-                                    $trans_detail_id,
-                                    $statusText,
-                                    $remark,
-                                    $recipient,
-                                    'Lead Time Exceeded'
-                                );
-                            }
+                                foreach ($recipients as $recipient) {
+
+
+                                    $sent = $this->email_format->generateEmailNotification(
+                                        $transHeader,
+                                        $trans_detail_id,
+                                        $statusText,
+                                        $remark,
+                                        $recipient,
+                                        'Lead Time Exceeded'
+                                    );
+
+                                    if(!$sent){
+                                        $allEmailsSent = false; 
+                                    }
+                                }
+                                if($allEmailsSent){
+                                    $updateData = [
+                                        'lead_time_identifier' => 1,
+                                        'modified_at' => date('Y-m-d H:i:s'),
+                                    ];
+                                    $this->main->update_data('trans_details', $updateData, ['trans_detail_id' => $trans_detail_id]);
+                                }
+                            } 
+                        
                         }
 
                     }
@@ -292,6 +313,7 @@ public function check_overdue_lead_times()
     public function auto_cancel_onhold_records()
     {
         if (!$this->input->is_cli_request()) return;
+
 
         $records = $this->db
             ->select('trans_detail_id, modified_at')
@@ -302,6 +324,7 @@ public function check_overdue_lead_times()
 
         $today = new DateTime();
         foreach ($records as $record) {
+
             if (empty($record->modified_at)) continue;
 
             $lastModified = new DateTime($record->modified_at);
@@ -309,10 +332,10 @@ public function check_overdue_lead_times()
             $current = clone $lastModified;
 
             while ($current < $today) {
-                $current->modify('+1 day');
                 if ($current->format('N') < 6) $businessDays++;
-            }
+                $current->modify('+1 day');
 
+            }
             if ($businessDays >= 3) {
                 $updateData = [
                     'test_status_id' => 25,

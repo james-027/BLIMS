@@ -640,10 +640,11 @@ class Main_model extends CI_Model {
 			'sup.supplier_name',
 			'p.plate_number',
 			'b.batch_number',
-			'td.lab_code AS lab_code',
+			'td.ext_lab_code AS lab_code',
 			'tr.remark AS existing_remark',
 			 'r.reason_name AS latest_reason',
 			($timestamp_from_status ? 'tt.latest_timestamp AS date_submitted' : ''),
+			($timestamp_from_status ? 'tt.date_roundoff AS date_roundoff' : ''),
 			($remark_from_verification ?'tr33.remark AS result_verification_remark' : ''),
 		]);
 		$this->db->from('trans_details td');
@@ -702,7 +703,7 @@ class Main_model extends CI_Model {
 
 		if ($timestamp_from_status) {
 			$timestamp_join = "
-				SELECT tt1.trans_detail_id, tt1.created_at AS latest_timestamp
+				SELECT tt1.trans_detail_id, tt1.created_at AS latest_timestamp, lead_ts_window_start AS date_roundoff
 				FROM trans_timestamps tt1
 				INNER JOIN (
 					SELECT trans_detail_id, MAX(id) AS latest_id
@@ -746,6 +747,149 @@ class Main_model extends CI_Model {
 
 		return $this->db->get()->result_array();
 	}
+
+
+	public function get_pdf_trans_detail($trans_detail_id) 
+	{
+			$this->db->select('sample_id, trans_id');
+			$this->db->from('trans_details');
+			$this->db->where('trans_detail_id', $trans_detail_id);
+			$result = $this->db->get()->row_array();
+
+			if (!$result) return null;
+
+			$sample_id = $result['sample_id'];
+			$trans_id = $result['trans_id'];
+
+			// Step 2: Get the latest trans_detail_id with status 37 for the same sample_id and trans_id
+			$this->db->select('trans_detail_id');
+			$this->db->from('trans_details');
+			$this->db->where('sample_id', $sample_id);
+			$this->db->where('trans_id', $trans_id);
+			$this->db->where('trans_detail_status_id', 37);
+			$this->db->order_by('modified_at', 'DESC');
+			$latest_detail = $this->db->get()->row_array();
+
+			$target_detail_id = $latest_detail['trans_detail_id'] ?? $trans_detail_id;
+
+			// Step 3: Prepare subqueries to get latest timestamps
+			$tt_received_sub = "(SELECT t1.* 
+								FROM trans_timestamps t1
+								WHERE t1.trans_detail_status_id = 20
+								AND t1.created_at = (
+									SELECT MAX(t2.created_at)
+									FROM trans_timestamps t2
+									WHERE t2.trans_detail_id = t1.trans_detail_id
+										AND t2.trans_detail_status_id = 20
+								))";
+
+			$tt_analyzed_sub = "(SELECT t1.* 
+								FROM trans_timestamps t1
+								WHERE t1.trans_detail_status_id = 26
+								AND t1.created_at = (
+									SELECT MAX(t2.created_at)
+									FROM trans_timestamps t2
+									WHERE t2.trans_detail_id = t1.trans_detail_id
+										AND t2.trans_detail_status_id = 26
+								))";
+
+			$tt_reported_sub = "(SELECT t1.* 
+								FROM trans_timestamps t1
+								WHERE t1.trans_detail_status_id = 36
+								AND t1.created_at = (
+									SELECT MAX(t2.created_at)
+									FROM trans_timestamps t2
+									WHERE t2.trans_detail_id = t1.trans_detail_id
+										AND t2.trans_detail_status_id = 36
+								))";
+
+			// Step 4: Get the main data with timestamps + user info
+			$this->db->select('
+				td.*, 
+				th.*, 
+				s.sample_name AS sample_name,
+				tt_received.created_at AS date_received,
+				tt_analyzed.created_at AS date_analyzed,
+				u_analyzed.userFirstName AS analyzed_firstname,
+				u_analyzed.userLastName AS analyzed_lastname,
+				prof.name AS analyzed_profession,
+				ss_prof.license_no AS license_no,
+				ss_prof.license_valid AS license_valid,
+				ut_analyzed.userTypeName AS analyzed_usertype,
+				tt_reported.created_at AS date_reported,
+				lab.laboratory_name AS laboratory_name,
+				lab.address AS laboratory_address
+			');
+			$this->db->from('trans_details td');
+			$this->db->join('trans_headers th', 'td.trans_id = th.trans_id', 'left');
+			$this->db->join('samples s', 'td.sample_id = s.id', 'left');
+			$this->db->join('laboratories lab', 'th.laboratory_id = lab.id', 'left');
+
+			$this->db->join("($tt_received_sub) tt_received", "tt_received.trans_detail_id = td.trans_detail_id", 'left');
+			$this->db->join("($tt_analyzed_sub) tt_analyzed", "tt_analyzed.trans_detail_id = td.trans_detail_id", 'left');
+			$this->db->join('users u_analyzed', 'u_analyzed.userID = tt_analyzed.created_by', 'left');
+			$this->db->join('user_professions ss_prof', 'ss_prof.userID = u_analyzed.userID', 'left');
+			$this->db->join('professions prof', 'prof.id = ss_prof.profession_id', 'left');
+			$this->db->join('usertype ut_analyzed', 'ut_analyzed.userTypeID = u_analyzed.userTypeID', 'left');
+			$this->db->join("($tt_reported_sub) tt_reported", "tt_reported.trans_detail_id = td.trans_detail_id", 'left');
+
+			$this->db->where('td.trans_detail_id', $target_detail_id);
+
+			return $this->db->get()->row_array();
+	}
+
+	public function get_pdf_test_results($trans_detail_id) {
+		$detail = $this->db->select('trans_id, sample_id, release_ref_number')
+						->from('trans_details')
+						->where('trans_detail_id', $trans_detail_id)
+						->get()
+						->row_array();
+
+		$trans_id = $detail['trans_id'];
+		$sample_id = $detail['sample_id'];
+		$release_ref_number = $detail['release_ref_number'];
+
+		$this->db->select('
+				td.trans_detail_id,
+				tp.param_name,
+				tm.method_name,
+				tm_ref.method_name AS reference_method,
+				td.test_exec_lab_result as test_result
+			')
+			->from('trans_details td')
+			->join('trans_headers th', 'td.trans_id = th.trans_id', 'left')
+			->join('lab_tests lt', 'td.lab_test_id = lt.test_id AND lt.laboratory_id = th.laboratory_id', 'left')
+			->join('test_parameters tp', 'lt.test_param_id = tp.id', 'left')
+			->join('test_methods tm', 'lt.test_method_id = tm.id', 'left')
+			->join('ref_methods tm_ref', 'lt.ref_method_id = tm_ref.id', 'left')
+			->where('td.release_ref_number', $release_ref_number) // <-- condition changed
+			->group_by(['td.trans_detail_id', 'tp.param_name', 'tm.method_name', 'tm_ref.method_name', 'td.test_exec_lab_result'])
+			->order_by('td.trans_detail_id', 'ASC');
+
+		return $this->db->get()->result_array();
+	}
+
+
+
+
+	public function get_lab_signatories($lab_id)
+	{
+		  if (!is_array($lab_id)) {
+				$lab_id = [$lab_id]; // ensure it's an array
+			}
+
+		$this->db->select('ss.*, u.userFirstName, u.userLastName, p.name AS profession_name, ut.userTypeName, ut.userTypeID');
+		$this->db->from('user_signatories_labs usl');              
+		$this->db->join('user_professions ss', 'ss.id = usl.user_profession_id', 'inner');
+		$this->db->join('users u', 'u.userID = ss.userID', 'left'); 
+		$this->db->join('professions p', 'p.id = ss.profession_id', 'left'); 
+		$this->db->join('usertype ut', 'ut.userTypeID = u.userTypeID', 'left'); 
+		$this->db->where_in('usl.laboratory_id', $lab_id);             
+		$this->db->order_by('ss.id', 'ASC');
+
+		return $this->db->get()->result_array();
+	}
+
 
 
 

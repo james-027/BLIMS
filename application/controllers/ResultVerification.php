@@ -47,7 +47,11 @@ class ResultVerification extends CI_Controller {
         $data['controller'] = $this->controller;
         $data['userID'] = $userID;
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-        $all_details = $this->main->get_trans_details($data,36,33,27,36); // data , RESULT VERIFICATION STATUS , DATA REVIEW STATUS, ,TEST EXECUTION STATUS , RESULT VERIFICATINO STATUS
+        $result_veri_stat = 36;
+        $data_review_stat = 33;
+        $test_exec_stat = 27;
+        $result_veri_remark = 36;
+        $all_details = $this->main->get_trans_details($data,$result_veri_stat,$data_review_stat,$test_exec_stat,$result_veri_remark); // data , RESULT VERIFICATION STATUS , DATA REVIEW STATUS, ,TEST EXECUTION STATUS , RESULT VERIFICATINO STATUS
         $jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];

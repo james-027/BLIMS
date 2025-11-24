@@ -340,7 +340,8 @@ if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
                     swal("Success!", response.message, "success");
                     setTimeout(function() {
                         window.location.href = baseUrl + controllerName;
-                        // window.location.reload();
+                        window.location.reload();
+                         window.scrollTo(0, 0);
                     }, 2000);
                 } else {
                     swal("Oops...", "Something went wrong!", "error");

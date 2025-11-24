@@ -55,8 +55,8 @@ class InitialPreparation extends CI_Controller {
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
-
-        $all_details = $this->main->get_trans_details($data,24);// data , INITIAL PREP STATUS ,
+        $initial_prep_status = 24;
+        $all_details = $this->main->get_trans_details($data,$initial_prep_status);// data , INITIAL PREP STATUS ,
 
         $jobs = [];
         foreach ($all_details as $row) {

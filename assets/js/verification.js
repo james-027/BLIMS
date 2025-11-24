@@ -47,6 +47,7 @@ function toggleReason(statusSelect) {
                     swal("Success!", response.message, "success");
                     setTimeout(function() {
                         window.location.reload();
+                         window.scrollTo(0, 0);
                     }, 2000);
                 } else {
                     swal("Oops...", "Something went wrong!", "error");

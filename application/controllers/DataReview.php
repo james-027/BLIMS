@@ -47,7 +47,10 @@ class DataReview extends CI_Controller {
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
-        $all_details = $this->main->get_trans_details($data,33,27,27);// data , DATA REVIEW STATUS , TEST EXECUTION STATUS, ,TEST EXECUTION STATUS ,
+        $data_review_stat = 33;
+        $test_exec_stat =27;
+        $test_exec_remark = 27;
+        $all_details = $this->main->get_trans_details($data,$data_review_stat,$test_exec_stat,$test_exec_remark);// data , DATA REVIEW STATUS , TEST EXECUTION STATUS, ,TEST EXECUTION STATUS ,
 
 
 
@@ -105,7 +108,7 @@ class DataReview extends CI_Controller {
         $select = "
             th.trans_history_id,
             th.trans_detail_id,
-            td.lab_code AS labCode,
+            td.ext_lab_code AS labCode,
             thd.job_order_no AS jo,
             s.statDesc AS module,
             th.detail_change AS action,
