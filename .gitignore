@@ -36,3 +36,6 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 
 /uploads/trans_attachments/*
 !/uploads/trans_attachments/.gitkeep
+
+
+application/application

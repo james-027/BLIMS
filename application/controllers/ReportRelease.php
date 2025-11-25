@@ -120,10 +120,9 @@ class ReportRelease extends CI_Controller {
         ) tt_latest", 'tt_latest.trans_detail_id = td.trans_detail_id', 'left');
 
        $this->db->where('td.trans_detail_status_id', 37);
-       $this->db->order_by('tt_latest.latest_timestamp', 'DESC');
+       $this->db->order_by('td.modified_at', 'DESC');
 
         $all_details = $this->db->get()->result_array();
-
         $jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -192,7 +191,7 @@ class ReportRelease extends CI_Controller {
             th.created_at AS log_date,
             CONCAT(u.userFirstName, ' ', u.userLastName) AS performed_by
         ";
-
+        
         $recFound = $this->main->get_join_datatables(
             'trans_history th',
             $join,

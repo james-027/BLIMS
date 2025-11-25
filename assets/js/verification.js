@@ -182,6 +182,9 @@ $(document).on('click', '#add-registration', function() {
     window.location.href = baseUrl + controllerName + '/sample_registration';
 });
 
+$(document).on("click", ".attachment-link", function (e) {
+    e.stopPropagation();
+});
 
 });
 

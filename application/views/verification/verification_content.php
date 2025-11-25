@@ -64,7 +64,7 @@
                                 <?php foreach ($jobAttachments as $file): ?>
                                 <a href="<?= base_url('uploads/trans_attachments/'.$file['filename']) ?>"
                                     download="<?= $file['original_name'] . '.' . pathinfo($file['filename'], PATHINFO_EXTENSION) ?>"
-                                    class="badge badge-light text-dark ml-1">
+                                    class="badge badge-light text-dark ml-1 attachment-link">
                                     <i class="fas fa-paperclip"></i>
                                     <?= $file['original_name'] . '.' . pathinfo($file['filename'], PATHINFO_EXTENSION) ?>
                                 </a>
@@ -82,8 +82,8 @@
                                             <thead>
                                                 <tr>
                                                     <th style="width:50px;">No.</th>
-                                                    <th style="width:120px;">Laboratory Code</th>
-                                                    <th>Sample Name</th>
+                                                    <th style="width:150px;">Laboratory Code</th>
+                                                    <th style="width:150px;">Sample Name</th>
                                                     <th style="width:120px;">Production Date</th>
                                                     <th style="width:150px;">Shipment Supplier</th>
                                                     <th>Plate / Van Number</th>

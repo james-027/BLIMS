@@ -15,13 +15,14 @@
                     <h4 class="mb-0"><?php echo $title ?></h4>
                 </div>
                 <div class="card-body">
+
                     <form method="post" action="<?=base_url($controller.'/submit_registration')?>" enctype="multipart/form-data"
                         id="registrationForm">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="internalFeedmill">Internal Feedmill<span class="text-danger"> *</span></label>
-                                    <select class="form-control" id="internalFeedmill" name="internalFeedmill" required>
+                                    <select class="form-control dynamic_dropdown" id="internalFeedmill" name="internalFeedmill" required>
                                         <option value="">Select Feedmill</option>
                                         <?php foreach($internalFeedmills as $feedmill): ?>
                                         <option value="<?= $feedmill->id ?>"><?= $feedmill->feedmill_name ?></option>
@@ -59,7 +60,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="nutritionist">Nutritionist<span class="text-danger"> *</span></label>
-                                    <select class="form-control" id="nutritionist" name="nutritionist" required>
+                                    <select class="form-control dynamic_dropdown" id="nutritionist" name="nutritionist" required>
                                         <option value="">Select Nutritionist</option>
                                         <?php foreach($nutritionists as $nutri): ?>
                                         <option value="<?= $nutri->id ?>"><?= $nutri->nutritionist_name ?></option>
@@ -69,7 +70,7 @@
 
                                 <div class="form-group">
                                     <label for="labLocation">Laboratory Location<span class="text-danger"> *</span></label></label>
-                                    <select class="form-control" id="labLocation" name="labLocation" required>
+                                    <select class="form-control " id="labLocation" name="labLocation" required>
                                         <option value="">Select Location</option>
                                         <?php foreach($laboratories as $lab): ?>
                                         <option value="<?= $lab->id ?>"><?= $lab->laboratory_name ?></option>

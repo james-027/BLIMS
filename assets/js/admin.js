@@ -167,7 +167,7 @@ $(document).ready(function () {
         }
 
         $select.select2({
-            placeholder: 'Select...',
+            placeholder: 'Select',
             theme: 'bootstrap4',
             sorter: data => data.sort((a, b) => {
                 if (a.id === '_reset') return -1;
