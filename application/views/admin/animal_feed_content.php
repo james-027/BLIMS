@@ -63,6 +63,7 @@
     </div>
 </div>
 
+
 <div class="modal fade animated bounceInDown" id="modal-edit-animal-feed"   role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">

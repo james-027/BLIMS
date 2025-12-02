@@ -12,6 +12,7 @@ class ReportRelease extends CI_Controller {
     	$this->load->model('main_model', 'main');
     	$this->load->library('custom_lib');
         $this->load->library('email_format');
+        $this->load->library('coa_lib');
 
     }
 
@@ -59,7 +60,8 @@ class ReportRelease extends CI_Controller {
             'tr.remark AS existing_remark',
             'tt.latest_timestamp AS date_submitted',
             'CONCAT(us.userFirstName, " ", us.userLastName) AS client_name',
-            'n.nutritionist_name AS nutritionist_name'
+            'n.nutritionist_name AS nutritionist_name',
+            'n.email_address AS nutritionist_email'
         ]);
         $this->db->from('trans_details td');
         $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
@@ -132,6 +134,7 @@ class ReportRelease extends CI_Controller {
                     'lab_code' => $row['lab_code'],
                     'client_name' => $row['client_name'] ?? 'N/A',
                     'nutritionist_name' => $row['nutritionist_name'] ?? 'N/A',
+                    'nutritionist_email' => $row['nutritionist_email'] ?? 'N/A',
                     'samples' => []
                 ];
             }
@@ -191,7 +194,7 @@ class ReportRelease extends CI_Controller {
             th.created_at AS log_date,
             CONCAT(u.userFirstName, ' ', u.userLastName) AS performed_by
         ";
-        
+
         $recFound = $this->main->get_join_datatables(
             'trans_history th',
             $join,
@@ -220,7 +223,7 @@ class ReportRelease extends CI_Controller {
             ->set_output(json_encode($data));
     }
 
-    public function submit_for_release()
+    public function submit_for_release01()
     {
         $info      = $this->custom_lib->_require_login();
         $userID    = decode($info['userID']);
@@ -228,6 +231,7 @@ class ReportRelease extends CI_Controller {
 
         $groups = [];
         $labs   = []; 
+        
 
         foreach ($releasing as $trans_detail_id => $releaseID) {
             if (empty($releaseID)) continue;
@@ -262,6 +266,7 @@ class ReportRelease extends CI_Controller {
                         }
                     }
                 }
+
                 $year = date('y'); 
                 if (!empty($released_items)) {
                     $existing_sequences = array_map(function ($r) use ($year) {
@@ -298,41 +303,65 @@ class ReportRelease extends CI_Controller {
                         ['trans_detail_id' => $trans_detail_id]
                     );
 
-
                     if (!empty($result_releasing)) {
-                            $this->main->user_logs([
-                                'userID'       => $userID,
-                                'userFullName' => $info['userFullName'],
-                                'logTS'        => date_now(),
-                                'page'         => 'ReportRelease/submit_for_release',
-                                'logDetail'    => 'Successfully Updated Report Release ID:' . $trans_detail_id
-                            ]);
+                        $this->main->user_logs([
+                            'userID'       => $userID,
+                            'userFullName' => $info['userFullName'],
+                            'logTS'        => date_now(),
+                            'page'         => 'ReportRelease/submit_for_release',
+                            'logDetail'    => 'Successfully Updated Report Release ID:' . $trans_detail_id
+                        ]);
 
-                            $detail = $this->db->where('trans_detail_id', $trans_detail_id)
+                        $detail = $this->db->where('trans_detail_id', $trans_detail_id)
                                             ->get('trans_details')
                                             ->row_array();
 
-                            if (!empty($detail)) {
-                                $historyData = $detail;
-                                unset($historyData['id']);
-                                $historyData['trans_detail_id'] = $trans_detail_id;
-                                $historyData['detail_change'] = "COA RELEASED";
-                                $historyData['trans_detail_status_id'] = 37;
-                                $historyData['created_by'] = $userID;
-                                $historyData['created_at'] = date('Y-m-d H:i:s');
-                                $this->main->insert_data('trans_history', $historyData);
+                        if (!empty($detail)) {
+                            $historyData = $detail;
+                            unset($historyData['id']);
+                            $historyData['trans_detail_id'] = $trans_detail_id;
+                            $historyData['detail_change'] = "COA RELEASED";
+                            $historyData['trans_detail_status_id'] = 37;
+                            $historyData['created_by'] = $userID;
+                            $historyData['created_at'] = date('Y-m-d H:i:s');
+                            $this->main->insert_data('trans_history', $historyData);
 
-                                $timestampData = [
-                                    'trans_detail_id'        => $trans_detail_id,
-                                    'trans_detail_status_id' => 37,
-                                    'status_id'              => 1,
-                                    'created_at'             => date('Y-m-d H:i:s'),
-                                    'created_by'             => $userID,
-                                ];
-                                $this->main->insert_data('trans_timestamps', $timestampData);
-                            }
-                    }
+                            $timestampData = [
+                                'trans_detail_id'        => $trans_detail_id,
+                                'trans_detail_status_id' => 37,
+                                'status_id'              => 1,
+                                'created_at'             => date('Y-m-d H:i:s'),
+                                'created_by'             => $userID,
+                            ];
+                            $this->main->insert_data('trans_timestamps', $timestampData);
+                        }
+
+                    //     $transHeader = $this->db
+                    //     ->select('th.trans_id, th.job_order_no,th.laboratory_id, td.lab_code, th.nutritionist_id, td.ext_lab_code')
+                    //     ->from('trans_headers th')
+                    //     ->join('trans_details td', 'td.trans_id = th.trans_id')
+                    //     ->where('td.trans_detail_id', $trans_detail_id)
+                    //     ->get()
+                    //     ->row_array();
+
+                    // $recipient = $this->db
+                    //     ->select('n.id, n.nutritionist_name, n.email_address')
+                    //     ->from('nutritionists n')
+                    //     ->where('n.id', $transHeader['nutritionist_id'])
+                    //     ->get()
+                    //     ->row_array();
                         
+                    // if (!empty($transHeader)) {
+                    //     $this->email_format->generateEmailNotificationByNutritionist(
+                    //         $transHeader,
+                    //         $trans_detail_id,
+                    //         $recipient
+                    //     );
+                    //     log_message('info', "Sent notification to {$recipient['email_address']} for trans_detail_id {$trans_detail_id}");
+                    // }
+
+                    }
+
 
                 }
             }
@@ -345,6 +374,137 @@ class ReportRelease extends CI_Controller {
     }
 
 
+    public function submit_for_release()
+{
+    $info      = $this->custom_lib->_require_login();
+    $userID    = decode($info['userID']);
+    $releasing = $this->input->post('releasing');
+
+    $labGroups = []; // Group by laboratory_id and ext_lab_code
+
+    foreach ($releasing as $trans_detail_id => $releaseID) {
+        if (empty($releaseID)) continue;
+
+        $detail = $this->main->get_data('trans_details', ['trans_detail_id' => $trans_detail_id], true);
+        if (!$detail) continue;
+
+        $transHeader = $this->main->get_data('trans_headers', ['trans_id' => $detail->trans_id], true);
+        if (!$transHeader) continue;
+
+        $lab_id = $transHeader->laboratory_id ?? null;
+        if (!$lab_id) continue;
+
+        $ext_lab_code = $detail->ext_lab_code ?? 'UNKNOWN';
+
+        $labGroups[$lab_id][$ext_lab_code][] = $trans_detail_id;
+    }
+
+    $year = date('y');
+    $lab_sequences = [];
+
+    foreach ($labGroups as $lab_id => $extLabGroups) {
+        // Determine current max sequence for this lab for the year
+        if (!isset($lab_sequences[$lab_id][$year])) {
+            $headers = $this->main->get_data('trans_headers', ['laboratory_id' => $lab_id], false);
+            $released_items = [];
+
+            if (!empty($headers)) {
+                foreach ($headers as $h) {
+                    $tds = $this->main->get_data('trans_details', ['trans_id' => $h->trans_id, 'is_released' => 1], false);
+                    if (!empty($tds)) $released_items = array_merge($released_items, $tds);
+                }
+            }
+
+            if (!empty($released_items)) {
+                $existing_sequences = array_map(function ($r) use ($year) {
+                    $num = $r->release_ref_number ?? '00000';
+                    $parts = explode('-', $num);
+                    return ($parts[0] == $year) ? (int)$parts[2] : 0;
+                }, $released_items);
+
+                $lab_sequences[$lab_id][$year] = max($existing_sequences);
+            } else {
+                $lab_sequences[$lab_id][$year] = 0;
+            }
+        }
+
+        $lab_code = $this->main->get_data('laboratories', ['id' => $lab_id], true)->identifier_code ?? 'LAB';
+
+        // Loop by ext_lab_code — assign same release_ref_number to all its trans_details
+        foreach ($extLabGroups as $ext_lab_code => $trans_detail_ids) {
+            $lab_sequences[$lab_id][$year]++;
+            $sequence_padded = str_pad($lab_sequences[$lab_id][$year], 5, '0', STR_PAD_LEFT);
+            $release_ref_number = "{$year}-{$lab_code}-{$sequence_padded}";
+
+            foreach ($trans_detail_ids as $trans_detail_id) {
+                $updateData = [
+                    'is_released'        => 1,
+                    'modified_at'        => date('Y-m-d H:i:s'),
+                    'is_released_time'   => date('Y-m-d H:i:s'),
+                    'updated_by'         => $userID,
+                    'release_ref_number' => $release_ref_number
+                ];
+
+                $this->main->update_data('trans_details', $updateData, ['trans_detail_id' => $trans_detail_id]);
+
+                $detail = $this->db->where('trans_detail_id', $trans_detail_id)->get('trans_details')->row_array();
+                if (!empty($detail)) {
+                    $historyData = $detail;
+                    unset($historyData['id']);
+                    $historyData['trans_detail_id'] = $trans_detail_id;
+                    $historyData['detail_change'] = "COA RELEASED";
+                    $historyData['trans_detail_status_id'] = 37;
+                    $historyData['created_by'] = $userID;
+                    $historyData['created_at'] = date('Y-m-d H:i:s');
+                    $this->main->insert_data('trans_history', $historyData);
+
+                    $timestampData = [
+                        'trans_detail_id'        => $trans_detail_id,
+                        'trans_detail_status_id' => 37,
+                        'status_id'              => 1,
+                        'created_at'             => date('Y-m-d H:i:s'),
+                        'created_by'             => $userID,
+                    ];
+                    $this->main->insert_data('trans_timestamps', $timestampData);
+                }
+            }
+        }
+    }
+
+    echo json_encode([
+        'status'  => 'success',
+        'message' => 'Report Release submitted successfully.'
+    ]);
+}
+
+
+    public function get_job_search()
+{
+    $search = $this->input->post('search');
+
+
+    var_dump($search);
+    // Prevent blank search from loading huge data
+    if (trim($search) === '') {
+        echo json_encode(['html' => '']);
+        return;
+    }
+
+    // 🔍 Your search query
+    $this->db->select('*');
+    $this->db->from('trans_details td');
+    $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
+    $this->db->like('th.job_order_no', $search);
+    $this->db->or_like('td.lab_code', $search);
+    $this->db->or_like('td.sample_name', $search);
+    $result = $this->db->get()->result_array();
+
+    // Then render a partial view (HTML rows)
+    $data['jobs'] = $result;
+    $html = $this->load->view('report_release/search_results', $data, TRUE);
+
+    echo json_encode(['html' => $html]);
+}
 
 
 	// END OF Report Release CONTROLLER
@@ -353,4 +513,288 @@ class ReportRelease extends CI_Controller {
 
 
 }
+
+    // public function submit_for_release01()
+    // {
+    //     $info      = $this->custom_lib->_require_login();
+    //     $userID    = decode($info['userID']);
+    //     $releasing = $this->input->post('releasing');
+
+    //     $groups = [];
+    //     $labs   = []; 
+
+    //     foreach ($releasing as $trans_detail_id => $releaseID) {
+    //         if (empty($releaseID)) continue;
+
+    //         $detail = $this->main->get_data('trans_details', ['trans_detail_id' => $trans_detail_id], true);
+    //         if (!$detail) continue;
+
+    //         $trans_id = $detail->trans_id;
+    //         $groups[$trans_id][$detail->sample_id][] = $trans_detail_id;
+
+    //         if (!isset($labs[$trans_id])) {
+    //             $header = $this->main->get_data('trans_headers', ['trans_id' => $trans_id], true);
+    //             $labs[$trans_id] = $header->laboratory_id ?? null;
+    //         }
+    //     }
+
+    //     $lab_sequences = [];
+
+    //     foreach ($groups as $trans_id => $samples) {
+    //         $laboratory_id = $labs[$trans_id] ?? null;
+    //         if (!$laboratory_id) continue;
+
+    //         if (!isset($lab_sequences[$laboratory_id])) {
+    //             $headers = $this->main->get_data('trans_headers', ['laboratory_id' => $laboratory_id], false);
+    //             $released_items = [];
+
+    //             if (!empty($headers)) {
+    //                 foreach ($headers as $h) {
+    //                     $tds = $this->main->get_data('trans_details', ['trans_id' => $h->trans_id, 'is_released' => 1], false);
+    //                     if (!empty($tds)) {
+    //                         $released_items = array_merge($released_items, $tds);
+    //                     }
+    //                 }
+    //             }
+    //             $year = date('y'); 
+    //             if (!empty($released_items)) {
+    //                 $existing_sequences = array_map(function ($r) use ($year) {
+    //                     $num = $r->release_ref_number ?? '00000';
+    //                     $parts = explode('-', $num);
+    //                     return ($parts[0] == $year) ? (int)$parts[2] : 0;
+    //                 }, $released_items);
+
+    //                 $lab_sequences[$laboratory_id][$year] = max($existing_sequences);
+    //             } else {
+    //                 $lab_sequences[$laboratory_id][$year] = 0;
+    //             }
+    //         }
+
+    //         $lab_code = $this->main->get_data('laboratories', ['id' => $laboratory_id], true)->identifier_code ?? 'LAB';
+
+    //         foreach ($samples as $sample_id => $trans_details) {
+    //             $lab_sequences[$laboratory_id][$year]++;
+    //             $sequence_padded = str_pad($lab_sequences[$laboratory_id][$year], 5, '0', STR_PAD_LEFT);
+    //             $release_ref_number = "{$year}-{$lab_code}-{$sequence_padded}";
+
+    //             foreach ($trans_details as $trans_detail_id) {
+    //                 $updateData = [
+    //                     'is_released'        => 1,
+    //                     'modified_at'        => date('Y-m-d H:i:s'),
+    //                     'is_released_time'   => date('Y-m-d H:i:s'),
+    //                     'updated_by'         => $userID,
+    //                     'release_ref_number' => $release_ref_number
+    //                 ];
+
+    //                 $result_releasing = $this->main->update_data(
+    //                     'trans_details',
+    //                     $updateData,
+    //                     ['trans_detail_id' => $trans_detail_id]
+    //                 );
+
+
+    //                 if (!empty($result_releasing)) {
+    //                         $this->main->user_logs([
+    //                             'userID'       => $userID,
+    //                             'userFullName' => $info['userFullName'],
+    //                             'logTS'        => date_now(),
+    //                             'page'         => 'ReportRelease/submit_for_release',
+    //                             'logDetail'    => 'Successfully Updated Report Release ID:' . $trans_detail_id
+    //                         ]);
+
+    //                         $detail = $this->db->where('trans_detail_id', $trans_detail_id)
+    //                                         ->get('trans_details')
+    //                                         ->row_array();
+
+    //                         if (!empty($detail)) {
+    //                             $historyData = $detail;
+    //                             unset($historyData['id']);
+    //                             $historyData['trans_detail_id'] = $trans_detail_id;
+    //                             $historyData['detail_change'] = "COA RELEASED";
+    //                             $historyData['trans_detail_status_id'] = 37;
+    //                             $historyData['created_by'] = $userID;
+    //                             $historyData['created_at'] = date('Y-m-d H:i:s');
+    //                             $this->main->insert_data('trans_history', $historyData);
+
+    //                             $timestampData = [
+    //                                 'trans_detail_id'        => $trans_detail_id,
+    //                                 'trans_detail_status_id' => 37,
+    //                                 'status_id'              => 1,
+    //                                 'created_at'             => date('Y-m-d H:i:s'),
+    //                                 'created_by'             => $userID,
+    //                             ];
+    //                             $this->main->insert_data('trans_timestamps', $timestampData);
+    //                         }
+                            
+    //                 }
+                        
+
+    //             }
+    //         }
+    //     }
+
+    //     echo json_encode([
+    //         'status'  => 'success',
+    //         'message' => 'Report Release submitted successfully.'
+    //     ]);
+    // }
+    // public function submit_for_release_working_test()
+    // {
+    //     $info      = $this->custom_lib->_require_login();
+    //     $userID    = decode($info['userID']);
+    //     $releasing = $this->input->post('releasing');
+
+    //     $groups = [];
+    //     $labs   = []; 
+
+    //     foreach ($releasing as $trans_detail_id => $releaseID) {
+    //         if (empty($releaseID)) continue;
+
+    //         $detail = $this->main->get_data('trans_details', ['trans_detail_id' => $trans_detail_id], true);
+    //         if (!$detail) continue;
+
+    //         $trans_id = $detail->trans_id;
+    //         $groups[$trans_id][$detail->sample_id][] = $trans_detail_id;
+
+    //         if (!isset($labs[$trans_id])) {
+    //             $header = $this->main->get_data('trans_headers', ['trans_id' => $trans_id], true);
+    //             $labs[$trans_id] = $header->laboratory_id ?? null;
+    //         }
+    //     }
+
+    //     $lab_sequences = [];
+
+    //     foreach ($groups as $trans_id => $samples) {
+    //         $laboratory_id = $labs[$trans_id] ?? null;
+    //         if (!$laboratory_id) continue;
+
+    //         if (!isset($lab_sequences[$laboratory_id])) {
+    //             $headers = $this->main->get_data('trans_headers', ['laboratory_id' => $laboratory_id], false);
+    //             $released_items = [];
+
+    //             if (!empty($headers)) {
+    //                 foreach ($headers as $h) {
+    //                     $tds = $this->main->get_data('trans_details', ['trans_id' => $h->trans_id, 'is_released' => 1], false);
+    //                     if (!empty($tds)) {
+    //                         $released_items = array_merge($released_items, $tds);
+    //                     }
+ 
+                     
+    //                 }
+    //             }             
+
+    //             $year = date('y'); 
+    //             if (!empty($released_items)) {
+    //                 $existing_sequences = array_map(function ($r) use ($year) {
+    //                     $num = $r->release_ref_number ?? '00000';
+    //                     $parts = explode('-', $num);
+    //                     return ($parts[0] == $year) ? (int)$parts[2] : 0;
+    //                 }, $released_items);
+
+    //                 $lab_sequences[$laboratory_id][$year] = max($existing_sequences);
+    //             } else {
+    //                 $lab_sequences[$laboratory_id][$year] = 0;
+    //             }
+    //         }
+
+    //         $lab_code = $this->main->get_data('laboratories', ['id' => $laboratory_id], true)->identifier_code ?? 'LAB';
+
+               
+
+    //         foreach ($samples as $sample_id => $trans_details) {
+    //             $lab_sequences[$laboratory_id][$year]++;
+    //             $sequence_padded = str_pad($lab_sequences[$laboratory_id][$year], 5, '0', STR_PAD_LEFT);
+    //             $release_ref_number = "{$year}-{$lab_code}-{$sequence_padded}";
+
+    //             foreach ($trans_details as $trans_detail_id) {
+    //                 $updateData = [
+    //                     'is_released'        => 1,
+    //                     'modified_at'        => date('Y-m-d H:i:s'),
+    //                     'is_released_time'   => date('Y-m-d H:i:s'),
+    //                     'updated_by'         => $userID,
+    //                     'release_ref_number' => $release_ref_number
+    //                 ];
+
+    //                 $result_releasing = $this->main->update_data(
+    //                     'trans_details',
+    //                     $updateData,
+    //                     ['trans_detail_id' => $trans_detail_id]
+    //                 );
+
+
+    //                 if (!empty($result_releasing)) {
+    //                         $this->main->user_logs([
+    //                             'userID'       => $userID,
+    //                             'userFullName' => $info['userFullName'],
+    //                             'logTS'        => date_now(),
+    //                             'page'         => 'ReportRelease/submit_for_release',
+    //                             'logDetail'    => 'Successfully Updated Report Release ID:' . $trans_detail_id
+    //                         ]);
+
+    //                         $detail = $this->db->where('trans_detail_id', $trans_detail_id)
+    //                                         ->get('trans_details')
+    //                                         ->row_array();
+
+    //                         if (!empty($detail)) {
+    //                             $historyData = $detail;
+    //                             unset($historyData['id']);
+    //                             $historyData['trans_detail_id'] = $trans_detail_id;
+    //                             $historyData['detail_change'] = "COA RELEASED";
+    //                             $historyData['trans_detail_status_id'] = 37;
+    //                             $historyData['created_by'] = $userID;
+    //                             $historyData['created_at'] = date('Y-m-d H:i:s');
+    //                             $this->main->insert_data('trans_history', $historyData);
+
+    //                             $timestampData = [
+    //                                 'trans_detail_id'        => $trans_detail_id,
+    //                                 'trans_detail_status_id' => 37,
+    //                                 'status_id'              => 1,
+    //                                 'created_at'             => date('Y-m-d H:i:s'),
+    //                                 'created_by'             => $userID,
+    //                             ];
+    //                             $this->main->insert_data('trans_timestamps', $timestampData);
+    //                         }
+                            
+    //                 }
+                    
+
+    //                     $transHeader = $this->db
+    //                             ->select('th.trans_id, th.job_order_no, td.lab_code,th.nutritionist_id,td.ext_lab_code')
+    //                             ->from('trans_headers th')
+    //                             ->join('trans_details td', 'td.trans_id = th.trans_id')
+    //                             ->where('td.trans_detail_id', $trans_detail_id)
+    //                             ->get()
+    //                             ->row_array();
+
+                                    
+    //                     $recipient = $this->db
+    //                         ->select('n.id, n.nutritionist_name, n.email_address,')
+    //                         ->from('nutritionists n')
+    //                         ->where('n.id', $transHeader['nutritionist_id'])
+    //                         ->get()
+    //                         ->row_array();
+
+    //                         if (!empty($transHeader)) {
+                                
+    //                             $this->email_format->generateEmailNotificationByNutritionist(
+    //                                 $transHeader,
+    //                                 $trans_detail_id,
+    //                                 $recipient,
+    //                                 'Failed'
+    //                             );
+
+    //                             log_message('info', "Sent 'Failed' notification to {$recipient['email_address']} for trans_detail_id {$trans_detail_id}");
+    //                         }
+                     
+
+                        
+
+    //             }
+    //         }
+    //     }
+    //     echo json_encode([
+    //         'status'  => 'success',
+    //         'message' => 'Report Release submitted successfully.'
+    //     ]);
+    // }
 

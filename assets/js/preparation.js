@@ -586,7 +586,7 @@ $('#jobSearch').on('keyup', function() {
             card.hide();
         }
     });
-
+    
     $('#noResultsMessage').remove();
 
     if (!matchFoundOverall && value !== '') {

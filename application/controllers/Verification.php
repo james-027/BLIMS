@@ -85,6 +85,15 @@ class Verification extends CI_Controller {
             $verification_jobs[$jobId]['samples'][] = $row;
         }
 
+             foreach ($verification_jobs as $jobId => &$job) {
+            if (!empty($job['samples'])) {
+                usort($job['samples'], function($a, $b) {
+                    return strtotime($b['created_at']) - strtotime($a['created_at']); // latest first
+                });
+            }
+        }
+        unset($job); // break reference
+
         $transIds = array_keys($verification_jobs);
         $attachments = [];
         if (!empty($transIds)) {
@@ -106,7 +115,6 @@ class Verification extends CI_Controller {
         });
 
         $data['attachments'] = $attachments;
-        $data['isViewOnly'] = false;
         $data['verification_jobs'] = $verification_jobs_indexed;
         $data['content'] = $this->load->view($this->controller.'/verification_content', $data , TRUE);
         $this->load->view('admin/templates', $data);

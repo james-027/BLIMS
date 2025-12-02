@@ -73,6 +73,8 @@ class InitialPreparation extends CI_Controller {
 
             $jobs[$jobId]['samples'][] = $row;
         }
+
+        
         $transIds = array_keys($jobs);
         $attachments = [];
         if (!empty($transIds)) {

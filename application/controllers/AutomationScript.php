@@ -243,12 +243,11 @@ class AutomationScript extends CI_Controller {
                         if ($lab_row) {
                             $lab_id = $lab_row->laboratory_id;
                             $recipients = $this->db
-                            
                                 ->select('u.userID, u.userEmail, u.userFirstName, u.userLastName, u.userTypeID')
                                 ->from('users u')
                                 ->join('userslabs ul', 'ul.userID = u.userID')
                                 ->where('ul.laboratory_id', $lab_id)
-                                ->where_in('u.userTypeID', [12, 1]) 
+                                ->where_in('u.userTypeID', [17, 19,20]) 
                                 ->where('u.userEmail IS NOT NULL AND u.userEmail !=', '') 
                                 ->get()
                                 ->result_array();

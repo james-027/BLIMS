@@ -17,8 +17,8 @@ class Coa extends CI_Controller
 		$this->db_tbl = 'trans_headers';
     	$this->load->model('main_model', 'main');
     	$this->load->library('custom_lib');
-        $this->load->library('email_format');
         $this->load->library('encryption');
+        $this->load->library('Email_format');
 
     }
 
@@ -33,7 +33,6 @@ class Coa extends CI_Controller
         }
 
     }
-
 
     public function generate_produ_pdf($id = null)
     {
@@ -297,7 +296,7 @@ class Coa extends CI_Controller
                 </div>
 
             
-                <div class="references" style="margin-top:150px; font-size:12px; line-height:1.4;">
+                <div class="references" style="margin-top:220px; font-size:12px; line-height:1.4;">
                     <strong>REFERENCE/S:</strong><br>
                     '.$refbody.'
                 </div>
@@ -369,14 +368,9 @@ class Coa extends CI_Controller
                 array(0,0,0) 
             );
 
-            // Open PDF in browser
-            $dompdf->stream($data['release_ref_number'] . "_" . $data['ext_lab_code'] . ".pdf", ["Attachment" => 1]);
-
+         
+                    $dompdf->stream($data['release_ref_number'] . "_" . $data['ext_lab_code'] . ".pdf", ["Attachment" => 1]);
     }
-
-
-
-
 
 
        public function generate_mambatangan_pdf($id = null)
@@ -477,7 +471,6 @@ class Coa extends CI_Controller
 
             $html = '
             <html>
-            
             <head>
                 <style>
                     body { font-family: Arial, sans-serif; font-size: 12px; }
@@ -499,14 +492,6 @@ class Coa extends CI_Controller
                     table.no-border th {
                         border: none !important;
                     }
-                        @page {
-    margin-top: 15mm;
-    margin-bottom: 25mm;
-}
-
-@page {
-    footer: pdf_footer;
-}
                 </style>
             </head>
             <body>
@@ -609,7 +594,7 @@ class Coa extends CI_Controller
                 </div>
 
             
-                <div class="references" style="margin-top:300px; font-size:12px; line-height:1.4;">
+                <div class="references" style="margin-top:275px; font-size:12px; line-height:1.4;">
                     <strong>REFERENCE/S:</strong><br>
                     '.$refbody.'
                 </div>
@@ -637,11 +622,23 @@ class Coa extends CI_Controller
                     </tr>
                 </table>
 
-   
+                <div style="border-top:4px solid #dbb50cff; width:100%; max-width:750px; margin:10px auto;"></div>
 
-
-                
-                    <div style="border-top:4px solid #dbb50cff; width:100%; max-width:800px; margin:10px auto;"></div>
+                    <table class = "no-border"style="width:100%; max-width:750px; font-size:10px; color:#555; margin:0 auto;">
+                        <tr>
+                            <td style="text-align:left; padding:2px;">
+                                Document Code: '.PDF_DOCU_MAMBATANGAN_CODE.'
+                            </td>
+                            <td style="text-align:right; padding:2px;">
+                                Downloaded At: '.date('M d, Y H:i:s').'
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="text-align:left; padding:2px;" colspan="2">
+                                Effectivity Date: '.PDF_MAMBATANGAN_EFFECT.'
+                            </td>
+                        </tr>
+                    </table>
               
             </body>
             </html>
@@ -653,9 +650,7 @@ class Coa extends CI_Controller
 
             $canvas = $dompdf->getCanvas();
             $font = $dompdf->getFontMetrics()->getFont('Arial', 'italic');
-            $canvas->page_text(30, 810, "Document Code: " . PDF_DOCU_MAMBATANGAN_CODE, $font, 8);
-            $canvas->page_text(450, 810, "Downloaded At: " . date('M d, Y H:i:s'), $font, 8);
-            $canvas->page_text(30, 822, "Effectivity Date: " . PDF_MAMBATANGAN_EFFECT, $font, 8);
+       
             $canvas->page_text(
                 520,  
                 820,  
@@ -665,7 +660,11 @@ class Coa extends CI_Controller
                 array(0,0,0) 
             );
 
-            $dompdf->stream($data['release_ref_number'] . "_" . $data['ext_lab_code'] . ".pdf", ["Attachment" => 0]);
+            // Open PDF in browser
+           
+                    $dompdf->stream($data['release_ref_number'] . "_" . $data['ext_lab_code'] . ".pdf", ["Attachment" => 1]);
 
     }
+
+
 }

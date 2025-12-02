@@ -48,13 +48,15 @@ class Email extends CI_Controller {
                         $mail->Password   = SYS_EMAIL_PASS;
                         $mail->SMTPSecure = 'tls';
                         $mail->Port       = 587;
-
                         $mail->setFrom(SYS_EMAIL, 'Lab Information System');
                         $mail->addAddress($email['to_email']);
-
                         $mail->isHTML(true);
                         $mail->Subject = $email['subject'];
                         $mail->Body    = $body;
+
+                        if (!empty($email['attachment_path'])) {
+                            $mail->addStringAttachment(base64_decode($email['attachment_path']), 'COA_'.$email['to_name'].'.pdf');
+                        }
 
                         if ($mail->send()) {
                             echo "[".date('Y-m-d H:i:s')."] Email sent to {$email['to_email']}\n";

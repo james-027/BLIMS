@@ -21,47 +21,47 @@ $(document).ready(function(){
         }
     });
 
-const deliveryRadios = document.getElementsByName('deliveryType');
-const plateNumberGroup = document.getElementById('plateNumberGroup');
-const wayBillGroup = document.getElementById('wayBillNumber'); 
-const driverGroup = document.getElementById('driverName'); 
+    const deliveryRadios = document.getElementsByName('deliveryType');
+    const plateNumberGroup = document.getElementById('plateNumberGroup');
+    const wayBillGroup = document.getElementById('wayBillNumber'); 
+    const driverGroup = document.getElementById('driverName'); 
 
-const wayBillLabel = document.querySelector("label[for='wayBillNumber']");
-const driverLabel = document.querySelector("label[for='driverName']");
+    const wayBillLabel = document.querySelector("label[for='wayBillNumber']");
+    const driverLabel = document.querySelector("label[for='driverName']");
 
-deliveryRadios.forEach(radio => {
-    radio.addEventListener('change', function() {
-        if (this.value === 'Courier') {
-            // Show Way Bill, hide Driver & Plate Number
-            wayBillGroup.style.display = 'block';
-            wayBillLabel.style.display = 'block';
-            wayBillGroup.disabled = false; // enable for validation
+    deliveryRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'Courier') {
+                // Show Way Bill, hide Driver & Plate Number
+                wayBillGroup.style.display = 'block';
+                wayBillLabel.style.display = 'block';
+                wayBillGroup.disabled = false; // enable for validation
 
-            driverGroup.style.display = 'none';
-            driverLabel.style.display = 'none';
-            driverGroup.disabled = true; // disable hidden input
+                driverGroup.style.display = 'none';
+                driverLabel.style.display = 'none';
+                driverGroup.disabled = true; // disable hidden input
 
-            plateNumberGroup.style.display = 'none';
-        } else {
-            // Show Driver & Plate Number, hide Way Bill
-            wayBillGroup.style.display = 'none';
-            wayBillLabel.style.display = 'none';
-            wayBillGroup.disabled = true;
+                plateNumberGroup.style.display = 'none';
+            } else {
+                // Show Driver & Plate Number, hide Way Bill
+                wayBillGroup.style.display = 'none';
+                wayBillLabel.style.display = 'none';
+                wayBillGroup.disabled = true;
 
-            driverGroup.style.display = 'block';
-            driverLabel.style.display = 'block';
-            driverGroup.disabled = false;
+                driverGroup.style.display = 'block';
+                driverLabel.style.display = 'block';
+                driverGroup.disabled = false;
 
-            plateNumberGroup.style.display = 'block';
-        }
+                plateNumberGroup.style.display = 'block';
+            }
+        });
     });
-});
 
-const checkedRadio = Array.from(deliveryRadios).find(r => r.checked);
-if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
+    const checkedRadio = Array.from(deliveryRadios).find(r => r.checked);
+    if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
 
-    let labTestsCache = [];
-    let labSamplesCache = [];
+        let labTestsCache = [];
+        let labSamplesCache = [];
 
 
 
@@ -319,6 +319,7 @@ if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
         });
     });
 
+
     $('#registrationForm').on('submit', function(e) {
         e.preventDefault();
 
@@ -337,12 +338,9 @@ if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
             success: function(response) {
                 $('#loader-div').hide();
                 if (response.status === 'success') {
-                    swal("Success!", response.message, "success");
-                    setTimeout(function() {
-                        window.location.href = baseUrl + controllerName;
-                        window.location.reload();
-                         window.scrollTo(0, 0);
-                    }, 2000);
+                   swal("Success!", response.message, "success").then(() => {
+                    window.location.reload();
+                });
                 } else {
                     swal("Oops...", "Something went wrong!", "error");
                 }

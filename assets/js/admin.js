@@ -186,6 +186,39 @@ $(document).ready(function () {
     });
 
     
+
+    $('select.dynamic_dropdown_modal').each(function() {
+
+    var $select = $(this);
+    var $modalParent = $select.closest('.modal');
+
+    if ($select.find('option[value="_reset"]').length === 0) {
+        $select.prepend('<option value="_reset">Select</option>');
+    }
+
+    $select.select2({
+        placeholder: 'Select',
+        theme: 'bootstrap4',
+        sorter: data => data.sort((a, b) => {
+            if (a.id === '_reset') return -1;
+            if (b.id === '_reset') return 1;
+            return a.text.localeCompare(b.text);
+        }),
+        width: '100%',
+
+        dropdownParent: $modalParent.length 
+                        ? $modalParent 
+                        : $select.closest('.table-responsive')
+    });
+
+    $select.on('change', function() {
+        if ($(this).val() === '_reset') {
+            $(this).val('').trigger('change');
+        }
+    });
+});
+
+    
     
 
 

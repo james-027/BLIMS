@@ -32,7 +32,7 @@
 
                                 <div class="form-group">
                                     <label for="commercialFeed">Commercial Feedmill</label>
-                                    <select class="form-control" id="commercialFeed" name="commercialFeed" required
+                                    <select class="form-control " id="commercialFeed" name="commercialFeed" required
                                         disabled>
                                         <option value="">Select Feed</option>
                                     </select>
@@ -203,6 +203,7 @@
                                             <td><select name="leadTimeType[]" class="form-control" required>
                                                     <option value="">Select Lead Time</option>
                                                 </select></td>
+                                                
                                             <td class="text-center"><input type="checkbox" name="coaRequired[0]"></td>
                                             <td class="text-center">
                                                 <span class="addRow"

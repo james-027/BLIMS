@@ -38,4 +38,7 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 !/uploads/trans_attachments/.gitkeep
 
 
+/uploads/notification_attachments/*
+!/uploads/notification_attachments/.gitkeep
+
 application/application
