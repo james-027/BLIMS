@@ -178,10 +178,12 @@ class Registration extends CI_Controller {
         foreach ($verification_jobs as $jobId => &$job) {
 
             $this->db->where('trans_id', $jobId);
+            $this->db->where_not_in('test_status_id', [23, 25]);
             $total = $this->db->count_all_results('trans_details');
 
             $this->db->where('trans_id', $jobId);
             $this->db->where('is_released', 1);
+            $this->db->where_not_in('test_status_id', [23, 25]);
             $released = $this->db->count_all_results('trans_details');
 
             $job['is_all_released'] = ($total > 0 && $total == $released);
@@ -189,37 +191,49 @@ class Registration extends CI_Controller {
             if (!empty($job['samples'])) {
 
                 $labStatus = [];
+
                 foreach ($job['samples'] as $sample) {
+
+                    if (in_array($sample['test_status_id'], [23, 25])) {
+                        continue;
+                    }
+
                     $lab = $sample['lab_code'];
+
                     if (!isset($labStatus[$lab])) {
                         $labStatus[$lab] = ['total' => 0, 'released' => 0];
                     }
-                    $labStatus[$lab]['total'] += 1;
+
+                    $labStatus[$lab]['total']++;
+
                     if (!empty($sample['is_released'])) {
-                        $labStatus[$lab]['released'] += 1;
+                        $labStatus[$lab]['released']++;
                     }
                 }
 
                 foreach ($job['samples'] as &$sample) {
-                    $lab = $sample['lab_code'];
 
                     if (in_array($sample['test_status_id'], [23, 25])) {
                         $sample['replicate_disabled'] = true;
+                        continue;
+                    }
+
+                    $lab = $sample['lab_code'];
+
+                    if (isset($labStatus[$lab])) {
+                        $sample['replicate_disabled'] =
+                            ($labStatus[$lab]['total'] > 0 &&
+                            $labStatus[$lab]['total'] == $labStatus[$lab]['released']);
                     } else {
-                        if (isset($labStatus[$lab])) {
-                            $sample['replicate_disabled'] = ($labStatus[$lab]['total'] > 0 
-                                && $labStatus[$lab]['total'] == $labStatus[$lab]['released']);
-                        } else {
-                            $sample['replicate_disabled'] = false;
-                        }
+                        $sample['replicate_disabled'] = false; 
                     }
                 }
                 unset($sample);
-
                 usort($job['samples'], function($a, $b) {
                     return strtotime($b['created_at']) - strtotime($a['created_at']);
                 });
             }
+
         }
 
         unset($job);

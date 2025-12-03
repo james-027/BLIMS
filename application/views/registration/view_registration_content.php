@@ -171,7 +171,7 @@
                                                         data-trans-id="<?= $job['trans_id'] ?>"
                                                         data-detail-id="<?= $detail['trans_detail_id'] ?>"
                                                         data-lab-code="<?= $detail['lab_code'] ?>"
-                                                        <?= !empty($detail['replicate_disabled']) ? 'disabled title = "Already Released"' : '' ?>  
+                                                        <?= !empty($detail['replicate_disabled']) ? 'disabled title = ""' : '' ?>  
                                                     >
                                                         <i class="fas fa-clone" title="Replicate Sample"></i>
                                                     </button>
