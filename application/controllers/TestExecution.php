@@ -55,7 +55,10 @@ class TestExecution extends CI_Controller {
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
         $test_exec_status = 27;
         $final_prep = 26;
-        $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep); // data , TEST EXECUTION STATUS , FINAL PREP STATUS, 
+        
+        $searchValue = $this->input->get_post('search') ?? '';
+
+        $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep,null,null,$searchValue ); // data , TEST EXECUTION STATUS , FINAL PREP STATUS, 
         $jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -92,6 +95,77 @@ class TestExecution extends CI_Controller {
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 4], false, 'statusID, statDesc', 'statDesc ASC');
         $data['content'] = $this->load->view('test_execution/test_execution_content', $data , TRUE);
         $this->load->view('admin/templates', $data);
+    }
+
+       public function search_details()
+    {
+        $info = $this->custom_lib->_require_login();
+        $userID = decode($info['userID']);
+
+        $searchValue = $this->input->get_post('search') ?? '';
+
+        $theme = get_user_theme(['a.userID' => $userID], true);
+        $data['thColor'] = $theme->thColor;
+        $data['btnColor'] = $theme->btnColor;
+        $data['tableColor'] = $theme->tableColor;
+        $data['menuColor'] = $theme->menuColor;
+        $data['profile'] = $this->custom_lib->_get_profile();
+        $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+        $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
+        $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
+
+        $data['title'] = 'Result Verification';
+        $data['menu_title'] = '';
+        $data['parent_title'] = 'Transactional';
+        $data['controller'] = $this->controller;
+        $data['userID'] = $userID;
+
+        $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data, TRUE);
+
+        $test_exec_status = 27;
+        $final_prep = 26;
+        $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep,null,null,$searchValue );
+
+        $jobs = [];
+        foreach ($all_details as $row) {
+            $jobId = $row['trans_id'];
+            if (!isset($jobs[$jobId])) {
+                $jobs[$jobId] = [
+                    'job_order_no' => $row['job_order_no'],
+                    'lab_code' => $row['lab_code'],
+                    'samples' => []
+                ];
+            }
+
+            $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
+            $jobs[$jobId]['samples'][] = $row;
+        }
+
+        $transIds = array_keys($jobs);
+        $attachments = [];
+        if (!empty($transIds)) {
+            $this->db->select('trans_id, filename, filepath');
+            $this->db->from('attachments');
+            $this->db->where_in('trans_id', $transIds);
+            $result = $this->db->get()->result_array();
+            foreach ($result as $attachment) {
+                $attachments[$attachment['trans_id']][] = $attachment;
+            }
+        }
+
+        $data['jobs'] = array_values($jobs);
+        $data['attachments'] = $attachments;
+
+        $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
+        $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 4], false, 'statusID, statDesc', 'statDesc ASC');
+        $html = $this->load->view('test_execution/test_execution_container', $data, TRUE);
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'status' => 'success',
+            'html' => $html
+        ]);
+        exit;
     }
 
     public function get_logs($trans_detail_id)

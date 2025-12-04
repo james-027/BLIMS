@@ -625,7 +625,7 @@ class Main_model extends CI_Model {
         return $query->num_rows();
     }
 
-	public function get_trans_details($data, $status_id, $timestamp_from_status = null, $remark_from_status = null , $remark_from_verification = null)
+	public function get_trans_details($data, $status_id, $timestamp_from_status = null, $remark_from_status = null , $remark_from_verification = null,$searchValue )
 	{
 		$this->db->select([
 			'th.trans_id AS trans_id',
@@ -733,6 +733,18 @@ class Main_model extends CI_Model {
 			$this->db->join("($reason_join) trr", 'trr.trans_detail_id = td.trans_detail_id', 'left');
 			$this->db->join('reasons r', 'r.id = trr.reason_id', 'left');
 
+
+			    if (!empty($searchValue)) {
+				$this->db->group_start();
+				$this->db->like('th.job_order_no', $searchValue);
+				$this->db->or_like('td.lab_code', $searchValue);
+				$this->db->or_like('td.test_exec_lab_result', $searchValue);
+				$this->db->or_like('s.sample_name', $searchValue);
+				$this->db->or_like('tn.name', $searchValue);
+				$this->db->or_where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE '%{$searchValue}%'");
+			
+				$this->db->group_end();
+			}
 		
 
 		$this->db->where('td.trans_detail_status_id', $status_id);
@@ -748,6 +760,138 @@ class Main_model extends CI_Model {
 		return $this->db->get()->result_array();
 	}
 
+	public function get_trans_prep_details($data, $status_id, $timestamp_from_status = null, $remark_from_status = null , $remark_from_verification = null,$searchValue )
+	{
+		$this->db->select([
+			'th.trans_id AS trans_id',
+			'th.job_order_no',
+			'th.internal_id',
+			'th.commercial_id',
+			'td.*',
+			's.sample_name',
+			'st.sample_type_name',
+			'tp.param_name',
+			'tn.name AS laboratory_tests',
+			'sup.supplier_name',
+			'p.plate_number',
+			'b.batch_number',
+			'td.ext_lab_code AS lab_code',
+			'tr.remark AS existing_remark',
+			 'r.reason_name AS latest_reason',
+			($timestamp_from_status ? 'tt.latest_timestamp AS date_submitted' : ''),
+			($timestamp_from_status ? 'tt.date_roundoff AS date_roundoff' : ''),
+			($remark_from_verification ?'tr33.remark AS result_verification_remark' : ''),
+		]);
+		$this->db->from('trans_details td');
+		$this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
+		$this->db->join('samples s', 's.id = td.sample_id', 'left');
+		$this->db->join('sample_types st', 'st.id = td.sample_type_id', 'left');
+		$this->db->join('lab_tests lt', 'lt.test_id = td.lab_test_id AND lt.laboratory_id = th.laboratory_id', 'inner');
+		$this->db->join('test_parameters tp', 'tp.id = lt.test_param_id', 'left');
+		$this->db->join('tests t', 't.id = lt.test_id', 'left');
+		$this->db->join('test_names tn', 'tn.id = t.test_name_id', 'left');
+		$this->db->join('suppliers sup', 'sup.id = td.supplier_id', 'left');
+		$this->db->join('plate_numbers p', 'p.id = td.plate_number_id', 'left');
+		$this->db->join('batch_numbers b', 'b.id = td.batch_number_id', 'left');
+		$this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
+
+		// Lab access filter
+		if (!empty($data['lab_access'])) {
+			$labIDs = array_column($data['lab_access'], 'laboratory_id');
+			$this->db->where_in('th.laboratory_id', $labIDs);
+		} else {
+			$this->db->where('th.laboratory_id', 0);
+		}
+
+		$this->db->group_by('td.trans_detail_id');
+
+		$remark_status = $remark_from_status ?? $status_id;
+		$remark_join = "
+			SELECT tr1.trans_detail_id, tr1.remark
+			FROM trans_remarks tr1
+			INNER JOIN (
+				SELECT trans_detail_id, MAX(created_at) AS latest_created
+				FROM trans_remarks
+				WHERE trans_detail_status_id = {$remark_status}
+				GROUP BY trans_detail_id
+			) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id
+				AND tr1.created_at = tr2.latest_created
+			WHERE tr1.trans_detail_status_id = {$remark_status}
+		";
+		$this->db->join("($remark_join) tr", 'tr.trans_detail_id = td.trans_detail_id', 'left');
+		
+			if ($remark_from_verification) {
+			$remark_join_verif = "
+				SELECT tr1.trans_detail_id, tr1.remark
+				FROM trans_remarks tr1
+				INNER JOIN (
+					SELECT trans_detail_id, MAX(created_at) AS latest_created
+					FROM trans_remarks
+					WHERE trans_detail_status_id = {$remark_from_verification}
+					GROUP BY trans_detail_id
+				) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id
+					AND tr1.created_at = tr2.latest_created
+				WHERE tr1.trans_detail_status_id = {$remark_from_verification}
+			";
+			$this->db->join("($remark_join_verif) tr33", 'tr33.trans_detail_id = td.trans_detail_id', 'left');
+		}
+
+		if ($timestamp_from_status) {
+			$timestamp_join = "
+				SELECT tt1.trans_detail_id, tt1.created_at AS latest_timestamp, lead_ts_window_start AS date_roundoff
+				FROM trans_timestamps tt1
+				INNER JOIN (
+					SELECT trans_detail_id, MAX(id) AS latest_id
+					FROM trans_timestamps
+					WHERE trans_detail_status_id = {$timestamp_from_status}
+					GROUP BY trans_detail_id
+				) tt2 ON tt1.trans_detail_id = tt2.trans_detail_id 
+					AND tt1.id = tt2.latest_id
+			";
+			$this->db->join("($timestamp_join) tt", 'tt.trans_detail_id = td.trans_detail_id', 'left');
+		}
+
+		
+		
+			$reason_join = "
+				SELECT tr1.trans_detail_id, tr1.reason_id
+				FROM trans_reasons tr1
+				INNER JOIN (
+					SELECT trans_detail_id, MAX(created_at) AS latest_created
+					FROM trans_reasons
+					WHERE trans_detail_status_id = {$status_id}
+					GROUP BY trans_detail_id
+				) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id
+					AND tr1.created_at = tr2.latest_created
+				WHERE tr1.trans_detail_status_id = {$status_id}
+			";
+			$this->db->join("($reason_join) trr", 'trr.trans_detail_id = td.trans_detail_id', 'left');
+			$this->db->join('reasons r', 'r.id = trr.reason_id', 'left');
+
+
+			    if (!empty($searchValue)) {
+				$this->db->group_start();
+				$this->db->like('th.job_order_no', $searchValue);
+				$this->db->or_like('td.lab_code', $searchValue);
+				$this->db->or_like('td.test_exec_lab_result', $searchValue);
+				$this->db->or_like('s.sample_name', $searchValue);
+				$this->db->or_like('tn.name', $searchValue);
+				$this->db->group_end();
+			}
+		
+
+		$this->db->where('td.trans_detail_status_id', $status_id);
+
+		// Test status condition only for 20
+		if ($status_id == 20) {
+			$this->db->where('(td.test_status_id IS NULL OR (td.test_status_id != 25 AND td.test_status_id != 23))', null, false);
+			$this->db->order_by('th.trans_id', 'DESC');
+		} else {
+			$this->db->order_by('td.modified_at', 'DESC');
+		}
+
+		return $this->db->get()->result_array();
+	}
 
 	public function get_pdf_trans_detail($trans_detail_id) 
 	{

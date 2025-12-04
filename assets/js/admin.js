@@ -185,7 +185,6 @@ $(document).ready(function () {
         });
     });
 
-    
 
     $('select.dynamic_dropdown_modal').each(function() {
 

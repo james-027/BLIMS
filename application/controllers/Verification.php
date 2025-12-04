@@ -67,7 +67,8 @@ class Verification extends CI_Controller {
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
         $verification_status = 20;
-        $all_details = $this->main->get_trans_details($data,$verification_status); // data , VERIFICATION STATUS
+        $searchValue = "";
+        $all_details = $this->main->get_trans_details($data,$verification_status,null,null,null,$searchValue); // data , VERIFICATION STATUS
         $verification_jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -121,6 +122,72 @@ class Verification extends CI_Controller {
     }
 
 
+
+      public function search_details()
+    {
+        $info = $this->custom_lib->_require_login();
+        $userID = decode($info['userID']);
+
+        $searchValue = $this->input->get_post('search') ?? '';
+
+        $theme = get_user_theme(['a.userID' => $userID], true);
+        $data['thColor'] = $theme->thColor;
+        $data['btnColor'] = $theme->btnColor;
+        $data['tableColor'] = $theme->tableColor;
+        $data['menuColor'] = $theme->menuColor;
+        $data['profile'] = $this->custom_lib->_get_profile();
+        $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+        $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
+        $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
+        $data['controller'] = $this->controller;
+        $data['userID'] = $userID;
+
+        $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data, TRUE);
+
+        $verification_status = 20;
+        $all_details = $this->main->get_trans_prep_details($data,$verification_status,null,null,null,$searchValue); // data , VERIFICATION STATUS
+
+        $jobs = [];
+        foreach ($all_details as $row) {
+            $jobId = $row['trans_id'];
+            if (!isset($jobs[$jobId])) {
+                $jobs[$jobId] = [
+                    'trans_id' => $row['trans_id'],
+                    'job_order_no' => $row['job_order_no'],
+                    'lab_code' => $row['lab_code'],
+                    'samples' => []
+                ];
+            }
+            $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
+            $jobs[$jobId]['samples'][] = $row;
+        }
+
+        $transIds = array_keys($jobs);
+        $attachments = [];
+        if (!empty($transIds)) {
+            $this->db->select(['trans_id', 'filename', 'filepath', 'original_name']);
+            $this->db->from('attachments');
+            $this->db->where_in('trans_id', $transIds);
+            $result = $this->db->get()->result_array();
+            foreach ($result as $attachment) {
+                $attachments[$attachment['trans_id']][] = $attachment;
+            }
+        }
+
+        $data['jobs'] = array_values($jobs);
+        $data['attachments'] = $attachments;
+        $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
+        $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
+        $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
+        $html = $this->load->view('verification/verification_container', $data, TRUE);
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'status' => 'success',
+            'html' => $html
+        ]);
+        exit;
+    }
 
 
     public function submit_verification()
@@ -332,182 +399,3 @@ class Verification extends CI_Controller {
 
 }
 
-
-   // public function submit_verification()
-    // {
-    //     $info   = $this->custom_lib->_require_login();
-    //     $userID = decode($info['userID']);
-
-    //     $testStatuses = $this->input->post('test_status');
-    //     $reasons      = $this->input->post('reasons');
-    //     $remarks      = $this->input->post('remarks');
-
-    //     if (empty($testStatuses)) {
-    //         echo json_encode([
-    //             'status'  => 'error',
-    //             'message' => 'No verification data received.'
-    //         ]);
-    //         return;
-    //     }
-
-    //     foreach ($testStatuses as $trans_detail_id => $statusID) {
-    //         if (empty($statusID)) continue;
-
-    //         $reasonID = $reasons[$trans_detail_id] ?? null;
-    //         $remark   = $remarks[$trans_detail_id] ?? null;
-
-    //         $updateData = ['test_status_id' => $statusID];
-    //         if ((int)$statusID === 22) {
-    //             $updateData['trans_detail_status_id'] = 22;
-    //         }
-
-    //         $result_verification = $this->main->update_data(
-    //             'trans_details',
-    //             $updateData,
-    //             ['trans_detail_id' => $trans_detail_id]
-    //         );
-
-    //         if (!empty($result_verification)) {
-
-    //             $user_logs = [
-    //                 'userID'       => decode($info['userID']),
-    //                 'userFullName' => $info['userFullName'],
-    //                 'logTS'        => date_now(),
-    //                 'page'         => 'Verification/submit_verification',
-    //                 'logDetail'    => 'Successfully Updated Detail ID:' . $trans_detail_id
-    //             ];
-    //             $this->main->user_logs($user_logs);
-
-    //             $detail = $this->db
-    //                 ->where('trans_detail_id', $trans_detail_id)
-    //                 ->get('trans_details')
-    //                 ->row_array();
-
-    //             if (!empty($detail)) {
-    //                 $historyData = $detail;
-    //                 unset($historyData['id']); 
-    //                 $historyData['trans_detail_id'] = $trans_detail_id;
-    //                 $historyData['trans_detail_status_id'] = 20; 
-    //                 $historyData['created_by'] = $userID;
-    //                 $historyData['created_at'] = date('Y-m-d H:i:s');
-    //                 $this->main->insert_data('trans_history', $historyData);
-
-    //                 $timestampData = [
-    //                     'trans_detail_id'        => $trans_detail_id,
-    //                     'trans_detail_status_id' => 20,
-    //                     'status_id'              => 1,
-    //                     'created_at'             => date('Y-m-d H:i:s'),
-    //                     'created_by'             => $userID,
-    //                 ];
-    //                 $this->main->insert_data('trans_timestamps', $timestampData);
-    //             }
-
-    //             if (!empty($reasonID)) {
-    //                 $set = [
-    //                     'trans_detail_id'        => $trans_detail_id,
-    //                     'trans_detail_status_id' => 20,
-    //                     'reason_id'              => $reasonID,
-    //                     'created_by'             => $userID,
-    //                     'created_at'             => date('Y-m-d H:i:s'),
-    //                 ];
-    //                 $this->main->insert_data('trans_reasons', $set);
-    //             }
-
-    //             if (!empty($remark)) {
-    //                 $set = [
-    //                     'trans_detail_id'        => $trans_detail_id,
-    //                     'trans_detail_status_id' => 20,
-    //                     'remark'                 => $remark,
-    //                     'created_by'             => $userID,
-    //                     'created_at'             => date('Y-m-d H:i:s'),
-    //                 ];
-    //                 $this->main->insert_data('trans_remarks', $set);
-    //             }
-
-    //             if ((int)$statusID === 7) {
-    //                 $this->db->select('th.trans_id, th.job_order_no, td.lab_code, th.created_by, u.userEmail as requester_email, u.userFirstName, u.userLastName');
-    //                 $this->db->from('trans_headers th');
-    //                 $this->db->join('users u', 'u.userID = th.created_by', 'left');
-    //                 $this->db->join('trans_details td', 'td.trans_id = th.trans_id');
-    //                 $this->db->where('td.trans_detail_id', $trans_detail_id);
-    //                 $transHeader = $this->db->get()->row_array();
-
-    //                 $requesterName = trim("{$transHeader['userFirstName']} {$transHeader['userLastName']}") ?: 'Requester';
-
-    //                 $reason = '';
-    //                 if (!empty($reasonID)) {
-    //                     $reasonRow = $this->db->select('reason_name')->get_where('reasons', ['id' => $reasonID])->row_array();
-    //                     $reason = $reasonRow['reason_name'] ?? '';
-    //                 }
-
-    //                 $sample = $this->db->select('s.sample_name')
-    //                     ->from('trans_details td')
-    //                     ->join('samples s', 's.id = td.sample_id', 'left')
-    //                     ->where('td.trans_detail_id', $trans_detail_id)
-    //                     ->get()->row_array();
-
-    //                 $subject = "Job Order {$transHeader['job_order_no']} - On Hold Notification";
-    //                 $message = "
-    //                     <p>Dear {$requesterName},</p>
-    //                     <p>The Laboratory Code <strong>{$transHeader['lab_code']}</strong> has been placed <strong>ON HOLD</strong>.</p>
-    //                     <p><strong>Failed Sample:</strong> {$sample['sample_name']}</p>
-    //                     <p><strong>Reason:</strong> {$reason}</p>
-    //                     <p><strong>Remarks:</strong> {$remark}</p>
-    //                     <br>
-    //                     <p>Please check the system for more details.</p>
-    //                     <p>-- <br> Laboratory System Notification</p>
-    //                 ";
-
-    //                 log_message('info', 'Sending email to: ' . $transHeader['requester_email']);
-
-
-    //                 if (!empty($transHeader['requester_email'])) {
-    //                     $mail = new PHPMailer(true);
-    //                     try {
-    //                         $mail->isSMTP();
-    //                         $mail->SMTPDebug  = 0; 
-    //                         $mail->Host       = 'smtp.gmail.com';
-    //                         $mail->SMTPAuth   = true;
-    //                         $mail->Username   = SYS_EMAIL;
-    //                         $mail->Password   = SYS_EMAIL_PASS;
-    //                         $mail->SMTPSecure = 'tls';
-    //                         $mail->Port       = 587;
-
-    //                         $mail->setFrom(SYS_EMAIL, 'Lab Information System');
-    //                         $mail->addAddress($transHeader['requester_email']);
-
-    //                         $mail->isHTML(true);
-    //                         $mail->Subject = $subject;
-    //                         $mail->Body    = $message;
-
-    //                         log_message('info', "Attempting to send email to: {$transHeader['requester_email']} for Job Order: {$transHeader['job_order_no']}");
-
-    //                         if ($mail->send()) {
-    //                             log_message('info', "Email successfully sent to {$transHeader['requester_email']} for Job Order: {$transHeader['job_order_no']}");
-
-    //                             $this->main->user_logs([
-    //                                 'userID'       => $userID,
-    //                                 'userFullName' => $info['userFullName'],
-    //                                 'logTS'        => date_now(),
-    //                                 'page'         => 'Verification/submit_verification',
-    //                                 'logDetail'    => "On Hold email sent to {$transHeader['requester_email']} for Job Order: {$transHeader['job_order_no']}"
-    //                             ]);
-    //                         } else {
-    //                             log_message('error', " Email failed to send. PHPMailer Error: {$mail->ErrorInfo}");
-    //                         }
-
-    //                     } catch (\PHPMailer\PHPMailer\Exception $e) {
-    //                         log_message('error', "PHPMailer Exception for Job Order {$transHeader['job_order_no']} to {$transHeader['requester_email']}: {$e->getMessage()}");
-    //                     } catch (\Exception $e) {
-    //                         log_message('error', " General Exception for Job Order {$transHeader['job_order_no']} to {$transHeader['requester_email']}: {$e->getMessage()}");
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     echo json_encode([
-    //         'status'  => 'success',
-    //         'message' => 'Verification submitted successfully.'
-    //     ]);
-    // }

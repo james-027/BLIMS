@@ -560,43 +560,8 @@ $(document).ready(function(){
 // });
 
 
-$('#jobSearch').on('keyup', function() {
-    let value = $(this).val().toLowerCase().trim();
-    let matchFoundOverall = false; 
 
-    $('.card').each(function() {
-        let card = $(this);
-        let matchFound = false;
-        let jobOrder = card.find('.card-header h5').text().toLowerCase();
 
-        card.find('tbody tr').each(function() {
-            let rowText = $(this).text().toLowerCase();
-            if (rowText.includes(value) || jobOrder.includes(value)) {
-                $(this).show();
-                matchFound = true;
-            } else {
-                $(this).hide();
-            }
-        });
-
-        if (matchFound) {
-            card.show();
-            matchFoundOverall = true;
-        } else {
-            card.hide();
-        }
-    });
-    
-    $('#noResultsMessage').remove();
-
-    if (!matchFoundOverall && value !== '') {
-        $('.page-inner').append(`
-            <div id="noResultsMessage" class="text-center text-muted mt-4">
-                <h5><i class="fas fa-search"></i> No matching item found.</h5>
-            </div>
-        `);
-    }
-});
 
 
     $('#clearSearch').on('click', function() {
@@ -700,7 +665,83 @@ $('#jobSearch').on('keyup', function() {
     });
 
 
+$('#jobSearch').on('keyup', function() {
+    let value = $(this).val().trim();
+    let field = $('#searchField').val();
+    $.ajax({
+        url: baseUrl + controllerName + '/search_details',
+        method: 'GET',
+        data: { search: value , field : field},
+        beforeSend: function() {
+            $('#jobsContainer').html('<div class="text-center my-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+        },
+     success: function(response) {
+    if(response.status === 'success') {
+        $('#jobsContainer').html(response.html);
+        initDynamicDropdowns("#jobsContainer");
+        if ($.trim(response.html) === '') {
+            $('#jobsContainer').html(`
+                <div class="row justify-content-center mt-4">
+                    <div class="col-md-12 text-center text-muted">
+                        <i class="fas fa-search"></i> No matching item found.
+                    </div>
+                </div>
+            `);
+        }
+    } else {
+        $('#jobsContainer').html('<div class="text-center text-danger mt-4">Error fetching results</div>');
+    }
+},
+        error: function() {
+            $('#jobsContainer').html('<div class="text-center text-danger mt-4">Error fetching results</div>');
+        }
+    });
+});
 
+
+    
+function initDynamicDropdowns(container = document) {
+
+    $(container).find('select.dynamic_dropdown').each(function() {
+
+        var $select = $(this);
+
+        if ($select.hasClass('select2-hidden-accessible')) return;
+
+        var $tableWrapper = $select.closest('.table-responsive');
+
+        if ($select.find('option[value="_reset"]').length === 0) {
+            $select.prepend('<option value="_reset">Select</option>');
+        }
+
+        $select.select2({
+            placeholder: 'Select',
+            theme: 'bootstrap4',
+            sorter: data => data.sort((a, b) => {
+                if (a.id === '_reset') return -1;
+                if (b.id === '_reset') return 1;
+                return a.text.localeCompare(b.text);
+            }),
+            width: '100%',
+            dropdownParent: $tableWrapper.length ? $tableWrapper : $select.parent()
+        });
+
+        $select.on('change', function() {
+            if ($(this).val() === '_reset') {
+                $(this).val('').trigger('change');
+            }
+        });
+
+    });
+
+}
+
+$(document).ready(function () {
+    initDynamicDropdowns();
+});
+
+
+    
     
 
 

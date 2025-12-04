@@ -161,7 +161,7 @@ class Coa_lib {
         }
         $signature_html .= '</tr></table>';
 
-     $html = '
+        $html = '
                 <html>
                 <head>
                     <style>
@@ -184,6 +184,8 @@ class Coa_lib {
                         table.no-border th {
                             border: none !important;
                         }
+
+                        
                     </style>
                 </head>
                 <body>
@@ -359,8 +361,6 @@ class Coa_lib {
                                 </td>
                             </tr>
                         </table>
-
-
 
 
                 </div>

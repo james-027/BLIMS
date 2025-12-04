@@ -378,20 +378,13 @@ class Registration extends CI_Controller {
         foreach ($jobs as $jobId => &$job) {
 
             $this->db->where('trans_id', $jobId);
-            $this->db->group_start();  
             $this->db->where_not_in('test_status_id', [23, 25]);
-            $this->db->or_where('test_status_id IS NULL', null, false);
-            $this->db->group_end(); 
             $total = $this->db->count_all_results('trans_details');
 
             $this->db->where('trans_id', $jobId);
             $this->db->where('is_released', 1);
-            $this->db->group_start();  
             $this->db->where_not_in('test_status_id', [23, 25]);
-            $this->db->or_where('test_status_id IS NULL', null, false);
-            $this->db->group_end();
             $released = $this->db->count_all_results('trans_details');
-
 
             $job['is_all_released'] = ($total > 0 && $total == $released);
 
@@ -400,10 +393,7 @@ class Registration extends CI_Controller {
                 $labStatus = [];
 
                 foreach ($job['samples'] as $sample) {
-
-                    if (in_array($sample['test_status_id'], [23, 25])) {
-                        continue;
-                    }
+                    if (in_array($sample['test_status_id'], [23, 25])) continue;
 
                     $lab = $sample['lab_code'];
 
@@ -427,23 +417,16 @@ class Registration extends CI_Controller {
 
                     $lab = $sample['lab_code'];
 
-                    if (isset($labStatus[$lab])) {
-                        $sample['replicate_disabled'] =
-                            ($labStatus[$lab]['total'] > 0 &&
-                            $labStatus[$lab]['total'] == $labStatus[$lab]['released']);
-                    } else {
-                        $sample['replicate_disabled'] = false; 
-                    }
+                    $sample['replicate_disabled'] =
+                        isset($labStatus[$lab]) &&
+                        ($labStatus[$lab]['total'] == $labStatus[$lab]['released']);
                 }
-                unset($sample);
-                usort($job['samples'], function($a, $b) {
+
+                usort($job['samples'], function ($a, $b) {
                     return strtotime($b['created_at']) - strtotime($a['created_at']);
                 });
             }
-
         }
-        unset($job);
-
 
         $jobs_sorted = array_values($jobs);
 

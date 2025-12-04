@@ -51,7 +51,8 @@ class ResultVerification extends CI_Controller {
         $data_review_stat = 33;
         $test_exec_stat = 27;
         $result_veri_remark = 36;
-        $all_details = $this->main->get_trans_details($data,$result_veri_stat,$data_review_stat,$test_exec_stat,$result_veri_remark); // data , RESULT VERIFICATION STATUS , DATA REVIEW STATUS, ,TEST EXECUTION STATUS , RESULT VERIFICATINO STATUS
+        $searchValue = "";
+        $all_details = $this->main->get_trans_details($data,$result_veri_stat,$data_review_stat,$test_exec_stat,$result_veri_remark,$searchValue); // data , RESULT VERIFICATION STATUS , DATA REVIEW STATUS, ,TEST EXECUTION STATUS , RESULT VERIFICATINO STATUS
         $jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -307,6 +308,85 @@ class ResultVerification extends CI_Controller {
             'message' => 'Result Verification submitted successfully.'
         ]);
     }
+
+
+    
+    public function search_details()
+    {
+        $info = $this->custom_lib->_require_login();
+        $userID = decode($info['userID']);
+
+        $searchValue = $this->input->get_post('search') ?? '';
+
+        $theme = get_user_theme(['a.userID' => $userID], true);
+        $data['thColor'] = $theme->thColor;
+        $data['btnColor'] = $theme->btnColor;
+        $data['tableColor'] = $theme->tableColor;
+        $data['menuColor'] = $theme->menuColor;
+        $data['profile'] = $this->custom_lib->_get_profile();
+        $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
+        $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
+        $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
+
+        $data['title'] = 'Result Verification';
+        $data['menu_title'] = '';
+        $data['parent_title'] = 'Transactional';
+        $data['controller'] = $this->controller;
+        $data['userID'] = $userID;
+
+        $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data, TRUE);
+
+        $result_veri_stat = 36;
+        $data_review_stat = 33;
+        $test_exec_stat = 27;
+        $result_veri_remark = 36;
+
+        $all_details = $this->main->get_trans_details($data, $result_veri_stat, $data_review_stat, $test_exec_stat, $result_veri_remark, $searchValue);
+
+        $jobs = [];
+        foreach ($all_details as $row) {
+            $jobId = $row['trans_id'];
+            if (!isset($jobs[$jobId])) {
+                $jobs[$jobId] = [
+                    'job_order_no' => $row['job_order_no'],
+                    'lab_code' => $row['lab_code'],
+                    'samples' => []
+                ];
+            }
+
+            $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
+            $jobs[$jobId]['samples'][] = $row;
+        }
+
+        $transIds = array_keys($jobs);
+        $attachments = [];
+        if (!empty($transIds)) {
+            $this->db->select('trans_id, filename, filepath');
+            $this->db->from('attachments');
+            $this->db->where_in('trans_id', $transIds);
+            $result = $this->db->get()->result_array();
+            foreach ($result as $attachment) {
+                $attachments[$attachment['trans_id']][] = $attachment;
+            }
+        }
+
+        $data['jobs'] = array_values($jobs);
+        $data['attachments'] = $attachments;
+
+        $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
+        $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC');
+        $html = $this->load->view('result_verification/result_verification_container', $data, TRUE);
+
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'status' => 'success',
+            'html' => $html
+        ]);
+        exit;
+    }
+
+    
 
 	// END OF Result Verification CONTROLLER
 
