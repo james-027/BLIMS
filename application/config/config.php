@@ -28,21 +28,16 @@ $port = APP_PORT;
 
 
 //LOCAL
-    // if (php_sapi_name() == 'cli') {
-    //     $base_url2 = 'http://localhost:' . APP_SUB_DIR;
-    // } else {
-    //     $base_url2 = 'http://'.$_SERVER['HTTP_HOST'].APP_SUB_DIR;
+    if (php_sapi_name() == 'cli') {
+        $base_url2 = 'http://localhost:' . APP_SUB_DIR;
+    } else {
+        $base_url2 = 'http://'.$_SERVER['HTTP_HOST'].APP_SUB_DIR;
 
-    // }
+    }
 
 //TO QA SERVER
 
-    $server_private_ip = '10.2.0.57';
-    if (php_sapi_name() == 'cli') {
-        $base_url2 = 'http://localhost:' . $port;
-    } else {
-        $base_url2 = $_SERVER['HTTP_HOST'] == 'localhost' || $_SERVER['HTTP_HOST'] == 'localhost:'.$port || $_SERVER['HTTP_HOST'] == '127.0.0.1:'.$port || $_SERVER['HTTP_HOST'] == $server_private_ip.':'.$port  ? 'http://'.$_SERVER['HTTP_HOST'] : 'https://'.$_SERVER['HTTP_HOST'];
-    }
+
 
 
 $config['base_url'] = $base_url2;
