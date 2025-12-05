@@ -9,7 +9,7 @@
 
     <div class="row align-items-center justify-content-end mt-3">
             <div class="col-auto pr-1">
-        <select id="searchField" class="form-control shadow-sm">
+        <select id="searchField" class="form-control shadow-sm" style = "cursor:pointer">
             <option value="">All Fields</option>
             <option value="job_order_no">Job Order No</option>
             <option value="lab_code">Lab Code</option>

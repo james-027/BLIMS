@@ -810,3 +810,13 @@ input#jobSearch::placeholder {
   white-space: nowrap;
 }
 
+.collapse-icon {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.collapse-icon.rotated {
+    transform: rotate(180deg);
+}
+
+

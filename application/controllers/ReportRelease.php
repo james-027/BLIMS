@@ -163,6 +163,8 @@ class ReportRelease extends CI_Controller {
         $this->load->view('admin/templates', $data);
     }
 
+
+
       public function search_details()
     {
         $searchValue = $this->input->get_post('search') ?? '';
@@ -233,59 +235,59 @@ class ReportRelease extends CI_Controller {
                 ) tt2 ON tt1.id = tt2.latest_id
             ) AS tt", 'tt.trans_detail_id = td.trans_detail_id', 'left');
 
-    if (!empty($searchValue)) {
-        $this->db->group_start();
+        if (!empty($searchValue)) {
+            $this->db->group_start();
 
-        switch ($searchField) {
-            case "job_order_no":
-                $this->db->like('th.job_order_no', $searchValue);
-                break;
+            switch ($searchField) {
+                case "job_order_no":
+                    $this->db->like('th.job_order_no', $searchValue);
+                    break;
 
-            case "lab_code":
-                $this->db->like('td.ext_lab_code', $searchValue);
-                break;
+                case "lab_code":
+                    $this->db->like('td.ext_lab_code', $searchValue);
+                    break;
 
-            case "date_submitted":
-                $this->db->where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");
-                break;
+                case "date_submitted":
+                    $this->db->where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");
+                    break;
 
-            case "lab_result":
-                $this->db->like('td.test_exec_lab_result', $searchValue);
-                break;
+                case "lab_result":
+                    $this->db->like('td.test_exec_lab_result', $searchValue);
+                    break;
 
-            case "reference_no":
-                $this->db->like('td.release_ref_number', $searchValue);
-                break;
+                case "reference_no":
+                    $this->db->like('td.release_ref_number', $searchValue);
+                    break;
 
-            case "client":
-                $this->db->where("CONCAT(us.userFirstName, ' ', us.userLastName) LIKE", "%$searchValue%");
-                break;
+                case "client":
+                    $this->db->where("CONCAT(us.userFirstName, ' ', us.userLastName) LIKE", "%$searchValue%");
+                    break;
 
-            case "nutritionist":
-                $this->db->like('n.nutritionist_name', $searchValue);
-                break;
+                case "nutritionist":
+                    $this->db->like('n.nutritionist_name', $searchValue);
+                    break;
 
-            case "sample_name":
-                $this->db->like('s.sample_name', $searchValue);
-                break;
+                case "sample_name":
+                    $this->db->like('s.sample_name', $searchValue);
+                    break;
 
-            case "test_name":
-                $this->db->like('tn.name', $searchValue);
-                break;
+                case "test_name":
+                    $this->db->like('tn.name', $searchValue);
+                    break;
 
-            default:
-                $this->db->like('th.job_order_no', $searchValue);
-                $this->db->or_like('td.ext_lab_code', $searchValue);
-                $this->db->or_like('s.sample_name', $searchValue);
-                $this->db->or_like('tn.name', $searchValue);
-                $this->db->or_like('td.release_ref_number', $searchValue);
-                $this->db->or_where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");
+                default:
+                    $this->db->like('th.job_order_no', $searchValue);
+                    $this->db->or_like('td.ext_lab_code', $searchValue);
+                    $this->db->or_like('s.sample_name', $searchValue);
+                    $this->db->or_like('tn.name', $searchValue);
+                    $this->db->or_like('td.release_ref_number', $searchValue);
+                    $this->db->or_where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");
 
-                break;
+                    break;
+            }
+
+            $this->db->group_end();
         }
-
-        $this->db->group_end();
-    }
 
 
         $this->db->where('td.trans_detail_status_id', 37);

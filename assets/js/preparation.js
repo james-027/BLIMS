@@ -641,28 +641,28 @@ $(document).ready(function(){
         });
     });
 
-    document.querySelectorAll('.select-all-btn').forEach(btn => {
-        btn.addEventListener('click', function(event) {
-            event.stopPropagation(); // prevent collapse
+document.querySelector('#jobsContainer').addEventListener('click', function(event) {
+    let btn = event.target.closest('.select-all-btn'); // find button if clicked inside icon
+    if (!btn) return;
 
-            let jobId = this.dataset.job;
-            let checkboxes = document.querySelectorAll(jobId + " input[type='checkbox']");
+    event.stopPropagation(); // prevent collapse
 
-            let enabledCheckboxes = Array.from(checkboxes).filter(cb => !cb.disabled);
+    let jobId = btn.dataset.job;
+    let checkboxes = document.querySelectorAll(jobId + " input[type='checkbox']");
+    let enabledCheckboxes = Array.from(checkboxes).filter(cb => !cb.disabled);
+    let allChecked = enabledCheckboxes.every(cb => cb.checked);
 
-            let allChecked = enabledCheckboxes.every(cb => cb.checked);
+    enabledCheckboxes.forEach(cb => cb.checked = !allChecked);
 
-            enabledCheckboxes.forEach(cb => cb.checked = !allChecked);
+    if (allChecked) {
+        btn.innerHTML = '<i class="fas fa-check-square mr-1"></i> Select All';
+        btn.classList.remove("btn-success");
+    } else {
+        btn.innerHTML = '<i class="fas fa-times mr-1"></i> Unselect All';
+        btn.classList.add("btn-success");
+    }
+});
 
-            if (allChecked) {
-                this.innerHTML = '<i class="fas fa-check-square mr-1"></i> Select All';
-                this.classList.remove("btn-success");
-            } else {
-                this.innerHTML = '<i class="fas fa-times mr-1"></i> Unselect All';
-                this.classList.add("btn-success");
-            }
-        });
-    });
 
 
 $('#jobSearch').on('keyup', function() {
@@ -742,7 +742,23 @@ $(document).ready(function () {
 
 
     
-    
+
+
+// Ensure first-click works for already shown collapses
+$('#jobsContainer .collapse.show').each(function(){
+    $(this).prev('.card-header').find('.collapse-icon').addClass('rotated');
+});
+
+// Toggle icon on collapse show/hide
+$('#jobsContainer').on('show.bs.collapse', '.collapse', function () {
+    $(this).prev('.card-header').find('.collapse-icon').addClass('rotated');
+});
+
+$('#jobsContainer').on('hide.bs.collapse', '.collapse', function () {
+    $(this).prev('.card-header').find('.collapse-icon').removeClass('rotated');
+});
+
+
 
 
 });
