@@ -1314,6 +1314,7 @@ class Admin extends CI_Controller {
 			$userModKeyID = clean_data($this->input->post('key-id'));
 			$sLocID = clean_data($this->input->post('sLoc-id'));
 			$userTypeID = clean_data($this->input->post('uType-id'));
+
 			$uplineID = clean_data($this->input->post('upline-id'));
 			$agencyID = clean_data($this->input->post('agency-id'));
 			$mobileNumber = clean_data($this->input->post('mobile-number'));
@@ -14556,6 +14557,7 @@ private function _read_excel($filePath)
 
 
 			$data[] = array(
+				$r->groupName,
 				$r->testCode,
 				$r->testName,
 				$r->paramName,
@@ -14564,9 +14566,8 @@ private function _read_excel($filePath)
 				$r->sampleTypeName,
 				$r->lead_regular,
 				$r->lead_rush,
-				$r->refMethodName,
 				$r->labName,
-				$r->groupName,
+				$r->refMethodName,
 				$createdBy,
 				$createdOn,
 				$modifiedBy,
@@ -16424,7 +16425,6 @@ private function _read_excel($filePath)
 		$data['js_file'] = '';
 		$data['profile'] = $this->custom_lib->_get_profile();
 		$btnColor = get_user_theme(array('a.userID' => decode($info['userID'])), true)->btnColor;
-
 		$data['available_access'] = $this->custom_lib->_get_available_access( array('userID' => decode($info['userID'])) );
 		$module_access = $this->custom_lib->module_access('my_profile');
 		if(!$module_access->view){redirect('admin');}
@@ -16453,6 +16453,7 @@ private function _read_excel($filePath)
 		$data['content'] = $this->load->view('admin/my_profile_content', $data , TRUE);
 		$this->load->view('admin/templates', $data);
 	}
+
 
 
 

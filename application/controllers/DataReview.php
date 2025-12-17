@@ -47,13 +47,12 @@ class DataReview extends CI_Controller {
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
-        $data_review_stat = 33;
-        $test_exec_stat =27;
-        $test_exec_remark = 27;
+        $data_review_stat = 33; // DATA REVIEW STATUS
+        $test_exec_stat =27; // TEST EXECUTION STATUS
+        $test_exec_remark = 27; // TEST EXECUTION REMARK
         $searchValue = "";
-        $all_details = $this->main->get_trans_details($data,$data_review_stat,$test_exec_stat,$test_exec_remark,null,$searchValue);// data , DATA REVIEW STATUS , TEST EXECUTION STATUS, ,TEST EXECUTION STATUS ,
-
-
+        $searchField = "";
+        $all_details = $this->main->get_trans_details($data,$data_review_stat,$test_exec_stat,$test_exec_remark,null,$searchValue,$searchField);// data , DATA REVIEW STATUS , TEST EXECUTION STATUS, ,TEST EXECUTION STATUS ,
 
         $jobs = [];
         foreach ($all_details as $row) {
@@ -102,6 +101,8 @@ class DataReview extends CI_Controller {
         $userID = decode($info['userID']);
 
         $searchValue = $this->input->get_post('search') ?? '';
+        $searchField = $this->input->get_post('field') ?? '';
+
 
         $theme = get_user_theme(['a.userID' => $userID], true);
         $data['thColor'] = $theme->thColor;
@@ -121,10 +122,10 @@ class DataReview extends CI_Controller {
 
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data, TRUE);
 
-        $data_review_stat = 33;
-        $test_exec_stat =27;
-        $test_exec_remark = 27;
-        $all_details = $this->main->get_trans_details($data,$data_review_stat,$test_exec_stat,$test_exec_remark,null,$searchValue);// data , DATA REVIEW STATUS , TEST EXECUTION STATUS, ,TEST EXECUTION STATUS ,
+        $data_review_stat = 33; // DATA REVIEW STATUS
+        $test_exec_stat =27; // TEST EXECUTION STATUS
+        $test_exec_remark = 27; // TEST EXECUTION REMARK
+        $all_details = $this->main->get_trans_details($data,$data_review_stat,$test_exec_stat,$test_exec_remark,null,$searchValue,$searchField);// data , DATA REVIEW STATUS , TEST EXECUTION STATUS, ,TEST EXECUTION STATUS ,
 
         $jobs = [];
         foreach ($all_details as $row) {

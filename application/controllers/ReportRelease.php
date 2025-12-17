@@ -274,7 +274,6 @@ class ReportRelease extends CI_Controller {
                 case "test_name":
                     $this->db->like('tn.name', $searchValue);
                     break;
-
                 default:
                     $this->db->like('th.job_order_no', $searchValue);
                     $this->db->or_like('td.ext_lab_code', $searchValue);
@@ -282,7 +281,9 @@ class ReportRelease extends CI_Controller {
                     $this->db->or_like('tn.name', $searchValue);
                     $this->db->or_like('td.release_ref_number', $searchValue);
                     $this->db->or_where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");
-
+                    $this->db->or_where("CONCAT(us.userFirstName, ' ', us.userLastName) LIKE", "%$searchValue%");
+                    $this->db->or_like('n.nutritionist_name', $searchValue);
+                    $this->db->or_like('td.test_exec_lab_result', $searchValue);
                     break;
             }
 

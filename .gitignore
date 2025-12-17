@@ -42,3 +42,6 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 !/uploads/notification_attachments/.gitkeep
 
 application/application
+
+uploads/thumbnail/
+uploads/esign/

@@ -625,7 +625,7 @@ class Main_model extends CI_Model {
         return $query->num_rows();
     }
 
-	public function get_trans_details($data, $status_id, $timestamp_from_status = null, $remark_from_status = null , $remark_from_verification = null,$searchValue )
+	public function get_trans_details($data, $status_id, $timestamp_from_status = null, $remark_from_status = null , $remark_from_verification = null,$searchValue,$searchField) 
 	{
 		$this->db->select([
 			'th.trans_id AS trans_id',
@@ -734,17 +734,49 @@ class Main_model extends CI_Model {
 			$this->db->join('reasons r', 'r.id = trr.reason_id', 'left');
 
 
-			    if (!empty($searchValue)) {
-				$this->db->group_start();
-				$this->db->like('th.job_order_no', $searchValue);
-				$this->db->or_like('td.lab_code', $searchValue);
-				$this->db->or_like('td.test_exec_lab_result', $searchValue);
-				$this->db->or_like('s.sample_name', $searchValue);
-				$this->db->or_like('tn.name', $searchValue);
-				$this->db->or_where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE '%{$searchValue}%'");
+	
+
 			
-				$this->db->group_end();
-			}
+        if (!empty($searchValue)) {
+            $this->db->group_start();
+
+            switch ($searchField) {
+                case "job_order_no":
+                    $this->db->like('th.job_order_no', $searchValue);
+                    break;
+
+                case "lab_code":
+                    $this->db->like('td.ext_lab_code', $searchValue);
+                    break;
+
+                case "date_submitted":
+                    $this->db->where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");
+                    break;
+
+                case "lab_result":
+                    $this->db->like('td.test_exec_lab_result', $searchValue);
+                    break;
+
+          
+                case "sample_name":
+                    $this->db->like('s.sample_name', $searchValue);
+                    break;
+
+                case "test_name":
+                    $this->db->like('tn.name', $searchValue);
+                    break;
+                default:
+                    $this->db->like('th.job_order_no', $searchValue);
+                    $this->db->or_like('td.ext_lab_code', $searchValue);
+                    $this->db->or_like('s.sample_name', $searchValue);
+                    $this->db->or_like('tn.name', $searchValue);
+                    $this->db->or_where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");
+                    $this->db->or_like('td.test_exec_lab_result', $searchValue);
+                    break;
+            }
+
+            $this->db->group_end();
+        }
 		
 
 		$this->db->where('td.trans_detail_status_id', $status_id);
@@ -905,7 +937,6 @@ class Main_model extends CI_Model {
 			$sample_id = $result['sample_id'];
 			$trans_id = $result['trans_id'];
 
-			// Step 2: Get the latest trans_detail_id with status 37 for the same sample_id and trans_id
 			$this->db->select('trans_detail_id');
 			$this->db->from('trans_details');
 			$this->db->where('sample_id', $sample_id);
@@ -916,7 +947,6 @@ class Main_model extends CI_Model {
 
 			$target_detail_id = $latest_detail['trans_detail_id'] ?? $trans_detail_id;
 
-			// Step 3: Prepare subqueries to get latest timestamps
 			$tt_received_sub = "(SELECT t1.* 
 								FROM trans_timestamps t1
 								WHERE t1.trans_detail_status_id = 20
@@ -947,7 +977,6 @@ class Main_model extends CI_Model {
 										AND t2.trans_detail_status_id = 36
 								))";
 
-			// Step 4: Get the main data with timestamps + user info
 			$this->db->select('
 				td.*, 
 				th.*, 
@@ -956,6 +985,7 @@ class Main_model extends CI_Model {
 				tt_analyzed.created_at AS date_analyzed,
 				u_analyzed.userFirstName AS analyzed_firstname,
 				u_analyzed.userLastName AS analyzed_lastname,
+				u_analyzed.userEsign AS analyzed_userEsign,
 				prof.name AS analyzed_profession,
 				ss_prof.license_no AS license_no,
 				ss_prof.license_valid AS license_valid,
@@ -1022,7 +1052,7 @@ class Main_model extends CI_Model {
 				$lab_id = [$lab_id]; // ensure it's an array
 			}
 
-		$this->db->select('ss.*, u.userFirstName, u.userLastName, p.name AS profession_name, ut.userTypeName, ut.userTypeID');
+		$this->db->select('ss.*, u.userFirstName, u.userLastName, p.name AS profession_name, ut.userTypeName, ut.userTypeID ,u.userEsign');
 		$this->db->from('user_signatories_labs usl');              
 		$this->db->join('user_professions ss', 'ss.id = usl.user_profession_id', 'inner');
 		$this->db->join('users u', 'u.userID = ss.userID', 'left'); 

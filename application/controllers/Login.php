@@ -351,6 +351,7 @@ class Login extends CI_Controller {
 			$lastName = clean_data(strtoupper($this->input->post('user-lname')));
 			$userTitle = clean_data(strtoupper($this->input->post('user-title')));
 			$themeID = clean_data(decode($this->input->post('themeID')));
+			
 
 			
 
@@ -476,6 +477,94 @@ class Login extends CI_Controller {
 		}
 	}
 
+
+
+
+
+
+
+	public function save_esign()
+	{
+		$info = $this->custom_lib->_require_login();
+		$userID = decode($info['userID']);
+
+		// Only allow POST requests
+		if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+			echo json_encode(['success' => false, 'message' => 'Invalid request']);
+			return;
+		}
+
+		$esign = $this->input->post('userEsign');
+		if (empty($esign)) {
+			$this->session->set_flashdata('error', 'Please draw your signature before saving.');
+			redirect('admin/my_profile');
+		}
+
+		$get_user_record = $this->main->check_data('users', ['userID' => $userID], TRUE);
+		$ctr = 1;
+		if ($get_user_record['result']) {
+			$esignName = $get_user_record['info']->userEsign;
+			if ($esignName) {
+				$prevFile = decode($esignName);
+				$slice = explode(".", basename($prevFile));
+				$arr = explode("-", $slice[0]);
+				$current_ctr = isset($arr[3]) ? intval($arr[3]) : 0;
+				$ctr = $current_ctr + 1;
+			}
+		}
+
+		$real_file_name = 'ESIGN-IMG-' . $userID . '-' . $ctr . '.png';
+
+		$path = 'uploads/esign/';
+		if (!is_dir($path)) {
+			if (!mkdir($path, 0777, true)) {
+				$this->session->set_flashdata('error', 'Failed to create directory.');
+				redirect('admin/my_profile');
+			}
+		}
+
+		$encrypted_file_name = encode($real_file_name);
+
+		$encrypted_file_name = str_replace(
+			['/', '\\', ':', '*', '?', '"', '<', '>', '|', '+', '='],
+			'_',
+			$encrypted_file_name
+		) . '.png';
+
+		$data = explode(',', $esign);
+		if (!isset($data[1]) || empty($data[1])) {
+			$this->session->set_flashdata('message', '<div class="alert alert-danger">Invalid Signature Data.</div>');
+			redirect('admin/my_profile');
+		}
+
+		$decodedData = base64_decode($data[1]);
+		if ($decodedData === false) {
+			$this->session->set_flashdata('message', '<div class="alert alert-danger">Failed to decode signature.</div>');
+			
+			redirect('admin/my_profile');
+		}
+
+		$fullPath = FCPATH . $path . $encrypted_file_name;
+		if (file_put_contents($fullPath, $decodedData) === false) {
+						$this->session->set_flashdata('message', '<div class="alert alert-danger">Failed to save Signature File.</div>');
+
+			redirect('admin/my_profile');
+		}
+
+		$update_data = ['userEsign' => $encrypted_file_name];
+		$result = $this->main->update_data('users', $update_data, ['userID' => $userID]);
+
+		$msg = '';
+			if($result){
+				$msg = '<div class="alert alert-success">Your E-Signature has been updated.</div>';
+			}
+
+		$this->session->set_flashdata('message', $msg);
+		redirect('admin/my_profile');
+	}
+
+
+
 	public function add_user_rating(){
 		
 		$info = $this->_require_login();
@@ -594,7 +683,6 @@ class Login extends CI_Controller {
 
 			if(empty($error)){
 
-				
 
 				if (!empty($data['upload_data']['file_name'])) {
 

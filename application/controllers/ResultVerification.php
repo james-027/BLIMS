@@ -47,12 +47,13 @@ class ResultVerification extends CI_Controller {
         $data['controller'] = $this->controller;
         $data['userID'] = $userID;
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-        $result_veri_stat = 36;
-        $data_review_stat = 33;
-        $test_exec_stat = 27;
-        $result_veri_remark = 36;
+        $result_veri_stat = 36; // RESULT VERIFICATION STATUS
+        $data_review_stat = 33; // DATA REVIEW STATUS
+        $test_exec_stat = 27; // TEST EXECUTION STATUS
+        $result_veri_remark = 36; // RESULT VERIFICATION REMARK
         $searchValue = "";
-        $all_details = $this->main->get_trans_details($data,$result_veri_stat,$data_review_stat,$test_exec_stat,$result_veri_remark,$searchValue); // data , RESULT VERIFICATION STATUS , DATA REVIEW STATUS, ,TEST EXECUTION STATUS , RESULT VERIFICATINO STATUS
+        $searchField = "";
+        $all_details = $this->main->get_trans_details($data,$result_veri_stat,$data_review_stat,$test_exec_stat,$result_veri_remark,$searchValue,$searchField); // data , RESULT VERIFICATION STATUS , DATA REVIEW STATUS, ,TEST EXECUTION STATUS , RESULT VERIFICATINO STATUS
         $jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -317,6 +318,9 @@ class ResultVerification extends CI_Controller {
         $userID = decode($info['userID']);
 
         $searchValue = $this->input->get_post('search') ?? '';
+        $searchField = $this->input->get_post('field') ?? '';
+
+        
 
         $theme = get_user_theme(['a.userID' => $userID], true);
         $data['thColor'] = $theme->thColor;
@@ -336,12 +340,12 @@ class ResultVerification extends CI_Controller {
 
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data, TRUE);
 
-        $result_veri_stat = 36;
-        $data_review_stat = 33;
-        $test_exec_stat = 27;
-        $result_veri_remark = 36;
+        $result_veri_stat = 36; // RESULT VERIFICATION STATUS
+        $data_review_stat = 33; // DATA REVIEW STATUS
+        $test_exec_stat = 27; // TEST EXECUTION STATUS
+        $result_veri_remark = 36; // RESULT VERIFICATION REMARK
 
-        $all_details = $this->main->get_trans_details($data, $result_veri_stat, $data_review_stat, $test_exec_stat, $result_veri_remark, $searchValue);
+        $all_details = $this->main->get_trans_details($data, $result_veri_stat, $data_review_stat, $test_exec_stat, $result_veri_remark, $searchValue, $searchField);
 
         $jobs = [];
         foreach ($all_details as $row) {
@@ -355,7 +359,7 @@ class ResultVerification extends CI_Controller {
             }
 
             $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
-            $jobs[$jobId]['samples'][] = $row;
+            $jobs[$jobId]['samples'][] = $row;      
         }
 
         $transIds = array_keys($jobs);

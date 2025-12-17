@@ -19,13 +19,13 @@
                             id="tbl-lab-test">
                             <thead class="bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
                                 <tr>
+                                    <th>Laboratory Test Group</th>
                                     <th>Test Code</th>
                                     <th>Laboratory Test</th>
                                     <th>Test Parameter</th>
                                     <th>Analyst</th>
                                     <th>Test Method</th>
                                     <th>Type of Sample</th>
-                                    <th>Test Group</th>
                                     <th>Lead Time (Regular)</th>
                                     <th>Lead Time (Rush)</th>
                                     <th>Laboratory Location</th>
@@ -61,7 +61,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="labtestGroup">Select Laboratory Test Group:</label>
-                        <select name="labtestGroup" id="labtestGroup" class="form-control form-control-md" required>
+                        <select name="labtestGroup" id="add_labtestGroup" class="form-control form-control-md basic_dropdown" required>
                             <option value="">-- Select Laboratory Test Group --</option>
                             <?php foreach($lab_test_groupings as $group): ?>
                             <option value="<?= $group->id ?>"><?= $group->group_name ?></option>
@@ -70,7 +70,7 @@
                     </div>
                     <div class="form-group">
                         <label for="testCode">Select Test Code :</label>
-                        <select name="testCode" id="testCode" class="form-control form-control-md" required>
+                        <select name="testCode" id="add_testCode" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Test Code --</option>
                             <?php foreach($tests as $test): ?>
                             <option value="<?= $test->id ?>"><?= $test->test_code ?></option>
@@ -79,7 +79,7 @@
                     </div>
                     <div class="form-group">
                         <label for="paramName">Select Test Parameters :</label>
-                        <select name="paramName" id="paramName" class="form-control form-control-md" required>
+                        <select name="paramName" id="add_paramName" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Test Parameters --</option>
                             <?php foreach($test_parameters as $parameter): ?>
                             <option value="<?= $parameter->id ?>"><?= $parameter->param_name ?></option>
@@ -88,7 +88,7 @@
                     </div>
                     <div class="form-group">
                         <label for="analystName">Select Analyst :</label>
-                        <select name="analystName" id="analystName" class="form-control form-control-md" required>
+                        <select name="analystName" id="add_analystName" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Analyst --</option>
                             <?php foreach($analysts as $analyst): ?>
                             <option value="<?= $analyst->id ?>"><?= $analyst->analyst_name ?></option>
@@ -97,7 +97,7 @@
                     </div>
                     <div class="form-group">
                         <label for="methodName">Select Test Method :</label>
-                        <select name="methodName" id="methodName" class="form-control form-control-md" required>
+                        <select name="methodName" id="add_methodName" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Test Method --</option>
                             <?php foreach($test_methods as $method): ?>
                             <option value="<?= $method->id ?>"><?= $method->method_name ?></option>
@@ -106,7 +106,7 @@
                     </div>
                     <div class="form-group">
                         <label for="sampleTypes">Select Sample Types :</label>
-                        <select name="sampleTypes" id="sampleTypes" class="form-control form-control-md" required>
+                        <select name="sampleTypes" id="add_sampleTypes" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Sample Types --</option>
                             <?php foreach($sample_types as $sample_type): ?>
                             <option value="<?= $sample_type->id ?>"><?= $sample_type->sample_type_name ?></option>
@@ -115,7 +115,7 @@
                     </div>
                     <div class="form-group">
                         <label for="refMethod">Select Reference Method :</label>
-                        <select name="refMethod" id="refMethod" class="form-control form-control-md " required>
+                        <select name="refMethod" id="add_refMethod" class="form-control basic_dropdown form-control-md " required>
                             <option value="">-- Select Reference Method --</option>
                             <?php foreach($ref_methods as $ref_method): ?>
                             <option value="<?= $ref_method->id ?>"><?= $ref_method->method_name ?></option>
@@ -124,7 +124,7 @@
                     </div>
                     <div class="form-group">
                         <label for="labName">Select Laboratories :</label>
-                        <select name="labName" id="labName" class="form-control form-control-md" required>
+                        <select name="labName" id="add_labName" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Laboratories --</option>
                             <?php foreach($laboratories as $laboratory): ?>
                             <option value="<?= $laboratory->id ?>"><?= $laboratory->laboratory_name ?></option>
@@ -168,7 +168,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="labtestGroup">Select Laboratory Test Group:</label>
-                        <select name="labtestGroup" id="labtestGroup" class="form-control form-control-md" required>
+                        <select name="labtestGroup" id="labtestGroup" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Laboratory Test Group --</option>
                             <?php foreach($lab_test_groupings as $group): ?>
                             <option value="<?= $group->id ?>"><?= $group->group_name ?></option>
@@ -177,7 +177,7 @@
                     </div>
                     <div class="form-group">
                         <label for="testCode">Select Test Code :</label>
-                        <select name="testCode" id="testCode" class="form-control form-control-md" required>
+                        <select name="testCode" id="testCode" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Test Code --</option>
                             <?php foreach($tests as $test): ?>
                             <option value="<?= $test->id ?>"><?= $test->test_code ?></option>
@@ -186,7 +186,7 @@
                     </div>
                     <div class="form-group">
                         <label for="paramName">Select Test Parameters :</label>
-                        <select name="paramName" id="paramName" class="form-control form-control-md" required>
+                        <select name="paramName" id="paramName" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Test Parameters --</option>
                             <?php foreach($test_parameters as $parameter): ?>
                             <option value="<?= $parameter->id ?>"><?= $parameter->param_name ?></option>
@@ -195,7 +195,7 @@
                     </div>
                     <div class="form-group">
                         <label for="analystName">Select Analyst :</label>
-                        <select name="analystName" id="analystName" class="form-control form-control-md" required>
+                        <select name="analystName" id="analystName" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Analyst --</option>
                             <?php foreach($analysts as $analyst): ?>
                             <option value="<?= $analyst->id ?>"><?= $analyst->analyst_name ?></option>
@@ -204,7 +204,7 @@
                     </div>
                     <div class="form-group">
                         <label for="methodName">Select Test Method :</label>
-                        <select name="methodName" id="methodName" class="form-control form-control-md" required>
+                        <select name="methodName" id="methodName" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Test Method --</option>
                             <?php foreach($test_methods as $method): ?>
                             <option value="<?= $method->id ?>"><?= $method->method_name ?></option>
@@ -213,7 +213,7 @@
                     </div>
                     <div class="form-group">
                         <label for="sampleTypes">Select Sample Types :</label>
-                        <select name="sampleTypes" id="sampleTypes" class="form-control form-control-md" required>
+                        <select name="sampleTypes" id="sampleTypes" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Sample Types --</option>
                             <?php foreach($sample_types as $sample_type): ?>
                             <option value="<?= $sample_type->id ?>"><?= $sample_type->sample_type_name ?></option>
@@ -222,7 +222,7 @@
                     </div>
                     <div class="form-group">
                         <label for="refMethod">Select Reference Method :</label>
-                        <select name="refMethod" id="refMethod" class="form-control form-control-md" required>
+                        <select name="refMethod" id="refMethod" class="form-control  basic_dropdown form-control-md" required>
                             <option value="">-- Select Reference Method --</option>
                             <?php foreach($ref_methods as $ref_method): ?>
                             <option value="<?= $ref_method->id ?>"><?= $ref_method->method_name ?></option>
@@ -231,7 +231,7 @@
                     </div>
                     <div class="form-group">
                         <label for="labName">Select Laboratories :</label>
-                        <select name="labName" id="labName" class="form-control form-control-md" required>
+                        <select name="labName" id="labName" class="form-control basic_dropdown form-control-md" required>
                             <option value="">-- Select Laboratories --</option>
                             <?php foreach($laboratories as $laboratory): ?>
                             <option value="<?= $laboratory->id ?>"><?= $laboratory->laboratory_name ?></option>

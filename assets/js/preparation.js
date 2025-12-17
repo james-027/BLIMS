@@ -642,7 +642,7 @@ $(document).ready(function(){
     });
 
 document.querySelector('#jobsContainer').addEventListener('click', function(event) {
-    let btn = event.target.closest('.select-all-btn'); // find button if clicked inside icon
+    let btn = event.target.closest('.select-all-btn'); 
     if (!btn) return;
 
     event.stopPropagation(); // prevent collapse
@@ -665,98 +665,94 @@ document.querySelector('#jobsContainer').addEventListener('click', function(even
 
 
 
-$('#jobSearch').on('keyup', function() {
-    let value = $(this).val().trim();
-    let field = $('#searchField').val();
-    $.ajax({
-        url: baseUrl + controllerName + '/search_details',
-        method: 'GET',
-        data: { search: value , field : field},
-        beforeSend: function() {
-            $('#jobsContainer').html('<div class="text-center my-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
-        },
-     success: function(response) {
-    if(response.status === 'success') {
-        $('#jobsContainer').html(response.html);
-        initDynamicDropdowns("#jobsContainer");
-        if ($.trim(response.html) === '') {
-            $('#jobsContainer').html(`
-                <div class="row justify-content-center mt-4">
-                    <div class="col-md-12 text-center text-muted">
-                        <i class="fas fa-search"></i> No matching item found.
+    $('#jobSearch').on('keyup', function() {
+        let value = $(this).val().trim();
+        let field = $('#searchField').val();
+        $.ajax({
+            url: baseUrl + controllerName + '/search_details',
+            method: 'GET',
+            data: { search: value , field : field},
+            beforeSend: function() {
+                $('#jobsContainer').html('<div class="text-center my-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+            },
+        success: function(response) {
+        if(response.status === 'success') {
+            $('#jobsContainer').html(response.html);
+            initDynamicDropdowns("#jobsContainer");
+            if ($.trim(response.html) === '') {
+                $('#jobsContainer').html(`
+                    <div class="row justify-content-center mt-4">
+                        <div class="col-md-12 text-center text-muted">
+                            <i class="fas fa-search"></i> No matching item found.
+                        </div>
                     </div>
-                </div>
-            `);
-        }
-    } else {
-        $('#jobsContainer').html('<div class="text-center text-danger mt-4">Error fetching results</div>');
-    }
-},
-        error: function() {
+                `);
+            }
+        } else {
             $('#jobsContainer').html('<div class="text-center text-danger mt-4">Error fetching results</div>');
         }
-    });
-});
-
-
-    
-function initDynamicDropdowns(container = document) {
-
-    $(container).find('select.dynamic_dropdown').each(function() {
-
-        var $select = $(this);
-
-        if ($select.hasClass('select2-hidden-accessible')) return;
-
-        var $tableWrapper = $select.closest('.table-responsive');
-
-        if ($select.find('option[value="_reset"]').length === 0) {
-            $select.prepend('<option value="_reset">Select</option>');
-        }
-
-        $select.select2({
-            placeholder: 'Select',
-            theme: 'bootstrap4',
-            sorter: data => data.sort((a, b) => {
-                if (a.id === '_reset') return -1;
-                if (b.id === '_reset') return 1;
-                return a.text.localeCompare(b.text);
-            }),
-            width: '100%',
-            dropdownParent: $tableWrapper.length ? $tableWrapper : $select.parent()
-        });
-
-        $select.on('change', function() {
-            if ($(this).val() === '_reset') {
-                $(this).val('').trigger('change');
+    },
+            error: function() {
+                $('#jobsContainer').html('<div class="text-center text-danger mt-4">Error fetching results</div>');
             }
         });
-
     });
 
-}
 
-$(document).ready(function () {
-    initDynamicDropdowns();
-});
+        
+    function initDynamicDropdowns(container = document) {
+
+        $(container).find('select.dynamic_dropdown').each(function() {
+
+            var $select = $(this);
+
+            if ($select.hasClass('select2-hidden-accessible')) return;
+
+            var $tableWrapper = $select.closest('.table-responsive');
+
+            if ($select.find('option[value="_reset"]').length === 0) {
+                $select.prepend('<option value="_reset">Select</option>');
+            }
+
+            $select.select2({
+                placeholder: 'Select',
+                theme: 'bootstrap4',
+                sorter: data => data.sort((a, b) => {
+                    if (a.id === '_reset') return -1;
+                    if (b.id === '_reset') return 1;
+                    return a.text.localeCompare(b.text);
+                }),
+                width: '100%',
+                dropdownParent: $tableWrapper.length ? $tableWrapper : $select.parent()
+            });
+
+            $select.on('change', function() {
+                if ($(this).val() === '_reset') {
+                    $(this).val('').trigger('change');
+                }
+            });
+
+        });
+
+    }
+
+    $(document).ready(function () {
+        initDynamicDropdowns();
+    });
 
 
-    
 
+    $('#jobsContainer .collapse.show').each(function(){
+        $(this).prev('.card-header').find('.collapse-icon').addClass('rotated');
+    });
 
-// Ensure first-click works for already shown collapses
-$('#jobsContainer .collapse.show').each(function(){
-    $(this).prev('.card-header').find('.collapse-icon').addClass('rotated');
-});
+    $('#jobsContainer').on('show.bs.collapse', '.collapse', function () {
+        $(this).prev('.card-header').find('.collapse-icon').addClass('rotated');
+    });
 
-// Toggle icon on collapse show/hide
-$('#jobsContainer').on('show.bs.collapse', '.collapse', function () {
-    $(this).prev('.card-header').find('.collapse-icon').addClass('rotated');
-});
-
-$('#jobsContainer').on('hide.bs.collapse', '.collapse', function () {
-    $(this).prev('.card-header').find('.collapse-icon').removeClass('rotated');
-});
+    $('#jobsContainer').on('hide.bs.collapse', '.collapse', function () {
+        $(this).prev('.card-header').find('.collapse-icon').removeClass('rotated');
+    });
 
 
 

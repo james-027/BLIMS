@@ -8986,14 +8986,14 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
                 var parse_response = JSON.parse(response);
                 if(parse_response['result'] == 1){
                     $('#update-lab-test').find('#id').val(id);
-                    $('#update-lab-test').find('#labtestGroup').val(parse_response['info'].lab_test_grouping_id);
-                    $('#update-lab-test').find('#testCode').val(parse_response['info'].test_id);
-                    $('#update-lab-test').find('#methodName').val(parse_response['info'].test_method_id);
-                    $('#update-lab-test').find('#paramName').val(parse_response['info'].test_param_id);
-                    $('#update-lab-test').find('#analystName').val(parse_response['info'].analyst_id);
-                    $('#update-lab-test').find('#sampleTypes').val(parse_response['info'].sample_type_id);
-                    $('#update-lab-test').find('#refMethod').val(parse_response['info'].ref_method_id);
-                    $('#update-lab-test').find('#labName').val(parse_response['info'].laboratory_id);
+                    $('#update-lab-test').find('#labtestGroup').val(parse_response['info'].lab_test_grouping_id).trigger('change');
+                    $('#update-lab-test').find('#testCode').val(parse_response['info'].test_id).trigger('change');
+                    $('#update-lab-test').find('#methodName').val(parse_response['info'].test_method_id).trigger('change');
+                    $('#update-lab-test').find('#paramName').val(parse_response['info'].test_param_id).trigger('change');
+                    $('#update-lab-test').find('#analystName').val(parse_response['info'].analyst_id).trigger('change');
+                    $('#update-lab-test').find('#sampleTypes').val(parse_response['info'].sample_type_id).trigger('change');
+                    $('#update-lab-test').find('#refMethod').val(parse_response['info'].ref_method_id).trigger('change');
+                    $('#update-lab-test').find('#labName').val(parse_response['info'].laboratory_id).trigger('change');
                     $('#update-lab-test').find('#leadRush').val(parse_response['info'].lead_rush);
                     $('#update-lab-test').find('#leadRegular').val(parse_response['info'].lead_regular);
                     $('#modal-edit-lab-test').modal({show:true});
@@ -11065,5 +11065,29 @@ function initValidationDefaults(){
 }
 
 
-
     
+var esignCanvas = document.getElementById("esign-pad");
+
+if (esignCanvas) {
+    
+
+    var signaturePad = new SignaturePad(esignCanvas);
+    var clearBtn = document.getElementById("clearEsign");
+    clearBtn.addEventListener("click", function () {
+        signaturePad.clear();
+    });
+
+    var saveBtn = document.getElementById("saveEsignButton");
+    saveBtn.addEventListener("click", function (e) {
+
+        if (signaturePad.isEmpty()) {
+            alert("Please draw your signature before saving.");
+            e.preventDefault();
+            return false;
+        }
+
+        var dataURL = signaturePad.toDataURL("image/png");
+
+        document.getElementById("esign-data").value = dataURL;
+    });
+}

@@ -260,6 +260,8 @@ class Registration extends CI_Controller {
     public function search_details()
     {
         $searchValue = $this->input->get_post('search') ?? '';
+        $searchField = $this->input->get_post('field') ?? '';
+
 
         $info = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
@@ -336,22 +338,52 @@ class Registration extends CI_Controller {
         $this->db->where('th.created_by', $userID);
         $this->db->order_by('th.trans_id', 'DESC');
 
-    if (!empty($searchValue)) {
-        $this->db->group_start();
+        if (!empty($searchValue)) {
+            $this->db->group_start();
 
-            $this->db->or_like('th.job_order_no', $searchValue);
-            $this->db->or_like('td.ext_lab_code', $searchValue);
-            if (strtoupper($searchValue) === 'ONGOING') {
-            $this->db->or_where('stat.statDesc IS NULL', null, false);
-        } else {
-            $this->db->or_like('stat.statDesc', $searchValue);
+            switch ($searchField) {
+                case "job_order_no":
+                    $this->db->like('th.job_order_no', $searchValue);
+                    break;
+
+                case "lab_code":
+                    $this->db->like('td.ext_lab_code', $searchValue);
+                    break;
+
+                case "status":
+                    if (strtoupper($searchValue) === 'ONGOING') {
+                    $this->db->or_where('stat.statDesc IS NULL', null, false);
+                } else {
+                    $this->db->or_like('stat.statDesc', $searchValue);
+                }
+                    $this->db->or_like('tn.name', $searchValue);
+                    break;
+
+                case "sample_name":
+                    $this->db->like('s.sample_name', $searchValue);
+                    break;
+
+                case "test_name":
+                    $this->db->like('tn.name', $searchValue);
+                    break;
+                default:
+                    $this->db->like('th.job_order_no', $searchValue);
+                    $this->db->or_like('td.ext_lab_code', $searchValue);
+                    $this->db->or_like('s.sample_name', $searchValue);
+                    $this->db->or_like('tn.name', $searchValue);
+                    if (strtoupper($searchValue) === 'ONGOING') {
+                    $this->db->or_where('stat.statDesc IS NULL', null, false);
+                    } else {
+                        $this->db->or_like('stat.statDesc', $searchValue);
+                    }
+                    $this->db->or_like('tn.name', $searchValue);
+                    break;
+            }
+
+            $this->db->group_end();
         }
-            $this->db->or_like('tn.name', $searchValue);
 
-        $this->db->group_end();
-        }
-
-
+        
         $results = $this->db->get()->result_array();
 
         $jobs = [];
@@ -484,9 +516,6 @@ class Registration extends CI_Controller {
         ]);
         exit;
     }
-
-
-    
 
     public function sample_registration(){
 		$alias = $this->alias;

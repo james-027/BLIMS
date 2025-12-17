@@ -68,18 +68,17 @@
                 <?php
                 $parentLinkArray = array(
                     array('1' => 'registration'),
+                    array('1' => 'verification'),
                     array('1' => 'initialpreparation'),
                     array('1' => 'finalpreparation'),
                     array('1' => 'testexecution'),
                     array('1' => 'datareview'),
                     array('1' => 'resultverification'),
                     array('1' => 'reportrelease'),
-                    array('1' => 'verification'),
-                    array('1' => 'failedverification'),
-                    array('1' => 'cancelverification'),
                 );
                 $parentAliasArray = array(
                     'registration',
+                    'verification',
                     'initialpreparation',
                     'finalpreparation',
                     'testexecution',
@@ -88,23 +87,8 @@
                     'reportrelease',
                 );
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'prefix', 'fa-layer-group');
-
-
                     echo menu_link_to_display('registration', 'registration', null, 1);
-                    $linkArray = array(
-                                        'verification',
-                                        'failedverification',
-                                        'cancelverification'
-
-                                      );   
-                    $aliasArray = array(
-                                        'verification',
-                                        'failedverification',
-                                        'cancelverification'
-                                      );  
-                    echo menu_link_to_display($linkArray, $aliasArray, 'Verification', 1, 'complex');
-
-
+                    echo menu_link_to_display('verification', 'verification', null, 1);
                     echo menu_link_to_display('initialpreparation', 'initialpreparation', null, 1);
                     echo menu_link_to_display('finalpreparation', 'finalpreparation', null, 1);
                     echo menu_link_to_display('testexecution', 'testexecution', null, 1);

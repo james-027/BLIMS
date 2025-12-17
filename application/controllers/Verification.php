@@ -58,17 +58,18 @@ class Verification extends CI_Controller {
 
         if (!$module_access->view) { redirect('admin'); }
 
-        $data['title'] = 'Verification';
+        $data['title'] = 'Ongoing Verification';
         $data['menu_title'] = '';
-        $data['parent_title'] = 'Transactional';
+        $data['parent_title'] = 'Verification';
         $data['controller'] = $this->controller;
         $data['userID'] = $userID;
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
-        $verification_status = 20;
+        $verification_status = 20; //VERIFICATION STATUS
         $searchValue = "";
-        $all_details = $this->main->get_trans_details($data,$verification_status,null,null,null,$searchValue); // data , VERIFICATION STATUS
+        $searchField = "";
+        $all_details = $this->main->get_trans_details($data,$verification_status,null,null,null,$searchValue,$searchField); // data , VERIFICATION STATUS
         $verification_jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -129,6 +130,8 @@ class Verification extends CI_Controller {
         $userID = decode($info['userID']);
 
         $searchValue = $this->input->get_post('search') ?? '';
+        $searchField = $this->input->get_post('field') ?? '';
+
 
         $theme = get_user_theme(['a.userID' => $userID], true);
         $data['thColor'] = $theme->thColor;
@@ -144,8 +147,8 @@ class Verification extends CI_Controller {
 
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data, TRUE);
 
-        $verification_status = 20;
-        $all_details = $this->main->get_trans_prep_details($data,$verification_status,null,null,null,$searchValue); // data , VERIFICATION STATUS
+        $verification_status = 20; //VERIFICATION STATUS
+        $all_details = $this->main->get_trans_prep_details($data,$verification_status,null,null,null,$searchValue,$searchField); // data , VERIFICATION STATUS
 
         $jobs = [];
         foreach ($all_details as $row) {
@@ -386,10 +389,6 @@ class Verification extends CI_Controller {
             ]);
         }
     }
-
-
-
-
 
 
 	// END OF Verification CONTROLLER

@@ -496,43 +496,39 @@ $(document).on('click', '.replicateDetailBtn', function () {
         $('#newSampleForm').submit();
     });
 
-
-
     
-$('#jobSearch').on('keyup', function() {
-    let value = $(this).val().trim();
-
-    $.ajax({
-        url: baseUrl + controllerName + '/search_details',
-        method: 'GET',
-        data: { search: value },
-        beforeSend: function() {
-            $('#jobsContainer').html('<div class="text-center my-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
-        },
-     success: function(response) {
-    if(response.status === 'success') {
-        $('#jobsContainer').html(response.html);
-        initDynamicDropdowns("#jobsContainer");
-        if ($.trim(response.html) === '') {
-            $('#jobsContainer').html(`
-                <div class="row justify-content-center mt-4">
-                    <div class="col-md-12 text-center text-muted">
-                        <i class="fas fa-search"></i> No matching item found.
+    $('#jobSearch').on('keyup', function() {
+        let value = $(this).val().trim();
+        let field = $('#searchField').val();
+        $.ajax({
+            url: baseUrl + controllerName + '/search_details',
+            method: 'GET',
+            data: { search: value , field : field},
+            beforeSend: function() {
+                $('#jobsContainer').html('<div class="text-center my-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+            },
+        success: function(response) {
+        if(response.status === 'success') {
+            $('#jobsContainer').html(response.html);
+            initDynamicDropdowns("#jobsContainer");
+            if ($.trim(response.html) === '') {
+                $('#jobsContainer').html(`
+                    <div class="row justify-content-center mt-4">
+                        <div class="col-md-12 text-center text-muted">
+                            <i class="fas fa-search"></i> No matching item found.
+                        </div>
                     </div>
-                </div>
-            `);
-        }
-    } else {
-        $('#jobsContainer').html('<div class="text-center text-danger mt-4">Error fetching results</div>');
-        console.log('Error:', response.message);
-    }
-},
-        error: function() {
-            console.log('AJAX error occurred while searching.');
+                `);
+            }
+        } else {
             $('#jobsContainer').html('<div class="text-center text-danger mt-4">Error fetching results</div>');
         }
+    },
+            error: function() {
+                $('#jobsContainer').html('<div class="text-center text-danger mt-4">Error fetching results</div>');
+            }
+        });
     });
-});
 
 
     

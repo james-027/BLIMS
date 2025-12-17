@@ -53,12 +53,13 @@ class TestExecution extends CI_Controller {
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 3], false, 'statusID, statDesc', 'statDesc ASC');
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
-        $test_exec_status = 27;
-        $final_prep = 26;
+        $test_exec_status = 27; // TEST EXECUTION STATUS
+        $final_prep = 26; // FINAL PREP STATUS
         
-        $searchValue = $this->input->get_post('search') ?? '';
+        $searchValue = "";
+        $searchField = "";
 
-        $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep,null,null,$searchValue ); // data , TEST EXECUTION STATUS , FINAL PREP STATUS, 
+        $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep,null,null,$searchValue ,$searchField); // data , TEST EXECUTION STATUS , FINAL PREP STATUS, 
         $jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -103,6 +104,8 @@ class TestExecution extends CI_Controller {
         $userID = decode($info['userID']);
 
         $searchValue = $this->input->get_post('search') ?? '';
+        $searchField = $this->input->get_post('field') ?? '';
+
 
         $theme = get_user_theme(['a.userID' => $userID], true);
         $data['thColor'] = $theme->thColor;
@@ -121,10 +124,10 @@ class TestExecution extends CI_Controller {
         $data['userID'] = $userID;
 
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data, TRUE);
-
-        $test_exec_status = 27;
-        $final_prep = 26;
-        $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep,null,null,$searchValue );
+ 
+        $test_exec_status = 27; // TEST EXECUTION STATUS
+        $final_prep = 26; // FINAL PREP STATUS
+        $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep,null,null,$searchValue,$searchField);
 
         $jobs = [];
         foreach ($all_details as $row) {

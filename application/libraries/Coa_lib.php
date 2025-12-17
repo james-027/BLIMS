@@ -141,12 +141,44 @@ class Coa_lib {
             if ($sig['userTypeID'] == 17) $columns['signed'] = $sig;
         }
 
+        $img_height = 80; 
+
+
+        $analyst_esign_img = '';
+        if (!empty($data['analyzed_userEsign'])) {
+            $real_file_name = $data['analyzed_userEsign']; 
+            $esign_path = FCPATH . 'uploads/esign/' . $real_file_name;
+
+            if (file_exists($esign_path)) {
+                $analyst_esign_img = '<img src="' . base_url('uploads/esign/' . $real_file_name) . '" style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;">';
+            } else {
+                $analyst_esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
+            }
+        } else {
+            $analyst_esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
+        }
+
         $signature_html = '';
         foreach (['certified', 'signed'] as $role) {
-            $signature_html .= '<td style="width:33%; padding-top:40px; vertical-align:top;">';
             if (!empty($columns[$role])) {
                 $sig = $columns[$role];
+
+            $esign_img = '';
+            if (!empty($sig['userEsign'])) {
+                $real_file_name = $sig['userEsign']; 
+                $esign_path = FCPATH.'uploads/esign/'.$real_file_name;
+                if(file_exists($esign_path)){
+                    $esign_img = '<img src="'.base_url('uploads/esign/'.$real_file_name).'" style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;">';
+                } else {
+                    $esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
+                }
+            } else {
+                $esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
+            }
+
                 $signature_html .= '
+                   <td style="width:33%; padding-top:40px; vertical-align:top;">
+                        '.$esign_img.'
                     <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
                     <strong>'.strtoupper($sig['userFirstName'].' '.$sig['userLastName']).'</strong><br>
                     '.ucwords(strtolower($sig['profession_name'])).'<br>
@@ -313,7 +345,7 @@ class Coa_lib {
                     </div>
 
                 
-                    <div class="references" style="margin-top:220px; font-size:12px; line-height:1.4;">
+                    <div class="references" style="margin-top:105px; font-size:12px; line-height:1.4;">
                         <strong>REFERENCE/S:</strong><br>
                         '.$refbody.'
                     </div>
@@ -332,6 +364,7 @@ class Coa_lib {
                     <table class = "no-border"style="width:100%; margin-top:10px; font-size:12px; line-height:1.4; text-align:center; table-layout:fixed;">
                         <tr>
                             <td style="width:33%; padding-top:40px; vertical-align:top;">
+                                    '.$analyst_esign_img.'
                                 <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
                                 <strong>'.$data['analyzed_firstname'] . ' ' . $data['analyzed_lastname'].'</strong><br>
                                 '.$analyst_profession.'<br>
@@ -415,6 +448,23 @@ class Coa_lib {
             $acc3_code = 'CATO No. 550';
 
             
+     $img_height = 80; 
+
+
+        $analyst_esign_img = '';
+        if (!empty($data['analyzed_userEsign'])) {
+            $real_file_name = $data['analyzed_userEsign']; 
+            $esign_path = FCPATH . 'uploads/esign/' . $real_file_name;
+
+            if (file_exists($esign_path)) {
+                $analyst_esign_img = '<img src="' . base_url('uploads/esign/' . $real_file_name) . '" style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;">';
+            } else {
+                $analyst_esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
+            }
+        } else {
+            $analyst_esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
+        }
+
 
             $signature_html = '';
 
@@ -423,14 +473,29 @@ class Coa_lib {
 
                     $full_name = strtoupper($sig['userFirstName'].' '.$sig['userLastName']);
 
-                $profession = ucwords(strtolower($sig['profession_name']));
-                $usertypename = ucwords(strtolower($sig['userTypeName']));
+                    $profession = ucwords(strtolower($sig['profession_name']));
+                    $usertypename = ucwords(strtolower($sig['userTypeName']));
 
 
                     $valid_until = date('F d, Y', strtotime($sig['license_valid']));
 
+
+                    $esign_img = '';
+                    if (!empty($sig['userEsign'])) {
+                        $real_file_name = $sig['userEsign']; 
+                        $esign_path = FCPATH.'uploads/esign/'.$real_file_name;
+                        if(file_exists($esign_path)){
+                            $esign_img = '<img src="'.base_url('uploads/esign/'.$real_file_name).'" style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;">';
+                        } else {
+                            $esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
+                        }
+                    } else {
+                        $esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
+                    }
+
                     $signature_html .= '
                         <td style="width:33%; padding-top:40px; vertical-align:top;">
+                        '.$esign_img.'
                             <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
                             <strong>'.$full_name.'</strong><br>
                             '.$profession.'<br>
@@ -569,7 +634,7 @@ class Coa_lib {
                 </div>
 
             
-                <div class="references" style="margin-top:275px; font-size:12px; line-height:1.4;">
+                <div class="references" style="margin-top:105px; font-size:12px; line-height:1.4;">
                     <strong>REFERENCE/S:</strong><br>
                     '.$refbody.'
                 </div>
@@ -586,6 +651,8 @@ class Coa_lib {
                 <table class = "no-border"style="width:100%; margin-top:10px; font-size:12px; line-height:1.4; text-align:center; table-layout:fixed;">
                     <tr>
                         <td style="width:33%; padding-top:40px; vertical-align:top;">
+                        
+                            '.$analyst_esign_img.'
                             <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
                             <strong>'.$data['analyzed_firstname'] . ' ' . $data['analyzed_lastname'].'</strong><br>
                             '.$analyst_profession.'<br>

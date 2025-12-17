@@ -134,12 +134,20 @@ public function get_lab_access($filter)
 		$path = 'uploads/thumbnail/';
 		$path .= 'PROFPIC-IMG-'.decode($info['userID']).'/';
 		$filter = array('userID' => decode($info['userID']));
-		$check_user = $CI->main->get_data('users', $filter, true, 'profilePicName');
+		$check_user = $CI->main->get_data('users', $filter, true, 'profilePicName, userEsign');
+
+
+	
 		$profile_img_link = base_url('assets/img/undraw_profile.svg');
+		    $userEsign_link = '';
 		if ($check_user->profilePicName) {
 			$profile_img_link = base_url($path.$check_user->profilePicName);
 		}
 		
+		if ($check_user->userEsign) {
+			$userEsign_link = base_url('uploads/esign/'.$check_user->userEsign);
+		}
+
 		$filter = array('statusID'	=>	1);
 		$check_themes = $CI->main->get_data('themes', $filter, false, false, 'themeName');
 			
@@ -158,7 +166,8 @@ public function get_lab_access($filter)
 				'lastName'	=>	$info['userLastName'],
 				'userTitle'	=>	$info['userTitle'],
 				'themes'	=>	$item,
-				'profile_img_link' => $profile_img_link
+				'profile_img_link' => $profile_img_link,
+				'userEsign' => $userEsign_link
 			);
 		} else {
 			return array(
@@ -167,7 +176,8 @@ public function get_lab_access($filter)
 				'lastName'	=>	$info['userLastName'],
 				'userTitle'	=>	$info['userTitle'],
 				'themes'	=>	'',
-				'profile_img_link' => $profile_img_link
+				'profile_img_link' => $profile_img_link,
+				'userEsign' => $userEsign_link
 			);
 		}
 	}

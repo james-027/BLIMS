@@ -9,8 +9,19 @@
 
     <?php if(!empty($jobs)): ?>
 
-    <div class="row align-items-center justify-content-end mt-3">
-        <div class="col-md-4 col-sm-12">
+     <div class="row align-items-center justify-content-end mt-3">
+        <div class="col-auto pr-1">
+            <select id="searchField" class="form-control shadow-sm" style = "cursor:pointer">
+                <option value="">All Fields</option>
+                <option value="job_order_no">Job Order No</option>
+                <option value="lab_code">Lab Code</option>
+                <option value="date_submitted">Date Submitted</option>
+                <option value="lab_result">Lab Result</option>
+                <option value="sample_name">Sample Name</option>
+                <option value="test_name">Laboratory Test</option>
+            </select>
+        </div>
+        <div class="col-auto pl-1">
             <input type="text" id="jobSearch" class="form-control shadow-sm" placeholder="🔍 Search here">
         </div>
     </div>

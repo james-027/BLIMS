@@ -485,6 +485,7 @@
 	<script src="<?=base_url('assets/js/select2.js')?>"></script>
 	<script src="<?=base_url('assets/js/plugin/jquery-validation/jquery.validate.min.js')?>"></script>
 	<script src="<?=base_url('assets/js/plugin/jquery-validation/additional-methods.min.js')?>"></script>
+	<script src="<?=base_url('assets/js/plugin/signature-pad/signature_pad.umd.min.js')?>"></script>
 	<script src="<?=base_url('assets/js/admin.js?v=3.5')?>"></script>
 	<?php if (!empty($js_file)): ?>
     <script src="<?= base_url($js_file) ?>"></script>

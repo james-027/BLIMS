@@ -334,7 +334,7 @@
                     <div class="form-group">
                         <label>User Role:</label>
                         <label for="" class="input-group">
-                            <select name="uType-id" id="uType2-id" class="form-control form-control-md dynamic_dropdown uType" required="true">
+                            <select name="uType-id" id="uType2-id" class="form-control form-control-md basic_dropdown uType" required="true">
                             </select>
                         </label>
                     </div>
