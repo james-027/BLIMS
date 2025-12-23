@@ -33,7 +33,6 @@ class Coa_lib {
 
 
 
-
       private function render_pdf($html, $filename) {
         $options = new Options();
         $options->set('isRemoteEnabled', true);
@@ -46,6 +45,19 @@ class Coa_lib {
         $dompdf->stream($filename . ".pdf", ["Attachment" => true]);
     }
 
+    public function formatProfession($text) {
+        $text = preg_replace('/\s+/', ' ', trim($text));
+        
+        $text = mb_convert_case($text, MB_CASE_TITLE, "UTF-8");
+        
+        $acronyms = ['QA'];
+        foreach($acronyms as $a) {
+            $text = preg_replace('/\b'.strtolower($a).'\b/i', $a, $text);
+        }
+        
+   
+        return $text;
+    }
 
     
     
@@ -107,8 +119,8 @@ class Coa_lib {
     public function generate_pdf_produ_html($data)
     {
         $analyst_valid = date('F d, Y', strtotime($data['license_valid']));
-        $analyst_profession = ucwords(strtolower($data['analyzed_profession']));
-        $analyst_usertypename = ucwords(strtolower($data['analyzed_usertype']));
+        $analyst_profession = $this->formatProfession($data['analyzed_profession']);
+        $analyst_usertypename = $this->formatProfession($data['analyzed_usertype']);
         $lab_id = $data['laboratory_id']; 
 
         $signatories = $this->CI->main->get_lab_signatories($lab_id);
@@ -177,15 +189,22 @@ class Coa_lib {
             }
 
                 $signature_html .= '
-                   <td style="width:33%; padding-top:40px; vertical-align:top;">
+                <td style="width:33%; padding-top:25px; vertical-align:top; position:relative;">
+
+                    <div style="position:absolute; top:-30px; left:0; right:0; text-align:center;">
                         '.$esign_img.'
-                    <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
-                    <strong>'.strtoupper($sig['userFirstName'].' '.$sig['userLastName']).'</strong><br>
-                    '.ucwords(strtolower($sig['profession_name'])).'<br>
-                    '.ucwords(strtolower($sig['userTypeName'])).'<br>
-                    License No.: '.$sig['license_no'].'<br>
-                    Valid Until: '.date('F d, Y', strtotime($sig['license_valid'])).'
-                ';
+                    </div>
+
+                    <div style="margin-top:35px;">
+                        <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
+                        <strong>'.strtoupper($sig['userFirstName'].' '.$sig['userLastName']).'</strong><br>
+                        '.$this->formatProfession($sig['profession_name']).'<br>
+                        '.$this->formatProfession($sig['userTypeName']).'<br>
+                        License No.: '.$sig['license_no'].'<br>
+                        Valid Until: '.date('F d, Y', strtotime($sig['license_valid'])).'
+                    </div>
+
+                </td>';
             } else {
                 $signature_html .= '<div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div><strong>---</strong><br>---';
             }
@@ -362,18 +381,23 @@ class Coa_lib {
                     </table>
 
                     <table class = "no-border"style="width:100%; margin-top:10px; font-size:12px; line-height:1.4; text-align:center; table-layout:fixed;">
-                        <tr>
-                            <td style="width:33%; padding-top:40px; vertical-align:top;">
-                                    '.$analyst_esign_img.'
+                    <tr>
+                        <td style="width:33%; padding-top:25px; vertical-align:top; position:relative;">
+                            <div style="position:absolute; top:-30px; left:0; right:0; text-align:center;">
+                                '.$analyst_esign_img.'
+                            </div>
+                            <div style="margin-top:35px;">
                                 <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
-                                <strong>'.$data['analyzed_firstname'] . ' ' . $data['analyzed_lastname'].'</strong><br>
+                                <strong>'.$data['analyzed_firstname'].' '.$data['analyzed_lastname'].'</strong><br>
                                 '.$analyst_profession.'<br>
                                 '.$analyst_usertypename.'<br>
-                                License No.:'.$data['license_no'].'<br>
+                                License No.: '.$data['license_no'].'<br>
                                 Valid Until: '.$analyst_valid.'
-                            </td>
-                            '.$signature_html.'
-                        </tr>
+                            </div>
+                        </td>
+                        '.$signature_html.'
+
+                    </tr>
                     </table>
 
                         <div style="border-top:4px solid #dbb50cff; width:100%; max-width:750px; margin:10px auto;"></div>
@@ -404,12 +428,14 @@ class Coa_lib {
         return $html;
     }
 
+
+
     public function generate_pdf_mambatangan_html($data)
     {
         
         $analyst_valid = date('F d, Y', strtotime($data['license_valid']));
-        $analyst_profession = ucwords(strtolower($data['analyzed_profession']));
-        $analyst_usertypename = ucwords(strtolower($data['analyzed_usertype']));
+        $analyst_profession = $this->formatProfession($data['analyzed_profession']);
+        $analyst_usertypename = $this->formatProfession($data['analyzed_usertype']);
         $lab_id = $data['laboratory_id']; 
 
         $signatories = $this->CI->main->get_lab_signatories($lab_id);
@@ -447,7 +473,13 @@ class Coa_lib {
             $acc2_code = 'BAI-FL-2025-004(R)';  
             $acc3_code = 'CATO No. 550';
 
-            
+        $columns = ['certified' => null, 'signed' => null];
+        foreach ($signatories as $sig) {
+            if ($sig['userTypeID'] == 19) $columns['certified'] = $sig;
+            if ($sig['userTypeID'] == 17) $columns['signed'] = $sig;
+        }
+
+
      $img_height = 80; 
 
 
@@ -466,46 +498,47 @@ class Coa_lib {
         }
 
 
-            $signature_html = '';
+        $signature_html = '';
+        foreach (['certified', 'signed'] as $role) {
+            if (!empty($columns[$role])) {
+                $sig = $columns[$role];
 
-            if (!empty($signatories)) {
-                foreach ($signatories as $sig) {
-
-                    $full_name = strtoupper($sig['userFirstName'].' '.$sig['userLastName']);
-
-                    $profession = ucwords(strtolower($sig['profession_name']));
-                    $usertypename = ucwords(strtolower($sig['userTypeName']));
-
-
-                    $valid_until = date('F d, Y', strtotime($sig['license_valid']));
-
-
-                    $esign_img = '';
-                    if (!empty($sig['userEsign'])) {
-                        $real_file_name = $sig['userEsign']; 
-                        $esign_path = FCPATH.'uploads/esign/'.$real_file_name;
-                        if(file_exists($esign_path)){
-                            $esign_img = '<img src="'.base_url('uploads/esign/'.$real_file_name).'" style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;">';
-                        } else {
-                            $esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
-                        }
-                    } else {
-                        $esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
-                    }
-
-                    $signature_html .= '
-                        <td style="width:33%; padding-top:40px; vertical-align:top;">
-                        '.$esign_img.'
-                            <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
-                            <strong>'.$full_name.'</strong><br>
-                            '.$profession.'<br>
-                            '.$usertypename.'<br>
-                            License No.: '.$sig['license_no'].'<br>
-                            Valid Until: '.$valid_until.'
-                        </td>
-                    ';
+            $esign_img = '';
+            if (!empty($sig['userEsign'])) {
+                $real_file_name = $sig['userEsign']; 
+                $esign_path = FCPATH.'uploads/esign/'.$real_file_name;
+                if(file_exists($esign_path)){
+                    $esign_img = '<img src="'.base_url('uploads/esign/'.$real_file_name).'" style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;">';
+                } else {
+                    $esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
                 }
+            } else {
+                $esign_img = '<div style="height:'.$img_height.'px; display:block; margin:0 auto 6px auto;"></div>';
             }
+
+                $signature_html .= '
+                <td style="width:33%; padding-top:25px; vertical-align:top; position:relative;">
+
+                    <div style="position:absolute; top:-30px; left:0; right:0; text-align:center;">
+                        '.$esign_img.'
+                    </div>
+
+                    <div style="margin-top:35px;">
+                        <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
+                        <strong>'.strtoupper($sig['userFirstName'].' '.$sig['userLastName']).'</strong><br>
+                        '.$this->formatProfession($sig['profession_name']).'<br>
+                        '.$this->formatProfession($sig['userTypeName']).'<br>
+                        License No.: '.$sig['license_no'].'<br>
+                        Valid Until: '.date('F d, Y', strtotime($sig['license_valid'])).'
+                    </div>
+
+                </td>';
+            } else {
+                $signature_html .= '<div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div><strong>---</strong><br>---';
+            }
+            $signature_html .= '</td>';
+        }
+        $signature_html .= '</tr></table>';
 
 
 
@@ -639,29 +672,38 @@ class Coa_lib {
                     '.$refbody.'
                 </div>
 
-                <table class = "no-border"style="width:100%;  font-size:12px; line-height:1.4; text-align:center; table-layout:fixed;">
+                <table class = "no-border"style="width:100%;  font-size:12px; line-height:0.4; text-align:center; table-layout:fixed;">
                 <tr>
                 <td> Analyzed by:
                 </td>
                 <td> Certified True and Correct:
                 </td>
+                <td> Signed for the Company by:
+                </td>
                 </tr>
                 </table>
 
                 <table class = "no-border"style="width:100%; margin-top:10px; font-size:12px; line-height:1.4; text-align:center; table-layout:fixed;">
+                
                     <tr>
-                        <td style="width:33%; padding-top:40px; vertical-align:top;">
-                        
-                            '.$analyst_esign_img.'
-                            <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
-                            <strong>'.$data['analyzed_firstname'] . ' ' . $data['analyzed_lastname'].'</strong><br>
-                            '.$analyst_profession.'<br>
-                            '.$analyst_usertypename.'<br>
-                            License No.:'.$data['license_no'].'<br>
-                            Valid Until: '.$analyst_valid.'
+                        <td style="width:33%; padding-top:25px; vertical-align:top; position:relative;">
+                            <div style="position:absolute; top:-30px; left:0; right:0; text-align:center;">
+                                '.$analyst_esign_img.'
+                            </div>
+                            <div style="margin-top:35px;">
+                                <div style="border-top:1px solid #000; width:80%; margin:0 auto 6px auto;"></div>
+                                <strong>'.$data['analyzed_firstname'].' '.$data['analyzed_lastname'].'</strong><br>
+                                '.$analyst_profession.'<br>
+                                '.$analyst_usertypename.'<br>
+                                License No.: '.$data['license_no'].'<br>
+                                Valid Until: '.$analyst_valid.'
+                            </div>
                         </td>
                         '.$signature_html.'
+
                     </tr>
+
+
                 </table>
 
                 <div style="border-top:4px solid #dbb50cff; width:100%; max-width:750px; margin:10px auto;"></div>

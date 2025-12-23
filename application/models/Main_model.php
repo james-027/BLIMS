@@ -1043,15 +1043,11 @@ class Main_model extends CI_Model {
 		return $this->db->get()->result_array();
 	}
 
-
-
-
 	public function get_lab_signatories($lab_id)
 	{
 		  if (!is_array($lab_id)) {
 				$lab_id = [$lab_id]; // ensure it's an array
 			}
-
 		$this->db->select('ss.*, u.userFirstName, u.userLastName, p.name AS profession_name, ut.userTypeName, ut.userTypeID ,u.userEsign');
 		$this->db->from('user_signatories_labs usl');              
 		$this->db->join('user_professions ss', 'ss.id = usl.user_profession_id', 'inner');
@@ -1060,7 +1056,6 @@ class Main_model extends CI_Model {
 		$this->db->join('usertype ut', 'ut.userTypeID = u.userTypeID', 'left'); 
 		$this->db->where_in('usl.laboratory_id', $lab_id);             
 		$this->db->order_by('ss.id', 'ASC');
-
 		return $this->db->get()->result_array();
 	}
 

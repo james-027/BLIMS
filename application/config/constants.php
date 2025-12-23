@@ -93,18 +93,31 @@ define('APP_NAME', 'apps');
 
 //LOCAL DEVELOPMENT
 
-define('APP_SESS_NAME', 'crish-sys-sess');
-define('APP_SESS_COOKIE_NAME', 'crishsysmgmt_session');
-define('APP_SESS_DIR', 'application/crish-sys-sess');
-define('APP_PORT', 718);
-define('APP_SUB_DIR', '/blims');
+// define('APP_SESS_NAME', 'crish-sys-sess');
+// define('APP_SESS_COOKIE_NAME', 'crishsysmgmt_session');
+// define('APP_SESS_DIR', 'application/crish-sys-sess');
+// define('APP_PORT', 718);
+// define('APP_SUB_DIR', '/blims');
+
+// define('DB_ONE', 'blims');
+// define('DB_TWO', 'blims_user_logs');
+// define('DB_HOSTNAME', 'localhost');
+// define('DB_UNAME', 'root');
+// define('DB_PASS', '');
+
+//QA AND PRODUCTION SERVER
+
+define('APP_SESS_NAME', 'blims-sys-sess');
+define('APP_SESS_COOKIE_NAME', 'blimssysmgmt_session');
+define('APP_SESS_DIR', 'application\crish-sys-sess');
+define('APP_PORT', 8085);
+define('APP_SUB_DIR', '/blims_fmlab');
 
 define('DB_ONE', 'blims');
 define('DB_TWO', 'blims_user_logs');
-define('DB_HOSTNAME', 'localhost');
-define('DB_UNAME', 'root');
-define('DB_PASS', '');
-
+define('DB_HOSTNAME', '10.2.0.57');
+define('DB_UNAME', 'blims_user');
+define('DB_PASS', 'enf4s3?S');
 
 
 
