@@ -15,6 +15,7 @@ class InitialPreparation extends CI_Controller {
 
 		$this->controller = strtolower(__CLASS__);
 		$this->db_tbl = 'trans_headers';
+        $this->alias = 'initialpreparation';
     	$this->load->model('main_model', 'main');
     	$this->load->library('custom_lib');
 
@@ -31,7 +32,7 @@ class InitialPreparation extends CI_Controller {
 
     public function index() 
     {
-
+         $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
 
         $data['js_file'] = 'assets/js/preparation.js?v=2.0';
@@ -45,8 +46,9 @@ class InitialPreparation extends CI_Controller {
 
         $userID = decode($info['userID']);
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
+        $module_access = $this->custom_lib->module_access($alias);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
-
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['title'] = 'Initial Preparation';
         $data['menu_title'] = '';
         $data['parent_title'] = 'Transactional';
@@ -99,6 +101,7 @@ class InitialPreparation extends CI_Controller {
  
     public function search_details()
     {
+        $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
 
@@ -115,7 +118,8 @@ class InitialPreparation extends CI_Controller {
         $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
-
+        $module_access = $this->custom_lib->module_access($alias);
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['title'] = 'Result Verification';
         $data['menu_title'] = '';
         $data['parent_title'] = 'Transactional';

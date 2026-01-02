@@ -5,16 +5,22 @@ function toggleReason(statusSelect) {
     const reasonSelect = $(statusSelect.dataset.target);
     const selectedText = statusSelect.options[statusSelect.selectedIndex].text.toLowerCase();
 
-    const $row = $(statusSelect).closest('tr');
+    const canModify = reasonSelect.attr('data-can-modify') === '1';
+
+    if (!canModify) {
+        reasonSelect.prop('disabled', true).trigger('change');
+        return;
+    }
+
     if (selectedText === 'passed') {
         reasonSelect.prop('disabled', true)
                     .val('')
                     .trigger('change');
-
     } else {
         reasonSelect.prop('disabled', false);
     }
 }
+
 
 
     $('.test-status-select').each(function() {

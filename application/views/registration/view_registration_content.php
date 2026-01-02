@@ -6,17 +6,14 @@
 
 <div class="page-inner animated fadeInRightBig">
     <?=$breadcrumbs?>
-
     <div class="row align-items-center justify-content-between mt-3">
-        <?php if (!empty($new_button)): ?>
         <div class="col-md-4 col-sm-12 mb-2 mb-md-0 pl-3">
-
-            <button type="button" id="add-registration" class="btn btn-primary shadow-sm">
-                <i class="fas fa-plus-circle mr-1"></i> Add Registration
-            </button>
-
+            <?php if (!empty($new_button)): ?>
+                <button type="button" id="add-registration" class="btn btn-primary shadow-sm">
+                    <i class="fas fa-plus-circle mr-1"></i> Add Registration
+                </button>
+            <?php endif; ?>
         </div>
-        <?php endif; ?>
 
           <div class="row align-items-center justify-content-end mt-3">
         <div class="col-auto pr-1">
@@ -24,7 +21,11 @@
                 <option value="">All Fields</option>
                 <option value="job_order_no">Job Order No</option>
                 <option value="lab_code">Lab Code</option>
-                <option value="status">Status</option>
+                <option value="date_submitted">Date Submitted</option>
+                <option value="lab_result">Lab Result</option>
+                <option value="reference_no">Reference Number</option>
+                <option value="client">Client</option>
+                <option value="nutritionist">Nutritionist</option>
                 <option value="sample_name">Sample Name</option>
                 <option value="test_name">Laboratory Test</option>
             </select>

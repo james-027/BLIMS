@@ -88,7 +88,7 @@
                                                             name="prep_verifications[<?= $detail['trans_detail_id'] ?>]"
                                                             class="form-control form-control-sm verification-select dynamic_dropdown status-zfix"
                                                             data-target="#prepverification-<?= $detail['trans_detail_id'] ?>"
-                                                            required>
+                                                              <?= empty($can_modify) ? 'disabled' : '' ?> required>
                                                             <option value="">Select Verification</option>
                                                             <?php foreach($prep_verifications as $prep_verification): ?>
                                                             <option value="<?= $prep_verification->statusID ?>"
@@ -97,13 +97,18 @@
                                                             </option>
                                                             <?php endforeach; ?>
                                                         </select>
+                                                            <?php if (empty($can_modify)): ?>
+                                                   <input type="hidden"
+                                                       name="prepverification[<?= $detail['trans_detail_id'] ?>]"
+                                                       value="<?= $detail['prep_verification_status_id'] ?>">
+                                                   <?php endif; ?>
                                                     </td>
 
                                                     <td class="align-middle">
                                                         <input type="text"
                                                             name="remarks[<?= $detail['trans_detail_id'] ?>]"
                                                             class="form-control form-control-sm"
-                                                            value="<?= htmlspecialchars($detail['existing_remark'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                                            value="<?= htmlspecialchars($detail['existing_remark'] ?? '', ENT_QUOTES, 'UTF-8') ?>"  <?= empty($can_modify) ? 'disabled' : '' ?> required>
                                                     </td>
 
 

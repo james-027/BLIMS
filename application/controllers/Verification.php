@@ -57,7 +57,7 @@ class Verification extends CI_Controller {
         $data['new_button'] .= '</div>';
 
         if (!$module_access->view) { redirect('admin'); }
-
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['title'] = 'Ongoing Verification';
         $data['menu_title'] = '';
         $data['parent_title'] = 'Verification';
@@ -126,9 +126,10 @@ class Verification extends CI_Controller {
 
       public function search_details()
     {
+        $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
-
+        
         $searchValue = $this->input->get_post('search') ?? '';
         $searchField = $this->input->get_post('field') ?? '';
 
@@ -142,6 +143,8 @@ class Verification extends CI_Controller {
         $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
+        $module_access = $this->custom_lib->module_access($alias);
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['controller'] = $this->controller;
         $data['userID'] = $userID;
 

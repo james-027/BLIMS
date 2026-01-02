@@ -12,6 +12,8 @@ class ResultVerification extends CI_Controller {
     	$this->load->model('main_model', 'main');
     	$this->load->library('custom_lib');
         $this->load->library('email_format');
+          $this->alias = 'resultverification';
+
 
     }
 
@@ -26,6 +28,7 @@ class ResultVerification extends CI_Controller {
 
     public function index() 
     {
+         $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
         $data['js_file'] = 'assets/js/preparation.js?v=2.0';
         $data['profile'] = $this->custom_lib->_get_profile();
@@ -39,6 +42,8 @@ class ResultVerification extends CI_Controller {
 
         $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
+        $module_access = $this->custom_lib->module_access($alias);
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
 
         $data['title'] = 'Result Verification';
@@ -275,7 +280,7 @@ class ResultVerification extends CI_Controller {
 
                         if (!empty($recipient)) {
                             $transHeader = $this->db
-                                ->select('th.trans_id, th.job_order_no, td.lab_code')
+                                ->select('th.trans_id, th.job_order_no, td.ext_lab_code')
                                 ->from('trans_headers th')
                                 ->join('trans_details td', 'td.trans_id = th.trans_id')
                                 ->where('td.trans_detail_id', $trans_detail_id)
@@ -314,6 +319,7 @@ class ResultVerification extends CI_Controller {
     
     public function search_details()
     {
+         $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
 
@@ -331,7 +337,8 @@ class ResultVerification extends CI_Controller {
         $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
-
+        $module_access = $this->custom_lib->module_access($alias);
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['title'] = 'Result Verification';
         $data['menu_title'] = '';
         $data['parent_title'] = 'Transactional';

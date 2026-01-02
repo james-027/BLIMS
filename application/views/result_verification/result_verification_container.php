@@ -1,102 +1,98 @@
     <?php foreach($jobs as $jobIndex => $job): ?>
-                <div class="row justify-content-center mt-4">
-                    <div class="col-md-12">
-                        <div class="card shadow-sm mb-3">
-                            <div class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>"
-                                data-toggle="collapse" data-target="#job-<?= $jobIndex ?>" aria-expanded="true"
-                                style="cursor:pointer;">
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>" data-toggle="collapse"
+                    data-target="#job-<?= $jobIndex ?>" aria-expanded="true" style="cursor:pointer;">
 
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <h5 class="mb-0">
-                                        Job Order No:
-                                        <span class="text-white font-weight-bold"><?= $job['job_order_no'] ?></span>
-                                    </h5>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h5 class="mb-0">
+                            Job Order No:
+                            <span class="text-white font-weight-bold"><?= $job['job_order_no'] ?></span>
+                        </h5>
 
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge badge-light mr-2">Samples:
-                                            <?= count($job['samples'] ?? []) ?></span>
-                                        <i class="fas fa-chevron-down collapse-icon"></i>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge badge-light mr-2">Samples:
+                                <?= count($job['samples'] ?? []) ?></span>
+                            <i class="fas fa-chevron-down collapse-icon"></i>
+                        </div>
+                    </div>
+                </div>
 
-                            <div id="job-<?= $jobIndex ?>" class="collapse show">
-                                <div class="card-body p-0">
-                                    <div class="verification-section">
-                                        <div class="table-responsive">
-                                            <table
-                                                class="table table-bordered table-hover table-striped mb-0 result_verification">
-                                                <thead>
-                                                    <tr>
-                                                        <th colspan="6"></th>
-                                                        <th colspan="3" class="text-center bg-light" title="Test Execution">
-                                                            Test
-                                                            Execution</th>
-                                                        <th colspan="1" class="text-center bg-light" title="Data Review">
-                                                            Data
-                                                            Review</th>
-                                                        <th colspan="2" class="text-center bg-light"
-                                                            title="Result Verification">Result Verification</th>
-                                                    </tr>
-                                                    <tr>
-                                                        <th rowspan="2" class="col-no" title="No.">No.</th>
-                                                        <th rowspan="2" title="Date Submitted">Date Submitted</th>
-                                                        <th rowspan="2" style="width:250px;" title="Laboratory Code">
-                                                            Laboratory
-                                                            Code</th>
-                                                        <th rowspan="2" title="Sample Name">Sample Name</th>
-                                                        <th rowspan="2" title="Laboratory Tests">Laboratory Tests</th>
-                                                        <th rowspan="2" class="col-lead-time" title="Lead Time">Lead Time
-                                                        </th>
-                                                        <th title="Test Execution Status">Status</th>
-                                                        <th title="Laboratory Result">Lab Result</th>
-                                                        <th style="width:200px;" title="Remarks for Test Execution">Remarks
-                                                        </th>
-                                                        <th title="Data Review Verification">Review Verification</th>
-                                                        <th title="Final Test Result">Test Result</th>
-                                                        <th style="width:300px;" title="Remarks for Result Verification">
-                                                            Remarks
-                                                        </th>
-                                                    </tr>
+                <div id="job-<?= $jobIndex ?>" class="collapse show">
+                    <div class="card-body p-0">
+                        <div class="verification-section">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-striped mb-0 result_verification">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="6"></th>
+                                            <th colspan="3" class="text-center bg-light" title="Test Execution">
+                                                Test
+                                                Execution</th>
+                                            <th colspan="1" class="text-center bg-light" title="Data Review">
+                                                Data
+                                                Review</th>
+                                            <th colspan="2" class="text-center bg-light" title="Result Verification">
+                                                Result Verification</th>
+                                        </tr>
+                                        <tr>
+                                            <th rowspan="2" class="col-no" title="No.">No.</th>
+                                            <th rowspan="2" title="Date Submitted">Date Submitted</th>
+                                            <th rowspan="2" style="width:250px;" title="Laboratory Code">
+                                                Laboratory
+                                                Code</th>
+                                            <th rowspan="2" title="Sample Name">Sample Name</th>
+                                            <th rowspan="2" title="Laboratory Tests">Laboratory Tests</th>
+                                            <th rowspan="2" class="col-lead-time" title="Lead Time">Lead Time
+                                            </th>
+                                            <th title="Test Execution Status">Status</th>
+                                            <th title="Laboratory Result">Lab Result</th>
+                                            <th style="width:200px;" title="Remarks for Test Execution">Remarks
+                                            </th>
+                                            <th title="Data Review Verification">Review Verification</th>
+                                            <th title="Final Test Result">Test Result</th>
+                                            <th style="width:300px;" title="Remarks for Result Verification">
+                                                Remarks
+                                            </th>
+                                        </tr>
 
-                                                </thead>
+                                    </thead>
 
-                                                <tbody>
-                                                    <?php if (!empty($job['samples'])): ?>
-                                                    <?php $itemNo = 1; ?>
-                                                    <?php foreach ($job['samples'] as $detail): ?>
-                                                    <?php
+                                    <tbody>
+                                        <?php if (!empty($job['samples'])): ?>
+                                        <?php $itemNo = 1; ?>
+                                        <?php foreach ($job['samples'] as $detail): ?>
+                                        <?php
                                                         $selectedReason = $this->main->get_data('trans_reasons', ['trans_detail_id' => $detail['trans_detail_id']], true);
                                                     ?>
-                                                    <tr>
-                                                        <td class="text-center align-middle"><?= $itemNo++ ?></td>
-                                                        <td class="align-middle">
-                                                            <?php if (!empty($detail['date_submitted'])): ?>
-                                                            <?= date('F d, Y', strtotime($detail['date_submitted'])) ?>
-                                                            <input type="hidden"
-                                                                name="date_submitted[<?= $detail['trans_detail_id'] ?>]"
-                                                                value="<?= htmlspecialchars($detail['date_submitted']) ?>">
-                                                            <?php else: ?>
-                                                            -
-                                                            <input type="hidden"
-                                                                name="date_submitted[<?= $detail['trans_detail_id'] ?>]"
-                                                                value="">
-                                                            <?php endif; ?>
-                                                        </td>
-                                                        <td class="align-middle"><?= $detail['lab_code'] ?? '-' ?></td>
-                                                        <td class="align-middle"><?= $detail['sample_name'] ?? '-' ?></td>
-                                                        <td class="align-middle"><?= $detail['laboratory_tests'] ?? '-' ?>
-                                                        </td>
-                                                        <td class="align-middle">
-                                                            <?= $detail['lead_time'] ?? '-' ?>
-                                                            <input type="hidden"
-                                                                name="lead_time[<?= $detail['trans_detail_id'] ?>]"
-                                                                value="<?= isset($detail['lead_time']) ? htmlspecialchars($detail['lead_time']) : '' ?>">
-                                                        </td>
+                                        <tr>
+                                            <td class="text-center align-middle"><?= $itemNo++ ?></td>
+                                            <td class="align-middle">
+                                                <?php if (!empty($detail['date_submitted'])): ?>
+                                                <?= date('F d, Y', strtotime($detail['date_submitted'])) ?>
+                                                <input type="hidden"
+                                                    name="date_submitted[<?= $detail['trans_detail_id'] ?>]"
+                                                    value="<?= htmlspecialchars($detail['date_submitted']) ?>">
+                                                <?php else: ?>
+                                                -
+                                                <input type="hidden"
+                                                    name="date_submitted[<?= $detail['trans_detail_id'] ?>]" value="">
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="align-middle"><?= $detail['lab_code'] ?? '-' ?></td>
+                                            <td class="align-middle"><?= $detail['sample_name'] ?? '-' ?></td>
+                                            <td class="align-middle"><?= $detail['laboratory_tests'] ?? '-' ?>
+                                            </td>
+                                            <td class="align-middle">
+                                                <?= $detail['lead_time'] ?? '-' ?>
+                                                <input type="hidden" name="lead_time[<?= $detail['trans_detail_id'] ?>]"
+                                                    value="<?= isset($detail['lead_time']) ? htmlspecialchars($detail['lead_time']) : '' ?>">
+                                            </td>
 
-                                                        <td class="align-middle" style="max-width: 200px;">
-                                                            <span>
-                                                                <?php
+                                            <td class="align-middle" style="max-width: 200px;">
+                                                <span>
+                                                    <?php
                                                                     $selectedStatus = 'No Status';
                                                                     foreach ($display_status as $status) {
                                                                         if ($detail['test_exec_status_id'] == $status->statusID) {
@@ -106,19 +102,19 @@
                                                                     }
                                                                     echo htmlspecialchars($selectedStatus, ENT_QUOTES, 'UTF-8');
                                                                 ?>
-                                                            </span>
-                                                        </td>
+                                                </span>
+                                            </td>
 
-                                                        <td class="align-middle">
-                                                            <span><?= htmlspecialchars($detail['test_exec_lab_result'] ?? 'No Result', ENT_QUOTES, 'UTF-8') ?></span>
-                                                        </td>
+                                            <td class="align-middle">
+                                                <span><?= htmlspecialchars($detail['test_exec_lab_result'] ?? 'No Result', ENT_QUOTES, 'UTF-8') ?></span>
+                                            </td>
 
-                                                        <td class="align-middle" style="max-width: 200px;">
-                                                            <span><?= htmlspecialchars($detail['existing_remark'] ?? 'No Remarks', ENT_QUOTES, 'UTF-8') ?></span>
-                                                        </td>
-                                                        <td class="align-middle" style="max-width: 200px;">
-                                                            <span>
-                                                                <?php
+                                            <td class="align-middle" style="max-width: 200px;">
+                                                <span><?= htmlspecialchars($detail['existing_remark'] ?? 'No Remarks', ENT_QUOTES, 'UTF-8') ?></span>
+                                            </td>
+                                            <td class="align-middle" style="max-width: 200px;">
+                                                <span>
+                                                    <?php
                                                                     $selectedReview = 'No Status';
                                                                     foreach ($display_status as $status) {
                                                                         if ($detail['review_verification_status_id'] == $status->statusID) {
@@ -128,48 +124,52 @@
                                                                     }
                                                                     echo htmlspecialchars($selectedReview, ENT_QUOTES, 'UTF-8');
                                                                 ?>
-                                                            </span>
-                                                        </td>
-                                                        <td class="text-center align-middle">
-                                                            <select
-                                                                id="result_verifications<?= $detail['trans_detail_id'] ?>"
-                                                                name="result_verifications[<?= $detail['trans_detail_id'] ?>]"
-                                                                class="form-control form-control-sm result-verification-status-select dynamic_dropdown status-zfix"
-                                                                data-target="#result_verifications-<?= $detail['trans_detail_id'] ?>"
-                                                                required>
-                                                                <option value="">Select Status</option>
-                                                                <?php foreach($result_verifications as $status): ?>
-                                                                <option value="<?= $status->statusID ?>"
-                                                                    <?= $detail['test_result_id'] == $status->statusID ? 'selected' : '' ?>>
-                                                                    <?= $status->statDesc ?>
-                                                                </option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </td>
-
-                                                        <td class="align-middle">
-                                                            <input type="text"
-                                                                name="result_verification_remarks[<?= $detail['trans_detail_id'] ?>]"
-                                                                class="form-control form-control-sm"
-                                                                value="<?= htmlspecialchars($detail['result_verification_remark'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                                                        </td>
-
-                                                    </tr>
+                                                </span>
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                <select id="result_verifications<?= $detail['trans_detail_id'] ?>"
+                                                    name="result_verifications[<?= $detail['trans_detail_id'] ?>]"
+                                                    class="form-control form-control-sm result-verification-status-select dynamic_dropdown status-zfix"
+                                                    data-target="#result_verifications-<?= $detail['trans_detail_id'] ?>"
+                                                    <?= empty($can_modify) ? 'disabled' : '' ?> required>
+                                                    <option value="">Select Status</option>
+                                                    <?php foreach($result_verifications as $status): ?>
+                                                    <option value="<?= $status->statusID ?>"
+                                                        <?= $detail['test_result_id'] == $status->statusID ? 'selected' : '' ?>>
+                                                        <?= $status->statDesc ?>
+                                                    </option>
                                                     <?php endforeach; ?>
-                                                    <?php else: ?>
-                                                    <tr>
-                                                        <td colspan="10" class="text-center text-muted">No samples available
-                                                        </td>
-                                                    </tr>
-                                                    <?php endif; ?>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
+                                                </select>
+                                                <?php if (empty($can_modify)): ?>
+                                                <input type="hidden"
+                                                    name="result_verifications[<?= $detail['trans_detail_id'] ?>]"
+                                                    value="<?= $detail['test_result_id'] ?>">
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <td class="align-middle">
+                                                <input type="text"
+                                                    name="result_verification_remarks[<?= $detail['trans_detail_id'] ?>]"
+                                                    class="form-control form-control-sm"
+                                                    value="<?= htmlspecialchars($detail['result_verification_remark'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                                    <?= empty($can_modify) ? 'disabled' : '' ?> required>
+                                            </td>
+
+                                        </tr>
+                                        <?php endforeach; ?>
+                                        <?php else: ?>
+                                        <tr>
+                                            <td colspan="10" class="text-center text-muted">No samples available
+                                            </td>
+                                        </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
-                <?php endforeach; ?>
-  
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>

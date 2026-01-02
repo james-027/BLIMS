@@ -34,14 +34,15 @@
                          </span>
                          <span style="cursor:pointer;" data-toggle="collapse" data-target="#job-<?= $jobIndex ?>"
                              aria-expanded="true" aria-controls="job-<?= $jobIndex ?>">
-                                 <i class="fas fa-chevron-down collapse-icon <?= empty($job['collapsed']) ? 'rotated' : '' ?>"></i>
+                             <i
+                                 class="fas fa-chevron-down collapse-icon <?= empty($job['collapsed']) ? 'rotated' : '' ?>"></i>
                          </span>
                      </div>
                  </div>
              </div>
 
 
-       <div id="job-<?= $jobIndex ?>" class="collapse <?= empty($job['collapsed']) ? 'show' : '' ?>">
+             <div id="job-<?= $jobIndex ?>" class="collapse <?= empty($job['collapsed']) ? 'show' : '' ?>">
                  <div class="card-body p-0">
                      <div class="verification-section">
                          <div class="table-responsive">
@@ -151,29 +152,36 @@
                                                             $encrypted_id = rtrim(strtr(base64_encode($encrypted_id), '+/', '-_'), '=');
 
                                                             ?>
-
                                          <td class="align-middle text-center">
+                                             <?php if ($can_modify): ?>
                                              <input type="checkbox" name="releasing[<?= $detail['trans_detail_id'] ?>]"
                                                  class="select-releasing"
                                                  <?= (!empty($detail['is_released']) && $detail['is_released'] == 1) ? 'checked data-prechecked="1" disabled' : '' ?>>
-
+                                             <?php else: ?>
+                                             <?= (!empty($detail['is_released']) && $detail['is_released'] == 1) ? 'Released' : 'Not Released'; ?>
+                                             <input type="hidden" name="releasing[<?= $detail['trans_detail_id'] ?>]"
+                                                 value="<?= !empty($detail['is_released']) && $detail['is_released'] == 1 ? 1 : 0 ?>">
+                                             <?php endif; ?>
                                          </td>
+
+
 
                                          <td class="align-middle"><?= $detail['release_ref_number'] ?? '-' ?></td>
 
 
-                                         <td class="align-middle text-center">
-                                             <?php if (!empty($detail['is_released'])): ?>
-                                             <a href="<?= base_url('coa/select_template_pdf/'.$detail['trans_detail_id'].'/'.$detail['laboratory_id']) ?>"
-                                                 class="btn btn-sm btn-primary" title="Download COA PDF">
-                                                 <i class="fa fa-download"></i>
-                                             </a>
-                                             <?php else: ?>
-                                             <button class="btn btn-sm btn-primary" disabled title="Not Released">
-                                                 <i class="fa fa-download"></i>
-                                             </button>
-                                             <?php endif; ?>
-                                         </td>
+                                        <td class="align-middle text-center">
+                                            <?php if (!empty($detail['is_released']) && !empty($can_download)): ?>
+                                                <a href="<?= base_url('coa/select_template_pdf/'.$detail['trans_detail_id'].'/'.$detail['laboratory_id']) ?>"
+                                                    class="btn btn-sm btn-primary" title="Download COA PDF">
+                                                    <i class="fa fa-download"></i>
+                                                </a>
+                                            <?php else: ?>
+                                                <button class="btn btn-sm btn-primary" disabled title="<?= empty($can_download) ? 'No Access' : 'Not Released' ?>">
+                                                    <i class="fa fa-download"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </td>   
+
 
 
                                          <td class="align-middle text-center">

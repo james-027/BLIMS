@@ -499,9 +499,7 @@ $(document).ready(function(){
     });
     $('#confirmDataReviewSubmit').on('click', function() {
         $('#confirmModalData').modal('hide');
-
-
-         $('#dataReviewForm').submit();
+      $('#dataReviewForm').submit();
     });
 
 

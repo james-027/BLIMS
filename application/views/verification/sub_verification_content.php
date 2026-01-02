@@ -43,7 +43,7 @@
     <?php else: ?>
     <div class="row justify-content-center mt-4">
         <div class="col-md-12 text-center text-muted">
-            <h4>No failed verifications found.</h4>
+            <h4>No Failed / Cancelled verifications found.</h4>
         </div>
     </div>
     <?php endif; ?>

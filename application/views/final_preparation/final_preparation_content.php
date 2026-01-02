@@ -59,7 +59,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="confirmModalLabel">
-                    <i class="fas fa-exclamation-circle mr-2"></i> Confirm Final Prepration
+                    <i class="fas fa-exclamation-circle mr-2"></i> Confirm Final Preparation
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>

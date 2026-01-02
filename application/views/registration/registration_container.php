@@ -18,6 +18,8 @@
                                     ? "Cannot Append Sample to this JO"  
                                     : "Append Sample to this JO"; 
                                 ?>
+
+                                <?php if (!empty($edit_button)): ?>
                                     <button type="button" class="btn btn-light btn-sm mr-3 addDetailBtn"
                                         data-job="<?= $jobIndex ?>" data-lab-id="<?= $job['laboratory_id'] ?>"
                                         data-trans-id="<?= $job['trans_id'] ?>"
@@ -25,6 +27,7 @@
                                         title="<?= $addDetailTitle ?>">
                                         <i class="fas fa-plus"></i> Add Detail
                                     </button>
+                                <?php endif; ?>
 
                                 </span>
                                 <span class="badge badge-light mr-3">Samples:

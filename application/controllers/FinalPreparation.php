@@ -15,6 +15,7 @@ class FinalPreparation extends CI_Controller {
 
 		$this->controller = strtolower(__CLASS__);
 		$this->db_tbl = 'trans_headers';
+          $this->alias = 'finalpreparation';
     	$this->load->model('main_model', 'main');
     	$this->load->library('custom_lib');
         $this->load->library('email_format');
@@ -32,6 +33,7 @@ class FinalPreparation extends CI_Controller {
 
     public function index() 
     {
+         $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
         $data['js_file'] = 'assets/js/preparation.js?v=2.0';
         $data['profile'] = $this->custom_lib->_get_profile();
@@ -43,6 +45,8 @@ class FinalPreparation extends CI_Controller {
         $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
         $userID = decode($info['userID']);
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
+        $module_access = $this->custom_lib->module_access($alias);
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
 
         $data['title'] = 'Final Preparation';
@@ -108,13 +112,14 @@ class FinalPreparation extends CI_Controller {
  
 
     public function search_details()
-    {
+    {   
+        $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
 
         $searchValue = $this->input->get_post('search') ?? '';
         $searchField = $this->input->get_post('field') ?? '';
-
+        
 
         $theme = get_user_theme(['a.userID' => $userID], true);
         $data['thColor'] = $theme->thColor;
@@ -125,7 +130,8 @@ class FinalPreparation extends CI_Controller {
         $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
-
+        $module_access = $this->custom_lib->module_access($alias);
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['title'] = 'Result Verification';
         $data['menu_title'] = '';
         $data['parent_title'] = 'Transactional';
@@ -316,7 +322,7 @@ class FinalPreparation extends CI_Controller {
 
                         if (!empty($recipient)) {
                             $transHeader = $this->db
-                                ->select('th.trans_id, th.job_order_no, td.lab_code')
+                                ->select('th.trans_id, th.job_order_no, td.ext_lab_code')
                                 ->from('trans_headers th')
                                 ->join('trans_details td', 'td.trans_id = th.trans_id')
                                 ->where('td.trans_detail_id', $trans_detail_id)

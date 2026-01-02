@@ -222,22 +222,20 @@
                         </button>
                     </div>
                 </div>
-
             </div>
 
             <div class="card card-round">
                 <div class="card-header">
                     <h4 class="card-title">E-Signature</h4>
                 </div>
-            <div class="card-body text-center">
-                <?php if (!empty($profile['userEsign'])): ?>
-                    <img src= "<?=@$profile['userEsign']?>" 
-                        alt="E-signature" 
+                <div class="card-body text-center">
+                    <?php if (!empty($profile['userEsign'])): ?>
+                    <img src="<?=@$profile['userEsign']?>" alt="E-signature"
                         style="width:300px; border:1px solid #ccc; background:white;">
-                <?php else: ?>
+                    <?php else: ?>
                     <p class="text-muted">No E-signature uploaded yet.</p>
-                <?php endif; ?>
-            </div>
+                    <?php endif; ?>
+                </div>
                 <div class="card-footer text-center">
                     <button type="button" class="btn btn-<?= $btnColor ?> btn-md btn-round" data-toggle="modal"
                         data-target="#esignModal">
@@ -245,6 +243,30 @@
                     </button>
                 </div>
             </div>
+
+            <div class="card card-round">
+                <div class="card-header">
+                    <h4 class="card-title">User Manual</h4>
+                </div>
+
+                <div class="card-body text-center">
+                    <p class="text-muted mb-2">
+                        Download the system user manual for guidance on using the system.
+                    </p>
+
+                    <i class="fa fa-file-pdf-o fa-3x text-danger mb-3"></i>
+                </div>
+
+                <div class="card-footer text-center">
+                    <a href="<?= base_url('uploads/user_manual/BLIMS_User_Manual.pdf') ?>"
+                        class="btn btn-<?= $btnColor ?> btn-md btn-round" target="_blank" download>
+                        <i class="flaticon-download mr-1"></i> <b>Download Manual (PDF)</b>
+                    </a>
+                </div>
+            </div>
+
+
+
             <div class="card card-round">
                 <form method="POST" action="<?=base_url('login/edit-user-profile')?>" id="update-profile-form">
                     <div class="card-header">
@@ -328,8 +350,8 @@
             <form action="<?=base_url('login/save_esign')?>" method="POST" id="esignForm">
                 <div class="modal-body text-center">
 
-                    <canvas id="esign-pad" width="500" height="200" 
-                            style="border:1px solid #333; background:white;"></canvas>
+                    <canvas id="esign-pad" width="500" height="200"
+                        style="border:1px solid #333; background:white;"></canvas>
 
                     <input type="hidden" name="userEsign" id="esign-data">
 
@@ -347,6 +369,3 @@
         </div>
     </div>
 </div>
-
-
-
