@@ -8,6 +8,9 @@
     <?=$breadcrumbs?>
 
 
+      <?php if(!empty($jobs)): ?>
+
+
      <div class="row align-items-center justify-content-end mt-3">
         <div class="col-auto pr-1">
             <select id="searchField" class="form-control shadow-sm" style = "cursor:pointer">
@@ -44,6 +47,13 @@
 
     </form>
 
+        <?php else: ?>
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-12 text-center text-muted">
+            No Result Verification
+        </div>
+    </div>
+    <?php endif; ?>
   
 </div>
 

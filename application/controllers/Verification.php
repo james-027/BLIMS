@@ -334,7 +334,7 @@ class Verification extends CI_Controller {
 
                     if ((int)$statusID === 7) {
                         $transHeader = $this->db
-                            ->select('th.trans_id, th.job_order_no, td.lab_code, th.created_by')
+                            ->select('th.trans_id, th.job_order_no, td.ext_lab_code, th.created_by')
                             ->from('trans_headers th')
                             ->join('trans_details td', 'td.trans_id = th.trans_id')
                             ->where('td.trans_detail_id', $trans_detail_id)

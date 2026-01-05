@@ -52,7 +52,7 @@
     <?php else: ?>
     <div class="row justify-content-center mt-4">
         <div class="col-md-12 text-center text-muted">
-            Empty Verification
+            No Verification
         </div>
     </div>
     <?php endif; ?>
