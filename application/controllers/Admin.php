@@ -789,7 +789,9 @@ class Admin extends CI_Controller {
 			$uplineID = clean_data($this->input->post('upline-id'));
 			$agencyID = clean_data($this->input->post('agency-id'));
 			$mobileNumber = clean_data($this->input->post('mobile-number'));
+			$is_nutritionist = clean_data($this->input->post('is_nutritionist'));
 
+			
 			$agencyID = !empty($agencyID) ? decode($agencyID) : 0;
 			$mobileNumber = !empty($mobileNumber) ? trim(substr($mobileNumber, -10)) : 0;
 			
@@ -870,6 +872,8 @@ class Admin extends CI_Controller {
 			if(!empty($userFirstName) && !empty($userLastName) && !empty($userEmail) && !empty($password) && !empty($emp_id) && !empty($userTypeID) && !empty($keyID) && !empty($labID)){
 				$check_email = $this->main->check_data('users', array('userEmail' =>  $userEmail));
 				if($check_email == FALSE){
+
+				
 					$check_mobile_no['result'] = FALSE;
 					if($mobileNumber != 0){
 						$check_mobile_no = $this->main->check_data('users', array('mobileNumber' =>  $mobileNumber), TRUE);
@@ -878,6 +882,7 @@ class Admin extends CI_Controller {
 						$check_empID = $this->main->check_data('users', array('employeeNo' =>  $emp_id));
 						if($check_empID == FALSE){
 	
+							
 							$set = array(
 								'userTitle' => strtoupper($userTitle),
 								'userFirstName' => strtoupper($userFirstName),
@@ -893,6 +898,21 @@ class Admin extends CI_Controller {
 								'themeID'  => 1
 							);
 	
+							if($is_nutritionist){
+								$set_nutritionist = array(
+								'nutritionist_name' => strtoupper($userFirstName.' '.$userLastName),
+								'email_address'=> $userEmail,
+								'created_at'   => date_now(),
+								'status_id'    => 1,
+								'created_by'   => decode($info['userID'])
+							);
+
+							$result_nutritionist = $this->main->insert_data('nutritionists', $set_nutritionist, TRUE);
+						
+
+							}
+
+
 							$result = $this->main->insert_data('users', $set, TRUE);
 							//get new user ID
 							$userID = @$result['id'];

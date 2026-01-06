@@ -52,7 +52,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="internalFeedmill">Select Internal Feedmill:</label>
-                        <select name="internalFeedmill" id="internalFeedmill" class="form-control form-control-md" required>
+                        <select name="internalFeedmill" id="internalFeedmill" class="form-control form-control-md dynamic_dropdown_modal" required>
                             <option value="">-- Select Feedmill --</option>
                             <?php foreach($internal_feedmills as $fm): ?>
                                 <option value="<?= $fm->id ?>"><?= $fm->feedmill_name ?></option>
@@ -62,14 +62,14 @@
                     <div class="form-group">
                         <label for="exampleInputEmail1">Commercial Feedmill Code: </label>
                         <label for="" class="input-group">
-                            <input type="text" name="feedmillCode" class="form-control form-control-md" required="true">
+                            <input type="text" name="feedmillCode" class="form-control form-control-md " required="true">
                         </label>
                     </div>
                     
                     <div class="form-group">
                         <label for="exampleInputEmail1">Commercial Feedmill Name: </label>
                         <label for="" class="input-group">
-                            <input type="text" name="feedmillName" class="form-control form-control-md" required="true">
+                            <input type="text" name="feedmillName" class="form-control form-control-md " required="true">
                         </label>
                     </div>
                 </div>
@@ -98,7 +98,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="internalFeedmill">Internal Feedmill: </label>
-                        <select name="internalFeedmill" id="internalFeedmill" class="form-control form-control-md" required>
+                        <select name="internalFeedmill" id="internalFeedmill" class="form-control form-control-md dynamic_dropdown_modal" required>
                             <option value="">-- Select Internal Feedmill --</option>
                             <?php foreach($internal_feedmills as $fm): ?>
                                 <option value="<?= $fm->id ?>"><?= $fm->feedmill_name ?></option>

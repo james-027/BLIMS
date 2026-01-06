@@ -66,6 +66,8 @@
                     </a>
                 </li>
                 <?php
+
+                
                 $parentLinkArray = array(
                     array('1' => 'registration'),
                     array('1' => 'initialpreparation'),
@@ -103,8 +105,6 @@
                                         'cancelverification'
                                       );  
                     echo menu_link_to_display($linkArray, $aliasArray, 'Verification', 1, 'complex');
-
-
                     echo menu_link_to_display('initialpreparation', 'initialpreparation', null, 1);
                     echo menu_link_to_display('finalpreparation', 'finalpreparation', null, 1);
                     echo menu_link_to_display('testexecution', 'testexecution', null, 1);
@@ -112,6 +112,27 @@
                     echo menu_link_to_display('resultverification', 'resultverification', null, 1);
                     echo menu_link_to_display('reportrelease', 'reportrelease', null, 1);
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'suffix');
+
+          
+                
+
+                $parentLinkArray = array(
+                    array('1' => 'reportfeeds'),
+                );
+
+                $parentAliasArray = array(
+                    'reportfeeds',
+                );
+
+                echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Reports', 1, 'prefix', 'fa-chart-bar');
+
+                    echo menu_link_to_display('reportfeeds','reportfeeds', null, 1);
+
+                echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Reports', 1, 'suffix');
+
+
+
+
                 
                 $parentLinkArray = array(
                     array('2' => 'branch'),
@@ -159,6 +180,9 @@
                     'professions',
                     'user-professions',
                 );
+
+
+
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Master Data', 1, 'prefix', 'fa-th-list');
                     $linkArray = array(
                                         'lab-test',
@@ -270,6 +294,9 @@
 
 
 
+
+
+
                 $parentLinkArray = array(
                     array('2' => 'my-profile'),
                     array('2' => 'notifications'),
@@ -306,6 +333,7 @@
                     echo menu_link_to_display('api-sync-errors', 'api_sync_errors', null, 1);
 
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Extras', 1, 'suffix');
+
 
 
                 ?>
