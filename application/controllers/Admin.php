@@ -2122,8 +2122,9 @@ class Admin extends CI_Controller {
 			'* Password',
 			'* System Key',
 			'* User Role',
+			'* Laboratory Location',
 			'Mobile Number',
-			'Agency',
+			'Laboratory Code',
 
 		);
 
@@ -2163,9 +2164,13 @@ class Admin extends CI_Controller {
 		foreach ($usertypes as $r) {
 			$userTypeName[] = $r->userTypeName;
 		}
+		$laboratories = $this->main->get_data('laboratories','status_id=1',false,'identifier_code');
+		foreach ($laboratories as $l) {
+			$identifier_code[] = $l->identifier_code;
+		}
 		$object_excel->getActiveSheet()->getComment('G2')->getText()->createTextRun(join(', ', $keyCode));
 		$object_excel->getActiveSheet()->getComment('H2')->getText()->createTextRun(join(', ', $userTypeName));
-
+		$object_excel->getActiveSheet()->getComment('I2')->getText()->createTextRun(join(', ', $identifier_code));
 		$object_excel->setActiveSheetIndex(0);
 		ob_end_clean();
 		ob_start();
@@ -2177,6 +2182,9 @@ class Admin extends CI_Controller {
 		$object_excel_writer = PHPExcel_IOFactory::createWriter($object_excel, 'Excel2007');
 		$object_excel_writer->save('php://output');
 	}
+
+
+
 
 	public function upload_users(){
 		$info = $this->custom_lib->_require_login();
@@ -2245,10 +2253,12 @@ class Admin extends CI_Controller {
 			        	$password					= clean_data(trim(@$value['F']));
 			        	$systemKey					= clean_data(trim(@$value['G']));
 			        	$userTypeName				= clean_data(trim(@$value['H']));
-			        	$mobileNumber				= clean_data(trim(@$value['I']));
-			        	$agency						= clean_data(trim(@$value['J']));
+			        	$laboratories				= clean_data(trim(@$value['I']));
+			        	$mobileNumber				= clean_data(trim(@$value['J']));
 
 						$mobileNumber = substr($mobileNumber, -10);
+
+						
 						
 						// VALIDATIONS
 						$check_email = $this->main->check_data('users', array('userEmail' =>  $userEmail));
@@ -2261,13 +2271,31 @@ class Admin extends CI_Controller {
 						$userTypeID			= $check_user_type['result'] ? $check_user_type['info']->userTypeID : FALSE;
 						$user_type_msg		= $userTypeID == FALSE ? 'User Role ('.$userTypeName.') not found.<br>' : NULL;
 						
-						$agencyID = 0;
-						$agency_msg = NULL;
-						if($agency || $agency != ''){
-							$check_agency 	= $this->main->check_data('agency_tbl', array('agency_name' =>  $agency, 'agency_status' => 1), true);
-							$agencyID			= $check_agency['result'] ? $check_agency['info']->agency_id : FALSE;
-							$agency_msg		= $agencyID == FALSE ? 'Agency ('.$agency.') not found.<br>' : NULL;
+						$labIDs = [];
+						$lab_msg = NULL;
+						if (!empty($laboratories)) {
+
+							$labList = array_filter(array_map('trim', explode(',', $laboratories)));
+
+							foreach ($labList as $labCode) {
+
+								$check_laboratory = $this->main->check_data(
+									'laboratories',
+									[
+										'identifier_code' => $labCode,
+										'status_id'       => 1
+									],
+									true
+								);
+
+								if ($check_laboratory['result']) {
+									$labIDs[] = $check_laboratory['info']->id;
+								} else {
+									$lab_msg .= 'Laboratory (' . $labCode . ') not found.<br>';
+								}
+							}
 						}
+
 
 						$mobile_no_msg = NULL;
 						if($mobileNumber || $mobileNumber != ''){
@@ -2300,8 +2328,9 @@ class Admin extends CI_Controller {
 							!empty($employeeNo) &&
 							!empty($password) &&
 							!empty($userTypeID) &&
+							!empty($labIDs) &&
 							!empty($sysKeyIDArray) &&
-							empty($agency_msg) &&
+							empty($lab_msg) &&
 							empty($sys_key_msg) &&
 							empty($email_msg) &&
 							empty($emp_no_msg) &&
@@ -2328,6 +2357,19 @@ class Admin extends CI_Controller {
 							if($result_added_users['result']){
 								//get new user ID
 								$userID = $result['id'];
+
+								foreach ($labIDs as $labID) {
+									$set_user_lab = [
+										'userID'        => $userID,
+										'laboratory_id'=> $labID,
+										'status_id'     => 1
+									];
+
+									$this->main->insert_data('userslabs', $set_user_lab);
+								}
+
+
+								$result_user_lab = $this->main->insert_data('userslabs', $set_user_lab);
 
 								//INSERT DEFAULT USER THEME
 								$set = array(
@@ -2369,7 +2411,7 @@ class Admin extends CI_Controller {
 													$set_user_module = array(
 														'userID' 	=> $userID,
 														'moduleID' 	=> $r->moduleID,
-														'keyID'		=> $keyID_val,
+														'keyID'		=> 8,
 														'userTypeID'=> $userTypeID,
 														'statusID' 	=> 1,
 														'createdTS' => date_now(),
@@ -2507,8 +2549,8 @@ class Admin extends CI_Controller {
 								
 							}
 						} else {
-							if($email_msg || $emp_no_msg || $user_type_msg || $sys_key_msg || $agency_msg || $mobile_no_msg){
-								$display_msg = '<font color="red"><span class="fas fa-times-circle"></span> FAILED, '.$email_msg.$emp_no_msg.$user_type_msg.$sys_key_msg.$agency_msg.$mobile_no_msg.'</font>';
+							if($email_msg || $emp_no_msg || $user_type_msg || $sys_key_msg || $lab_msg || $mobile_no_msg){
+								$display_msg = '<font color="red"><span class="fas fa-times-circle"></span> FAILED, '.$email_msg.$emp_no_msg.$user_type_msg.$sys_key_msg.$lab_msg.$mobile_no_msg.'</font>';
 							} else {
 								$display_msg = '<font color="red"><span class="fas fa-times-circle"></span> FAILED, All columns with (*) are required.</font>';
 							}
@@ -2528,7 +2570,7 @@ class Admin extends CI_Controller {
 								<td class="align-middle text-left">'.$userTypeName.'</td>
 								<td class="align-middle text-left">'.$mobileNumber.'</td>
 
-								<td class="align-middle text-left">'.$agency.'</td>
+								<td class="align-middle text-left">'.$laboratories.'</td>
 								
 								<td class="align-middle text-left">'.$display_msg.'</td>
 							</tr>';

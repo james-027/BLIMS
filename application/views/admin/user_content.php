@@ -603,7 +603,7 @@
                                         <th>User Role</th>
 
                                         <th>Mobile Number</th>
-                                        <th>Agency</th>
+                                        <th>Laboratory Code</th>
 
                                         <th>Message</th>
                                     </tr>

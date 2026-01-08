@@ -122,10 +122,6 @@ define('DB_PASS', ENVIRONMENT === "production" ? 'Ra7VU+SH' : 'enf4s3?S');
 
 
 
-
-
-
-
 define('SYS_NAME', 'BLIMS');
 define('SYS_FULL_NAME', 'Bounty Laboratory Info Management');
 define('SYS_CUSTOM_GROUP_EMAIL', 'systemsupport@chookstogoinc.com.ph');
