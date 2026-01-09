@@ -66,7 +66,7 @@ class Email_temp {
 		                                    
 		                                    <tr>
 		                                        <td align="center" valign="middle" style="height:20px; padding:15px; font-size:11px; text-align:center; color:#'.$expFontColor.';">
-		                                            BAVI © '.$this->cright_year.'
+		                                            BLIMS © '.$this->cright_year.'
 		                                        </td>
 		                                    </tr>
 		                                </table>

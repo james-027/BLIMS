@@ -9745,6 +9745,18 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
         }
         $(".key option[value=-1]").prop("selected", false).parent().trigger("change");
     });
+
+        $('.laboratory').on("select2:select", function (e) { 
+        var data = e.params.data.text;
+        if(data==' Select All'){
+
+            $(".laboratory > option").prop("selected","selected");
+            $(".laboratory").trigger("change");
+        }
+        $(".laboratory option[value=-1]").prop("selected", false).parent().trigger("change");
+    });
+
+
     $('.bc').on("select2:select", function (e) { 
         var data = e.params.data.text;
         if(data==' Select All'){

@@ -809,6 +809,7 @@ class Admin extends CI_Controller {
 
 			$bcID = clean_data($this->input->post('bc-id'));
 			$sendEmailNotif = clean_data(decode($this->input->post('send-email-notif')));
+
 			
 			//decode the value of arrays		
 			//for view
@@ -1107,7 +1108,9 @@ class Admin extends CI_Controller {
 									$this->main->user_logs($user_logs);
 									$msg = '<div class="alert alert-success">User successfully added.</div>';
 									if($sendEmailNotif==1){
+
 										$combiName = $userTitle ? $userTitle.' '.$userFirstName : $userFirstName;
+
 										$this->_user_email_notif(strtoupper($combiName), $userEmail, $password, $msg, 'new');
 									}
 								}
@@ -1996,9 +1999,11 @@ class Admin extends CI_Controller {
 	}
 
 	public function _user_email_notif ($firstname, $email, $uPassword, $msg_out, $identifier){
+
 		$info = $this->custom_lib->_require_login();
 		//$expThColor = expColor($info['thColor'])->expThColor;
         //$expFontColor = expColor($info['thColor'])->expFontColor;
+
 
 		$expThColor = EMAIL_SKIN;
         $expFontColor = EMAIL_SKIN_FONT_COLOR;
@@ -2017,9 +2022,9 @@ class Admin extends CI_Controller {
 			</table>';
 
         if ($identifier == 'new') {
-        	$message = "This is to inform you that ".$info['userFullName']." enrolled you as a user in this system.<br>Here is your credentials:<br><br>".$table_data."<br><strong>Note</strong> : Password are case sensitive.<br>You can change your password once logged in.<br>You may login <a href=".base_url().">here</a>.<br><br>Regards,<br>".TEAM_NAME;
+        	$message = "This is to inform you that ".$info['userFullName']." enrolled you as a user in this system.<br>Here are your credentials:<br><br>".$table_data."<br><strong>Note</strong> : Password are case sensitive.<br>You can change your password once logged in.<br>You may login <a href=".base_url().">here</a>.<br><br>Regards,<br>".TEAM_NAME;
         } else {
-        	$message = "This is to inform you that ".$info['userFullName']." reset your account in this system.<br>Here is your new credentials:<br><br>".$table_data."<br><strong>Note</strong> : Password are case sensitive.<br>You can change your password once logged in.<br>You may login <a href=".base_url().">here</a>.<br><br>Regards,<br>".TEAM_NAME;
+        	$message = "This is to inform you that ".$info['userFullName']." reset your account in this system.<br>Here are your new credentials:<br><br>".$table_data."<br><strong>Note</strong> : Password are case sensitive.<br>You can change your password once logged in.<br>You may login <a href=".base_url().">here</a>.<br><br>Regards,<br>".TEAM_NAME;
         }
         
         $this->load->library('email');
@@ -2037,12 +2042,14 @@ class Admin extends CI_Controller {
 			->from($this->email_temp->mail_from, $this->email_temp->mail_from_name)
 			->reply_to($this->email_temp->mail_from, $this->email_temp->mail_from_name)    // Optional, an account where a human being reads.
 			->to($email)
-			->bcc('akatok@bountyagro.com.ph')
+			// ->bcc('jfdimaculangan@chookstogoinc.com.ph')
 			//->bcc('akatok@bountyagro.com.ph')
 			->subject($subject)
 			->message($body)
 			->send();
 
+
+			
         if($resultEmail){
             $user_logs = array(
 				'userID'	=>	decode($info['userID']),
@@ -2059,6 +2066,8 @@ class Admin extends CI_Controller {
 			}
         }
     }
+
+
 
     public function sendMail (){
 		$info = $this->custom_lib->_require_login();
@@ -2094,6 +2103,7 @@ class Admin extends CI_Controller {
 		}
     }
 
+
 	public function download_user_template(){
 		$info = $this->custom_lib->_require_login();
 		$data['thColor'] = get_user_theme(array('a.userID' => decode($info['userID'])), true)->thColor;
@@ -2122,9 +2132,8 @@ class Admin extends CI_Controller {
 			'* Password',
 			'* System Key',
 			'* User Role',
-			'* Laboratory Location',
+			'* Laboratory Location Code',
 			'Mobile Number',
-			'Laboratory Code',
 
 		);
 

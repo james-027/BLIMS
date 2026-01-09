@@ -72,7 +72,7 @@
                 <footer class="sticky-footer">
                     <div class="container my-auto">
                         <div class="copyright text-center my-auto">
-                            <span class="small">BAVI &copy; 2021</span>
+                            <span class="small">BLIMS &copy; 2025</span>
                         </div>
                     </div>
                 </footer>
