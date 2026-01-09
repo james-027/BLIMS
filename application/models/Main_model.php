@@ -1024,24 +1024,35 @@ class Main_model extends CI_Model {
 		$release_ref_number = $detail['release_ref_number'];
 
 		$this->db->select('
-				td.trans_detail_id,
-				tp.param_name,
-				tm.method_name,
-				tm_ref.method_name AS reference_method,
-				td.test_exec_lab_result as test_result
-			')
-			->from('trans_details td')
-			->join('trans_headers th', 'td.trans_id = th.trans_id', 'left')
-			->join('lab_tests lt', 'td.lab_test_id = lt.test_id AND lt.laboratory_id = th.laboratory_id', 'left')
-			->join('test_parameters tp', 'lt.test_param_id = tp.id', 'left')
-			->join('test_methods tm', 'lt.test_method_id = tm.id', 'left')
-			->join('ref_methods tm_ref', 'lt.ref_method_id = tm_ref.id', 'left')
-			->where('td.release_ref_number', $release_ref_number) // <-- condition changed
-			->group_by(['td.trans_detail_id', 'tp.param_name', 'tm.method_name', 'tm_ref.method_name', 'td.test_exec_lab_result'])
-			->order_by('td.trans_detail_id', 'ASC');
+			td.trans_detail_id,
+			tp.param_name,
+			tm.method_name,
+			GROUP_CONCAT(DISTINCT tm_ref.method_name SEPARATOR ", ") AS reference_method,
+			td.test_exec_lab_result AS test_result
+		', false)
+		->from('trans_details td')
+		->join('trans_headers th', 'td.trans_id = th.trans_id', 'left')
+		->join(
+			'lab_tests lt',
+			'td.lab_test_id = lt.test_id AND lt.laboratory_id = th.laboratory_id',
+			'left'
+		)
+		->join('test_parameters tp', 'lt.test_param_id = tp.id', 'left')
+		->join('test_methods tm', 'lt.test_method_id = tm.id', 'left')
+		->join('ref_methods tm_ref', 'lt.ref_method_id = tm_ref.id', 'left')
+		->where('td.release_ref_number', $release_ref_number) //same results
+		->group_by([
+			'td.trans_detail_id',
+			'tp.param_name',
+			'tm.method_name',
+			'td.test_exec_lab_result'
+		])
+		->order_by('td.trans_detail_id', 'ASC');
 
 		return $this->db->get()->result_array();
 	}
+
+	
 
 	public function get_lab_signatories($lab_id)
 	{
