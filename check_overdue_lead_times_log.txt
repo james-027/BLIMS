@@ -1,18 +1,19 @@
-PHP Notice:  Undefined index: HTTP_HOST in D:\xampp\htdocs\blims\application\config\config.php on line 31
-
-Notice: Undefined index: HTTP_HOST in D:\xampp\htdocs\blims\application\config\config.php on line 31
 
 A PHP Error was encountered
 
 Severity:    Notice
-Message:     Undefined index: HTTP_HOST
-Filename:    D:\xampp\htdocs\blims\application\config\config.php
-Line Number: 31
+Message:     Undefined variable: _SESSION
+Filename:    D:\xampp\htdocs\blims\system\libraries\Session\Session.php
+Line Number: 822
 
 Backtrace:
-	File: D:\xampp\htdocs\blims\application\config\config.php
-	Line: 31
-	Function: _error_handler
+	File: D:\xampp\htdocs\blims\application\libraries\Custom_lib.php
+	Line: 122
+	Function: unset_userdata
+
+	File: D:\xampp\htdocs\blims\application\controllers\Admin.php
+	Line: 149
+	Function: _require_login
 
 	File: D:\xampp\htdocs\blims\index.php
 	Line: 316
@@ -20,14 +21,24 @@ Backtrace:
 
 
 
-Database error: A Database Error Occurred
+A PHP Error was encountered
 
-	Error Number: 1054
-	Unknown column 'tt.latest_timestamp' in 'field list'
-	SELECT `td`.`trans_detail_id`, `td`.`lead_time`, `tt`.`latest_timestamp` AS `date_submitted`
-FROM `trans_details` `td`
-LEFT JOIN `trans_timestamps` `tt` ON `tt`.`trans_detail_id` = `td`.`trans_detail_id` AND `tt`.`trans_detail_status_id` = 26
-WHERE `td`.`lead_time` IS NOT NULL
-	Filename: D:/xampp/htdocs/blims/system/database/DB_driver.php
-	Line Number: 691
+Severity:    Warning
+Message:     Cannot modify header information - headers already sent by (output started at D:\xampp\htdocs\blims\system\core\Exceptions.php:271)
+Filename:    D:\xampp\htdocs\blims\system\helpers\url_helper.php
+Line Number: 564
+
+Backtrace:
+	File: D:\xampp\htdocs\blims\application\libraries\Custom_lib.php
+	Line: 123
+	Function: redirect
+
+	File: D:\xampp\htdocs\blims\application\controllers\Admin.php
+	Line: 149
+	Function: _require_login
+
+	File: D:\xampp\htdocs\blims\index.php
+	Line: 316
+	Function: require_once
+
 

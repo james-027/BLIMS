@@ -47,14 +47,14 @@
                                         <th style="width:150px;">Sample Name</th>
                                         <th style="width:120px;">Production Date</th>
                                         <th style="width:150px;">Shipment Supplier</th>
-                                        <th>Plate / Van Number</th>
-                                        <th>Batch / Lot Number</th>
-                                        <th>Type of Sample</th>
-                                        <th>Laboratory Tests</th>
-                                        <th>Test Parameter</th>
+                                        <th style="width:150px;">Plate / Van Number</th>
+                                        <th style="width:150px;">Batch / Lot Number</th>
+                                        <th style="width:150px;">Type of Sample</th>
+                                        <th style="width:150px;">Laboratory Tests</th>
+                                        <th style="width:150px;">Test Parameter</th>
                                         <th style="width:150px;">Test Status</th>
                                         <th style="width:200px;">Reason</th>
-                                        <th>COA Required</th>
+                                        <th style="width:150px;">COA Required</th>
                                         <th style="width:200px;">Remarks</th>
                                     </tr>
                                 </thead>

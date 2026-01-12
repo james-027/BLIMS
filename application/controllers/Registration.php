@@ -679,6 +679,7 @@ class Registration extends CI_Controller {
         $this->db->limit(1);
         $last = $this->db->get('trans_headers')->row();
 
+        //Sequence reset every month
         $seq = ($last && preg_match('/(\d{4})$/', $last->job_order_no, $matches)) ? intval($matches[1]) + 1 : 1;
         $seqFormatted = str_pad($seq, 4, '0', STR_PAD_LEFT);
         $jobOrderNo = "$labCode-$moduleCode-$monthYear-$seqFormatted";
@@ -852,8 +853,11 @@ class Registration extends CI_Controller {
                 $feedmillCode = $internal ? $internal->feedmill_code : 'FM';
             }
 
+
+            //Ext Lab Code for display and Lab Code for Filtering also sequence reset every month
             $laboratoryCode = "$feedmillCode-$mmyy-$sampleCode-$testCode-$increment";
             $ext_lab_code = "$feedmillCode-$mmyy-$increment";
+            
 
             $coa_flag = isset($coaRequired[$index]) ? 'Y' : 'N';
 
