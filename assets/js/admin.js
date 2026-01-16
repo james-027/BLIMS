@@ -9842,16 +9842,6 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
 
     
 
-    
-    let $wrapper = $('.wrapper');
-    let $minibutton = $('.toggle-sidebar');
-
-    if (!$wrapper.hasClass('sidebar_minimize')) {
-        $wrapper.addClass('sidebar_minimize');
-        $minibutton.addClass('toggled');
-        $minibutton.html('<i class="icon-options-vertical"></i>');
-        window.mini_sidebar = 1; 
-    }
 
     $(document).on('click', '.toggle-details', function() {
     const row = $(this).closest('tr');

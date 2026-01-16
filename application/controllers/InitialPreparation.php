@@ -47,6 +47,7 @@ class InitialPreparation extends CI_Controller {
         $userID = decode($info['userID']);
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $module_access = $this->custom_lib->module_access($alias);
+        if(!$module_access->view){redirect('admin');}
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
         $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['title'] = 'Initial Preparation';
@@ -119,6 +120,7 @@ class InitialPreparation extends CI_Controller {
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
         $module_access = $this->custom_lib->module_access($alias);
+        
         $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
         $data['title'] = 'Result Verification';
         $data['menu_title'] = '';

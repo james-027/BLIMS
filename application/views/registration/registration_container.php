@@ -142,23 +142,31 @@
                                                 <td class="text-center align-middle">
                                                     <span>
 
-                                                        <?php
-                                                $replicateTitle = !empty($detail['replicate_disabled'])
-                                                    ? "Cannot Append Sample to this Lab Code"
-                                                    : "Append Sample to this Lab Code"; 
-                                                ?>
-                                                        <button type="button"
-                                                            class="btn btn-primary btn-sm replicateDetailBtn"
-                                                            data-job="<?= $jobIndex ?>"
-                                                            data-lab-id="<?= $job['laboratory_id'] ?>"
-                                                            data-trans-id="<?= $job['trans_id'] ?>"
-                                                            data-detail-id="<?= $detail['trans_detail_id'] ?>"
-                                                            data-lab-code="<?= $detail['lab_code'] ?>"
-                                                            <?= !empty($detail['replicate_disabled']) ? 'disabled' : '' ?>
-                                                            title="<?= $replicateTitle ?>">
-                                                            <i class="fas fa-clone"></i>
-                                                        </button>
+                                                `<?php
+                                                    $hasEditAccess = !empty($edit_button);
 
+                                                    $isDisabled = !$hasEditAccess || !empty($detail['replicate_disabled']);
+
+                                                    if (!$hasEditAccess) {
+                                                        $replicateTitle = 'You do not have permission to replicate this sample';
+                                                    } elseif (!empty($detail['replicate_disabled'])) {
+                                                        $replicateTitle = 'Cannot Append Sample to this Lab Code';
+                                                    } else {
+                                                        $replicateTitle = 'Append Sample to this Lab Code';
+                                                    }
+                                                ?>
+
+                                                <button type="button"
+                                                    class="btn btn-primary btn-sm replicateDetailBtn"
+                                                    data-job="<?= $jobIndex ?>"
+                                                    data-lab-id="<?= $job['laboratory_id'] ?>"
+                                                    data-trans-id="<?= $job['trans_id'] ?>"
+                                                    data-detail-id="<?= $detail['trans_detail_id'] ?>"
+                                                    data-lab-code="<?= $detail['lab_code'] ?>"
+                                                    <?= $isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>
+                                                    title="<?= $replicateTitle ?>">
+                                                    <i class="fas fa-clone"></i>
+                                                </button>`
 
 
 

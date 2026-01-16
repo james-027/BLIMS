@@ -30,13 +30,11 @@ class ReportFeeds extends CI_Controller {
 	Change Management #1`
 	*/
 
-	public function index() 
-    {         
-
-        $alias = $this->alias;
+        public function index() 
+    {
+         $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
-
-        $data['js_file'] = 'assets/js/verification.js?v=2.0';
+        $data['js_file'] = 'assets/js/preparation.js?v=2.0';
         $data['profile'] = $this->custom_lib->_get_profile();
         $data['menuColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->menuColor;
         $data['tableColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->tableColor;
@@ -44,59 +42,64 @@ class ReportFeeds extends CI_Controller {
         $data['btnColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->btnColor;
 
         $data['notif_counter'] = $this->custom_lib->_get_notifications()->counter;
-
         $userID = decode($info['userID']);
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $module_access = $this->custom_lib->module_access($alias);
-        $data['new_button'] = !empty($module_access->add);
-        $data['edit_button'] = !empty($module_access->edit);
-        if (!$module_access->view) { redirect('admin'); }
+        if(!$module_access->view){redirect('admin');}
+        $data['can_modify'] =(isset($module_access->add) && (int)$module_access->add === 1) ||(isset($module_access->edit) && (int)$module_access->edit === 1);
+        $data['can_download'] = $module_access->dlod;
+        $data['lab_access'] = $this->custom_lib->get_lab_access(['ul.userID' => $userID]);
+        
         $data['title'] = 'Report Feeds';
         $data['menu_title'] = '';
         $data['parent_title'] = 'Reports';
         $data['controller'] = $this->controller;
         $data['userID'] = $userID;
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-        $data['test_statuses'] = $this->main->get_data(
-                'stats',
-                "status_type_id = 3 OR statusID = 25",
-                false,
-                'statusID, statDesc',
-                'statDesc ASC'
-                );
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
+        
         $this->db->select([
-            'th.trans_id AS trans_id',
-            'th.job_order_no',
-            'th.laboratory_id',
-            'th.internal_id',
-            'th.commercial_id',
-            'th.trans_id',
-            'td.*',
-            's.sample_name',
-            'st.sample_type_name',
-            'tn.name AS laboratory_tests',
-            'sup.supplier_name',
-            'tp.param_name',
-            'p.plate_number',
-            'b.batch_number',
-            'td.ext_lab_code AS lab_code',
-            'tr.remark AS existing_remark',
-             'r.reason_name AS latest_reason'
+        'th.trans_id AS trans_id',
+        'th.job_order_no',
+        'th.laboratory_id',
+        'td.trans_detail_id',
+        'td.sample_id',
+        'td.lab_test_id',
+        'td.test_exec_lab_result',
+        'td.ext_lab_code AS lab_code',
+        'td.delivery_date',
+        'td.created_at',
+        's.sample_name',
+        'st.sample_type_name',
+        'tp.param_name',
+        'if.feedmill_name AS internal_feedmill_name',
+        'cf.feedmill_name AS commercial_feedmill_name',
+        'GROUP_CONCAT(DISTINCT tn.name ORDER BY tn.name SEPARATOR ", ") AS laboratory_tests',
+        'tr.remark AS existing_remark',
+        'CONCAT(us.userFirstName, " ", us.userLastName) AS client_name',
+        'n.nutritionist_name AS nutritionist_name'
         ]);
         $this->db->from('trans_details td');
-        $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
+        $this->db->join('trans_headers th', 'th.trans_id = td.trans_id', 'inner');
         $this->db->join('samples s', 's.id = td.sample_id', 'left');
         $this->db->join('sample_types st', 'st.id = td.sample_type_id', 'left');
         $this->db->join('lab_tests lt', 'lt.test_id = td.lab_test_id AND lt.laboratory_id = th.laboratory_id', 'inner');
         $this->db->join('test_parameters tp', 'tp.id = lt.test_param_id', 'left');
         $this->db->join('tests t', 't.id = lt.test_id', 'left');
         $this->db->join('test_names tn', 'tn.id = t.test_name_id', 'left');
-        $this->db->join('suppliers sup', 'sup.id = td.supplier_id', 'left');
-        $this->db->join('plate_numbers p', 'p.id = td.plate_number_id', 'left');
-        $this->db->join('batch_numbers b', 'b.id = td.batch_number_id', 'left');
         $this->db->join('laboratories l', 'l.id = th.laboratory_id', 'left');
-        $this->db->group_by('td.trans_detail_id');
+        $this->db->join('users us', 'us.userID = th.client_id', 'left');
+        $this->db->join('nutritionists n', 'n.id = th.nutritionist_id', 'left');
+        $this->db->join('internal_feedmills if', 'if.id = th.internal_id', 'left');
+        $this->db->join('commercial_feedmills cf', 'cf.id = th.commercial_id', 'left');
+
+        if (!empty($data['lab_access'])) {
+            $labIDs = array_column($data['lab_access'], 'laboratory_id');
+            $this->db->where_in('th.laboratory_id', $labIDs);
+        } else {
+            $this->db->where('th.laboratory_id', 0);
+        }
+
         $this->db->join("
             (
                 SELECT tr1.trans_detail_id, tr1.remark
@@ -104,155 +107,54 @@ class ReportFeeds extends CI_Controller {
                 INNER JOIN (
                     SELECT trans_detail_id, MAX(created_at) AS latest_created
                     FROM trans_remarks
-                     WHERE trans_detail_status_id = 20
+                    WHERE trans_detail_status_id = 27
                     GROUP BY trans_detail_id
                 ) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id 
-                    AND tr1.created_at = tr2.latest_created
-                     WHERE tr1.trans_detail_status_id = 20
+                AND tr1.created_at = tr2.latest_created
+                WHERE tr1.trans_detail_status_id = 27
             ) tr", 'tr.trans_detail_id = td.trans_detail_id', 'left');
 
-                $this->db->join("
-        (
-            SELECT tr1.trans_detail_id, tr1.reason_id
-            FROM trans_reasons tr1
-            INNER JOIN (
-                SELECT trans_detail_id, MAX(created_at) AS latest_created
-                FROM trans_reasons
-                WHERE trans_detail_status_id = 20
-                GROUP BY trans_detail_id
-            ) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id
-                  AND tr1.created_at = tr2.latest_created
-            WHERE tr1.trans_detail_status_id = 20
-        ) trr", 'trr.trans_detail_id = td.trans_detail_id', 'left');
-        $this->db->join('reasons r', 'r.id = trr.reason_id', 'left');
-        $this->db->where('th.created_by', $userID);
-        $this->db->order_by('th.trans_id', 'DESC');
+        $this->db->where('td.trans_detail_status_id', 37);
+
+        $this->db->group_by('td.trans_detail_id');
+
+        $this->db->order_by('td.modified_at', 'DESC');
+
         $all_details = $this->db->get()->result_array();
 
 
-        $verification_jobs = [];
+        $jobs = [];
+
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
-            if (!isset($verification_jobs[$jobId])) {
-                $verification_jobs[$jobId] = [
-                    'job_order_no' => $row['job_order_no'],
-                    'lab_code' => $row['lab_code'],
-                    'sample_name' => $row['sample_name'],
-                    'test_name' => $row['laboratory_tests'],
-                    'test_exec_lab_result' => $row['test_exec_lab_result'],
-                    'created_at' => $row['created_at'],
-                    'samples' => []
-                ];
-            }
 
-            $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
-
-            $verification_jobs[$jobId]['samples'][] = $row;
+                    if (!isset($jobs[$jobId])) {
+                        $jobs[$jobId] = [
+                            'job_order_no' => $row['job_order_no'],
+                            'feedmill' => $row['commercial_feedmill_name'] ?? $row['internal_feedmill_name'],
+                            'details' => []
+                        ];
+                    }
+                    $jobs[$jobId]['details'][] = [
+                        'sample_name' => $row['sample_name'],
+                        'test_name' => $row['laboratory_tests'],   
+                        'lab_code' => $row['lab_code'],
+                        'test_exec_lab_result' => $row['test_exec_lab_result'],
+                        'delivery_date' => $row['delivery_date'],
+                        'created_at' => $row['created_at'],
+                    ];
         }
 
 
-        foreach ($verification_jobs as $jobId => &$job) {
+        $jobs_indexed = array_values($jobs);
 
-            $this->db->where('trans_id', $jobId);
-            $this->db->group_start();  
-            $this->db->where_not_in('test_status_id', [23, 25]);
-            $this->db->or_where('test_status_id IS NULL', null, false);
-            $this->db->group_end(); 
-            $total = $this->db->count_all_results('trans_details');
-
-            $this->db->where('trans_id', $jobId);
-            $this->db->where('is_released', 1);
-            $this->db->group_start();  
-            $this->db->where_not_in('test_status_id', [23, 25]);
-            $this->db->or_where('test_status_id IS NULL', null, false);
-            $this->db->group_end();
-            $released = $this->db->count_all_results('trans_details');
-
-
-            $job['is_all_released'] = ($total > 0 && $total == $released);
-
-            if (!empty($job['samples'])) {
-
-                $labStatus = [];
-
-                foreach ($job['samples'] as $sample) {
-
-                    if (in_array($sample['test_status_id'], [23, 25])) {
-                        continue;
-                    }
-
-                    $lab = $sample['lab_code'];
-
-                    if (!isset($labStatus[$lab])) {
-                        $labStatus[$lab] = ['total' => 0, 'released' => 0];
-                    }
-
-                    $labStatus[$lab]['total']++;
-
-                    if (!empty($sample['is_released'])) {
-                        $labStatus[$lab]['released']++;
-                    }
-                }
-
-                foreach ($job['samples'] as &$sample) {
-
-                    if (in_array($sample['test_status_id'], [23, 25])) {
-                        $sample['replicate_disabled'] = true;
-                        continue;
-                    }
-
-                    $lab = $sample['lab_code'];
-
-                    if (isset($labStatus[$lab])) {
-                        $sample['replicate_disabled'] =
-                            ($labStatus[$lab]['total'] > 0 &&
-                            $labStatus[$lab]['total'] == $labStatus[$lab]['released']);
-                    } else {
-                        $sample['replicate_disabled'] = false; 
-                    }
-                }
-                unset($sample);
-                usort($job['samples'], function($a, $b) {
-                    return strtotime($b['created_at']) - strtotime($a['created_at']);
-                });
-            }
-
-        }
-
-        unset($job);
-
-        $transIds = array_keys($verification_jobs);
-        $attachments = [];
-        if (!empty($transIds)) {
-            $this->db->select('trans_id, filename, filepath');
-            $this->db->from('attachments');
-            $this->db->where_in('trans_id', $transIds);
-            $result = $this->db->get()->result_array();
-            foreach ($result as $attachment) {
-                $attachments[$attachment['trans_id']][] = $attachment;
-            }
-        }
-        $verification_jobs_indexed = array_values($verification_jobs);
-
-            usort($verification_jobs_indexed, function($a, $b) {
-            $latestA = max(array_column($a['samples'], 'created_at'));
-            $latestB = max(array_column($b['samples'], 'created_at'));
-            return strtotime($latestB) - strtotime($latestA); 
-        });
-        
-        $data['attachments'] = $attachments;
-        $data['is_all_released'] = true OR false;
-        $data['jobs'] = $verification_jobs_indexed;
-        $data['isViewOnly'] = true;
+        $data['jobs'] = $jobs_indexed;
         $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
-        $data['plate_numbers']   = $this->main->get_data('plate_numbers', ['status_id' => 1], false, 'id, plate_number', 'plate_number ASC');
-		$data['suppliers']      = $this->main->get_data('suppliers', ['status_id' => 1], false, 'id, supplier_name', 'supplier_name ASC');
-		$data['batches']      = $this->main->get_data('batch_numbers', ['status_id' => 1], false, 'id, batch_number', 'batch_number ASC');
-		$data['samples']      = $this->main->get_data('samples', ['status_id' => 1], false, 'id, sample_name', 'sample_name ASC');
         $data['content'] = $this->load->view('reports/report_feeds_content', $data , TRUE);
-        
         $this->load->view('admin/templates', $data);
     }
+
+
  
 
 

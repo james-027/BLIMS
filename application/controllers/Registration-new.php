@@ -41,18 +41,9 @@ class Registration extends CI_Controller {
         $userID = decode($info['userID']);
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $module_access = $this->custom_lib->module_access($alias);
-
-        		$data['new_button'] = '<div class="row pl-3">';
-
-		$btn_class = 'btn btn-icon btn-sm btn-round btn-'.$data['btnColor'].' mr-2 mb-2';
-		if($module_access->add){
-			$data['new_button'] .= '
-				<button type="button" class="add-registration '.$btn_class.'"><span class="fas fa-plus"></span></button>
-				';
-		}
-
-		$data['new_button'] .= '</div>';
-
+        if(!$module_access->view){redirect('admin');}
+        $data['new_button'] = !empty($module_access->add);
+        $data['edit_button'] = !empty($module_access->edit);
         if (!$module_access->view) { redirect('admin'); }
         $data['title'] = 'Registration';
         $data['menu_title'] = '';
@@ -260,6 +251,8 @@ class Registration extends CI_Controller {
     public function search_details()
     {
         $searchValue = $this->input->get_post('search') ?? '';
+        $searchField = $this->input->get_post('field') ?? '';
+
 
         $info = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
@@ -336,22 +329,52 @@ class Registration extends CI_Controller {
         $this->db->where('th.created_by', $userID);
         $this->db->order_by('th.trans_id', 'DESC');
 
-    if (!empty($searchValue)) {
-        $this->db->group_start();
+        if (!empty($searchValue)) {
+            $this->db->group_start();
 
-            $this->db->or_like('th.job_order_no', $searchValue);
-            $this->db->or_like('td.ext_lab_code', $searchValue);
-            if (strtoupper($searchValue) === 'ONGOING') {
-            $this->db->or_where('stat.statDesc IS NULL', null, false);
-        } else {
-            $this->db->or_like('stat.statDesc', $searchValue);
+            switch ($searchField) {
+                case "job_order_no":
+                    $this->db->like('th.job_order_no', $searchValue);
+                    break;
+
+                case "lab_code":
+                    $this->db->like('td.ext_lab_code', $searchValue);
+                    break;
+
+                case "status":
+                    if (strtoupper($searchValue) === 'ONGOING') {
+                    $this->db->or_where('stat.statDesc IS NULL', null, false);
+                } else {
+                    $this->db->or_like('stat.statDesc', $searchValue);
+                }
+                    $this->db->or_like('tn.name', $searchValue);
+                    break;
+
+                case "sample_name":
+                    $this->db->like('s.sample_name', $searchValue);
+                    break;
+
+                case "test_name":
+                    $this->db->like('tn.name', $searchValue);
+                    break;
+                default:
+                    $this->db->like('th.job_order_no', $searchValue);
+                    $this->db->or_like('td.ext_lab_code', $searchValue);
+                    $this->db->or_like('s.sample_name', $searchValue);
+                    $this->db->or_like('tn.name', $searchValue); 
+                    if (strtoupper($searchValue) === 'ONGOING') {
+                    $this->db->or_where('stat.statDesc IS NULL', null, false);
+                    } else {
+                        $this->db->or_like('stat.statDesc', $searchValue);
+                    }
+                    $this->db->or_like('tn.name', $searchValue);
+                    break;
+            }
+
+            $this->db->group_end();
         }
-            $this->db->or_like('tn.name', $searchValue);
 
-        $this->db->group_end();
-        }
-
-
+        
         $results = $this->db->get()->result_array();
 
         $jobs = [];
@@ -378,13 +401,20 @@ class Registration extends CI_Controller {
         foreach ($jobs as $jobId => &$job) {
 
             $this->db->where('trans_id', $jobId);
+            $this->db->group_start();  
             $this->db->where_not_in('test_status_id', [23, 25]);
+            $this->db->or_where('test_status_id IS NULL', null, false);
+            $this->db->group_end(); 
             $total = $this->db->count_all_results('trans_details');
 
             $this->db->where('trans_id', $jobId);
             $this->db->where('is_released', 1);
+            $this->db->group_start();  
             $this->db->where_not_in('test_status_id', [23, 25]);
+            $this->db->or_where('test_status_id IS NULL', null, false);
+            $this->db->group_end();
             $released = $this->db->count_all_results('trans_details');
+
 
             $job['is_all_released'] = ($total > 0 && $total == $released);
 
@@ -393,7 +423,10 @@ class Registration extends CI_Controller {
                 $labStatus = [];
 
                 foreach ($job['samples'] as $sample) {
-                    if (in_array($sample['test_status_id'], [23, 25])) continue;
+
+                    if (in_array($sample['test_status_id'], [23, 25])) {
+                        continue;
+                    }
 
                     $lab = $sample['lab_code'];
 
@@ -417,16 +450,23 @@ class Registration extends CI_Controller {
 
                     $lab = $sample['lab_code'];
 
-                    $sample['replicate_disabled'] =
-                        isset($labStatus[$lab]) &&
-                        ($labStatus[$lab]['total'] == $labStatus[$lab]['released']);
+                    if (isset($labStatus[$lab])) {
+                        $sample['replicate_disabled'] =
+                            ($labStatus[$lab]['total'] > 0 &&
+                            $labStatus[$lab]['total'] == $labStatus[$lab]['released']);
+                    } else {
+                        $sample['replicate_disabled'] = false; 
+                    }
                 }
-
-                usort($job['samples'], function ($a, $b) {
+                unset($sample);
+                usort($job['samples'], function($a, $b) {
                     return strtotime($b['created_at']) - strtotime($a['created_at']);
                 });
             }
+
         }
+        unset($job);
+
 
         $jobs_sorted = array_values($jobs);
 
@@ -467,9 +507,6 @@ class Registration extends CI_Controller {
         ]);
         exit;
     }
-
-
-    
 
     public function sample_registration(){
 		$alias = $this->alias;
@@ -518,6 +555,11 @@ class Registration extends CI_Controller {
 		
 		$this->load->view('admin/templates', $data);
 	}
+
+
+   
+
+
 
 	public function get_commercial_feeds($internalID = null)
 	{
@@ -643,6 +685,7 @@ class Registration extends CI_Controller {
         $this->db->limit(1);
         $last = $this->db->get('trans_headers')->row();
 
+        //Sequence reset every month
         $seq = ($last && preg_match('/(\d{4})$/', $last->job_order_no, $matches)) ? intval($matches[1]) + 1 : 1;
         $seqFormatted = str_pad($seq, 4, '0', STR_PAD_LEFT);
         $jobOrderNo = "$labCode-$moduleCode-$monthYear-$seqFormatted";
@@ -727,20 +770,14 @@ class Registration extends CI_Controller {
 
 
             $mmyy = date('my');
+
+            $this->db->select('MAX(CAST(RIGHT(lab_code,4) AS UNSIGNED)) AS max_inc');
+            $this->db->like('lab_code', "-$mmyy-", 'both'); 
+            $maxRow = $this->db->get('trans_details')->row();
+
+            $lastIncrement = $maxRow && $maxRow->max_inc ? (int)$maxRow->max_inc : 0;
+
             $sampleIncrements = [];  
-
-            $this->db->select('lab_code');
-            $this->db->like('lab_code', "$mmyy-", 'both'); 
-            $this->db->order_by('trans_detail_id', 'DESC');
-            $this->db->limit(1);
-            $last = $this->db->get('trans_details')->row();
-
-            if ($last && preg_match('/(\d{4})$/', $last->lab_code, $matches)) {
-                $lastIncrement = (int)$matches[1];
-            } else {
-                $lastIncrement = 0;
-            }
-
 
         foreach ($sampleNames as $index => $sampleID) {
             $testID     = $labTests[$index] ?? null;
@@ -816,8 +853,11 @@ class Registration extends CI_Controller {
                 $feedmillCode = $internal ? $internal->feedmill_code : 'FM';
             }
 
+
+            //Ext Lab Code for display and Lab Code for Filtering also sequence reset every month
             $laboratoryCode = "$feedmillCode-$mmyy-$sampleCode-$testCode-$increment";
             $ext_lab_code = "$feedmillCode-$mmyy-$increment";
+            
 
             $coa_flag = isset($coaRequired[$index]) ? 'Y' : 'N';
 
@@ -877,6 +917,7 @@ class Registration extends CI_Controller {
             'message' => "Registration saved successfully! Job Order: $jobOrderNo"
         ]);
     }
+    
 
     public function replicate_sample_details()
     {

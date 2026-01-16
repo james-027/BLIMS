@@ -42,7 +42,10 @@ class FailedVerification extends CI_Controller {
         $data['available_access'] = $this->custom_lib->_get_available_access(['userID' => $userID]);
         $module_access = $this->custom_lib->module_access($alias);
 
-        		$data['new_button'] = '<div class="row pl-3">';
+
+        if(!$module_access->view){redirect('admin');}
+
+        $data['new_button'] = '<div class="row pl-3">';
 
 		$btn_class = 'btn btn-icon btn-sm btn-round btn-'.$data['btnColor'].' mr-2 mb-2';
 		if($module_access->add){

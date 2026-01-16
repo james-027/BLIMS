@@ -905,6 +905,7 @@ class Main_model extends CI_Model {
 				$this->db->group_start();
 				$this->db->like('th.job_order_no', $searchValue);
 				$this->db->or_like('td.lab_code', $searchValue);
+				$this->db->or_like('td.ext_lab_code', $searchValue);
 				$this->db->or_like('td.test_exec_lab_result', $searchValue);
 				$this->db->or_like('s.sample_name', $searchValue);
 				$this->db->or_like('tn.name', $searchValue);
@@ -1052,7 +1053,7 @@ class Main_model extends CI_Model {
 		return $this->db->get()->result_array();
 	}
 
-	
+
 
 	public function get_lab_signatories($lab_id)
 	{

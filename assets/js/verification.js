@@ -341,43 +341,6 @@ $(document).on('click', '.replicateDetailBtn', function () {
 
 
 
-
-
-    // $('#newSampleForm').on('submit', function(e) {
-    //     e.preventDefault();
-    //     var formData = new FormData(this);
-    //     $.ajax({
-    //         url: $(this).attr('action'),
-    //         type: 'POST',
-    //         data: formData,
-    //         processData: false,
-    //         contentType: false,
-    //         dataType: 'json',
-    //         beforeSend: function() {
-    //             $('#loader-div').show();
-    //         },
-    //         success: function(response) {
-    //             $('#loader-div').hide();
-    //             if (response.status === 'success') {
-    //                 swal("Success!", response.message, "success");
-    //                 setTimeout(function() {
-    //                     window.location.reload();
-    //                      window.scrollTo(0, 0);
-    //                 }, 2000);
-    //             } 
-    //             else {
-    //                 swal("Oops...", "Something went wrong!", "error");
-    //             }
-    //         },
-    //         error: function(xhr, status, error) {
-    //             $('#loader-div').hide();
-    //             swal("AJAX Error", error, "error");
-    //         }
-    //     });
-    // });
-
-
-
     $('#newSampleForm').on('submit', function(e) {
     e.preventDefault();
     var formData = new FormData(this);

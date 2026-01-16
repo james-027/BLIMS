@@ -258,7 +258,7 @@
                 </div>
 
                 <div class="card-footer text-center">
-                    <a href="<?= base_url('uploads/user_manual/BLIMS_User_Manualv2.pdf') ?>"
+                    <a href="<?= base_url('uploads/user_manual/BLIMS_User_Manualv3.pdf') ?>"
                         class="btn btn-<?= $btnColor ?> btn-md btn-round" target="_blank" download>
                         <i class="flaticon-download mr-1"></i> <b>Download Manual (PDF)</b>
                     </a>

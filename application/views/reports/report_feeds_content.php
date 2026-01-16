@@ -18,47 +18,50 @@
                 <button class="btn btn-outline-success btn-sm">
                     <i class="fas fa-file-excel"></i> Export Excel
                 </button>
- 
+
             </div>
         </div>
     </div>
 
-
-    <!-- Report Preview Table -->
     <div class="card shadow-sm">
         <div class="card-body p-0">
 
             <div class="table-responsive" style="max-height:70vh;">
                 <table class="table table-bordered table-hover mb-0">
-                    <thead class="thead-light sticky-top">
+                    <thead class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
                         <tr>
-                            <th>Job Order No</th>
-                            <th>Lab Code</th>
                             <th>Sample Name</th>
+                            <th>Feedmill</th>
+                            <th>Job Order No</th>
+                            <th>Laboratory Code</th>
                             <th>Laboratory Test</th>
                             <th>Result</th>
+                            <th>Production/ Delivery Date</th>
                             <th>Date Created</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach($jobs as $job): ?>
+                        <?php foreach ($jobs as $job): ?>
+                        <?php foreach ($job['details'] as $detail): ?>
                         <tr>
+                            <td><?= $detail['sample_name'] ?></td>
+                            <td><?= $job['feedmill'] ?></td> 
                             <td><?= $job['job_order_no'] ?></td>
-                            <td><?= $job['lab_code'] ?></td>
-                            <td><?= $job['sample_name'] ?></td>
-                            <td><?= $job['test_name'] ?></td>
-                            <td><?= $job['test_exec_lab_result'] ?></td>
-                            <td><?= date('Y-m-d', strtotime($job['created_at'])) ?></td>
+                            <td><?= $detail['lab_code'] ?></td>
+                            <td><?= $detail['test_name'] ?></td>
+                            <td><?= $detail['test_exec_lab_result'] ?></td>
+                            <td><?= date('M d, Y', strtotime($detail['delivery_date'])) ?></td>
+                            <td><?= date('M d, Y', strtotime($detail['created_at'])) ?></td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php endforeach; ?>
                     </tbody>
+
                 </table>
             </div>
 
         </div>
     </div>
-
-
 </div>
 
 <script>

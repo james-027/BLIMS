@@ -338,9 +338,9 @@ $(document).ready(function(){
             success: function(response) {
                 $('#loader-div').hide();
                 if (response.status === 'success') {
-                   swal("Success!", response.message, "success").then(() => {
-                    window.location.reload();
-                });
+                //    swal("Success!", response.message, "success").then(() => {
+                //     window.location.reload();
+                // });
                 } else {
                     swal("Oops...", "Something went wrong!", "error");
                 }

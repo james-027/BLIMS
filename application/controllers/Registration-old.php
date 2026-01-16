@@ -256,11 +256,6 @@ class Registration extends CI_Controller {
 
         $info = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
-        $alias = $this->alias;
-
-              $module_access = $this->custom_lib->module_access($alias);
-                $data['new_button'] = !empty($module_access->add);
-        $data['edit_button'] = !empty($module_access->edit);
 
         $this->db->select([
             'th.trans_id AS trans_id',
@@ -366,7 +361,7 @@ class Registration extends CI_Controller {
                     $this->db->like('th.job_order_no', $searchValue);
                     $this->db->or_like('td.ext_lab_code', $searchValue);
                     $this->db->or_like('s.sample_name', $searchValue);
-                    $this->db->or_like('tn.name', $searchValue);
+                    $this->db->or_like('tn.name', $searchValue); 
                     if (strtoupper($searchValue) === 'ONGOING') {
                     $this->db->or_where('stat.statDesc IS NULL', null, false);
                     } else {
@@ -562,6 +557,9 @@ class Registration extends CI_Controller {
 	}
 
 
+   
+
+
 
 	public function get_commercial_feeds($internalID = null)
 	{
@@ -676,9 +674,21 @@ class Registration extends CI_Controller {
         }
 
         $laboratoryID = $this->input->post('labLocation');
-        $jobOrderNo = $this->generate_job_order_no($laboratoryID);
+        $lab = $this->main->get_data('laboratories', ['id' => $laboratoryID], TRUE, 'identifier_code');
+        $labCode = $lab ? $lab->identifier_code : 'XXXX';
+        $moduleCode = 'JN';
+        $monthYear = date('my');
 
+        $this->db->select('job_order_no');
+        $this->db->like('job_order_no', "-$moduleCode-$monthYear-", 'both');
+        $this->db->order_by('trans_id', 'DESC');
+        $this->db->limit(1);
+        $last = $this->db->get('trans_headers')->row();
 
+        //Sequence reset every month
+        $seq = ($last && preg_match('/(\d{4})$/', $last->job_order_no, $matches)) ? intval($matches[1]) + 1 : 1;
+        $seqFormatted = str_pad($seq, 4, '0', STR_PAD_LEFT);
+        $jobOrderNo = "$labCode-$moduleCode-$monthYear-$seqFormatted";
 
         $headerData = [
             'job_order_no'        => $jobOrderNo,
@@ -758,7 +768,21 @@ class Registration extends CI_Controller {
         $commercialID    = $this->input->post('commercialFeed') ?: null;
         $internalID      = $this->input->post('internalFeedmill');
 
-        
+
+            $mmyy = date('my');
+            $sampleIncrements = [];  
+
+            $this->db->select('lab_code');
+            $this->db->like('lab_code', "$mmyy-", 'both'); 
+            $this->db->order_by('trans_detail_id', 'DESC');
+            $this->db->limit(1);
+            $last = $this->db->get('trans_details')->row();
+
+            if ($last && preg_match('/(\d{4})$/', $last->lab_code, $matches)) {
+                $lastIncrement = (int)$matches[1];
+            } else {
+                $lastIncrement = 0;
+            }
 
 
         foreach ($sampleNames as $index => $sampleID) {
@@ -816,7 +840,14 @@ class Registration extends CI_Controller {
 
             $groupKey = $sampleCode . '|' . $productionDate . '|' . $supplierID . '|' . $plateKey . '|' . $batchKey;
 
-
+            if (isset($sampleIncrements[$groupKey])) {
+                $increment = $sampleIncrements[$groupKey];
+            } else {
+                $lastIncrement++;
+                $increment = str_pad($lastIncrement, 4, '0', STR_PAD_LEFT);
+                $sampleIncrements[$groupKey] = $increment;
+            }
+  
 
             $feedmillCode = null;
             if (!empty($commercialID)) {
@@ -829,16 +860,10 @@ class Registration extends CI_Controller {
             }
 
 
-            list($laboratoryCode, $ext_lab_code) = $this->generate_lab_codes(
-                $laboratoryID,
-                $feedmillCode,
-                $sampleCode,
-                $testCode,
-                $groupKey
-            );
-
-
-       
+            //Ext Lab Code for display and Lab Code for Filtering also sequence reset every month
+            $laboratoryCode = "$feedmillCode-$mmyy-$sampleCode-$testCode-$increment";
+            $ext_lab_code = "$feedmillCode-$mmyy-$increment";
+            
 
             $coa_flag = isset($coaRequired[$index]) ? 'Y' : 'N';
 
@@ -898,97 +923,7 @@ class Registration extends CI_Controller {
             'message' => "Registration saved successfully! Job Order: $jobOrderNo"
         ]);
     }
-
-
-
-        private function generate_lab_codes($laboratoryID, $feedmillCode, $sampleCode, $testCode, $groupKey) 
-        {
-            static $sampleIncrements = [];
-            $mmyy = date('my');
-
-            // Reuse increment if this groupKey already exists in this submission
-            if (isset($sampleIncrements[$groupKey])) {
-                $increment = $sampleIncrements[$groupKey];
-            } else {
-                  $seq_name = "LAB_CODE_$mmyy"; // monthly reset
-                // -Get next sequence from transaction_sequences table 
-                 $incrementInt = $this->next_sequence($seq_name, 1, 1);
-                $increment = str_pad($incrementInt, 4, '0', STR_PAD_LEFT);
-
-                // Store in static array to reuse in same submission
-                $sampleIncrements[$groupKey] = $increment;
-            }
-
-            // Build lab codes
-            $labCode    = "$feedmillCode-$mmyy-$sampleCode-$testCode-$increment";
-            $extLabCode = "$feedmillCode-$mmyy-$increment";
-
-            return [$labCode, $extLabCode];
-        }
-
-    private function generate_job_order_no($laboratoryID, $moduleCode = 'JN')
-    {
-        // Get laboratory code
-        $lab = $this->main->get_data('laboratories', ['id' => $laboratoryID], TRUE, 'identifier_code');
-        $labCode = $lab ? $lab->identifier_code : 'XXXX';
-
-        // Build month-year for sequence name (monthly reset)
-        $monthYear = date('my'); 
-        
-        $seq_name = "JOB_ORDER_{$moduleCode}_{$monthYear}";
-
-        // Get next atomic sequence
-        $seqInt = $this->next_sequence($seq_name, 1, 1); // increment by 1, start at 1 if not exist
-        $seqFormatted = str_pad($seqInt, 4, '0', STR_PAD_LEFT);
-
-        return "{$labCode}-{$moduleCode}-{$monthYear}-{$seqFormatted}";
-    }
-
-
-    private function next_sequence($seq_name, $increment_by = 1, $start_value = 1)
-    {
-        $this->db->trans_begin(); 
-
-        try {
-            // Lock the row for update (prevents race conditions)
-            $query = $this->db->query(
-                "SELECT * FROM trans_sequences WHERE seq_name = ? FOR UPDATE", 
-                [$seq_name]
-            );
-
-            if ($query->num_rows() === 0) {
-                // Sequence does not exist insert starting value
-                $new_value = $start_value;
-                $this->db->insert('trans_sequences', [
-                    'seq_name'      => $seq_name,
-                    'current_value' => $new_value
-                ]);
-            } else {
-                // Sequence exists increment
-                $row = $query->row();
-                $new_value = $row->current_value + $increment_by;
-
-                $this->db->where('seq_name', $seq_name);
-                $this->db->update('trans_sequences', [
-                    'current_value' => $new_value
-                ]);
-            }
-
-            // Check for transaction errors
-            if ($this->db->trans_status() === FALSE) {
-                throw new Exception('Database error during sequence update.');
-            }
-
-            $this->db->trans_commit(); 
-            return $new_value;
-
-        } catch (Exception $e) {
-            $this->db->trans_rollback(); 
-            log_message('error', 'Sequence update failed: ' . $e->getMessage());
-            return FALSE;
-        }
-    }
-
+    
 
     public function replicate_sample_details()
     {
@@ -1077,7 +1012,6 @@ class Registration extends CI_Controller {
 
     }
 
-
     public function add_sample_details()
     {
         $info = $this->custom_lib->_require_login();
@@ -1085,72 +1019,84 @@ class Registration extends CI_Controller {
 
         $this->load->helper('url');
 
-        $trans_id        = $this->input->post('transId');
-        $sampleNames     = $this->input->post('sampleName');
-        $typeOfSamples   = $this->input->post('typeOfSample');
-        $labTests        = $this->input->post('testCode');
-        $productionDates = $this->input->post('productionDate');
-        $suppliers       = $this->input->post('shipmentSupplier');
-        $plateNumbers    = $this->input->post('plateVanNumber');
-        $batchNumbers    = $this->input->post('batchLotNumber');
-        $leadTimeTypes   = $this->input->post('leadTimeType');
-        $coaRequired     = $this->input->post('coaRequired');
+        $trans_id        = $this->input->post('transId');  
+        $sampleNames     = $this->input->post('sampleName'); 
+        $typeOfSamples   = $this->input->post('typeOfSample'); 
+        $labTests        = $this->input->post('testCode'); 
+        $productionDates = $this->input->post('productionDate'); 
+        $suppliers       = $this->input->post('shipmentSupplier'); 
+        $plateNumbers    = $this->input->post('plateVanNumber'); 
+        $batchNumbers    = $this->input->post('batchLotNumber'); 
+        $leadTimeTypes   = $this->input->post('leadTimeType'); 
+        $coaRequired     = $this->input->post('coaRequired'); 
 
         if (!$trans_id || empty($sampleNames)) {
-            echo json_encode(['status' => 'error', 'message' => 'Missing required data.']);
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Missing required data.'
+            ]);
             return;
         }
 
         $header = $this->main->get_data('trans_headers', ['trans_id' => $trans_id], TRUE);
         if (!$header) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid Job Order ID.']);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Invalid Job Order ID.'
+            ]);
             return;
         }
 
         $commercialID = $header->commercial_id ?: null;
         $internalID   = $header->internal_id;
-        $mmyy         = date('my');
+        $mmyy = date('my');
 
-        static $submissionSequences = [];
+        // Get maximum increment used so far for this month
+        $this->db->select('MAX(CAST(RIGHT(ext_lab_code, 4) AS UNSIGNED)) AS max_increment');
+        $this->db->like('ext_lab_code', "$mmyy-", 'both');
+        $maxResult = $this->db->get('trans_details')->row();
+        $maxIncrement = $maxResult && $maxResult->max_increment ? (int)$maxResult->max_increment : 0;
 
         foreach ($sampleNames as $index => $sampleID) {
-
-            $testID         = $labTests[$index] ?? null;
-            $supplierID     = $suppliers[$index] ?? null;
+            $testID     = $labTests[$index] ?? null;
+            $supplierID = $suppliers[$index] ?? null;
+            $plateVal   = trim(strtoupper($plateNumbers[$index] ?? ''));
+            $batchVal   = trim(strtoupper($batchNumbers[$index] ?? ''));
             $productionDate = $productionDates[$index] ?? null;
-            $plateVal       = trim(strtoupper($plateNumbers[$index] ?? ''));
-            $batchVal       = trim(strtoupper($batchNumbers[$index] ?? ''));
 
+            // Plate Number
             $plateID = null;
-            if ($plateVal) {
-                $plate = $this->main->get_data('plate_numbers', ['plate_number' => $plateVal], TRUE);
-                $plateID = $plate ? $plate->id : $this->main->insert_data('plate_numbers', [
+            if (!empty($plateVal)) {
+                $plateCheck = $this->main->get_data('plate_numbers', ['plate_number' => $plateVal], TRUE);
+                $plateID = $plateCheck ? $plateCheck->id : $this->main->insert_data('plate_numbers', [
                     'plate_number' => $plateVal,
-                    'status_id' => 1,
-                    'created_by' => $userID,
-                    'created_at' => date_now(),
-                    'modified_at' => date_now(),
+                    'status_id'    => 1,
+                    'created_by'   => $userID,
+                    'created_at'   => date_now(),
+                    'modified_at'  => date_now(),
                 ], TRUE)['id'];
             }
 
+            // Batch Number
             $batchID = null;
-            if ($batchVal) {
-                $batch = $this->main->get_data('batch_numbers', ['batch_number' => $batchVal], TRUE);
-                $batchID = $batch ? $batch->id : $this->main->insert_data('batch_numbers', [
+            if (!empty($batchVal)) {
+                $batchCheck = $this->main->get_data('batch_numbers', ['batch_number' => $batchVal], TRUE);
+                $batchID = $batchCheck ? $batchCheck->id : $this->main->insert_data('batch_numbers', [
                     'batch_number' => $batchVal,
-                    'status_id' => 1,
-                    'created_by' => $userID,
-                    'created_at' => date_now(),
-                    'modified_at' => date_now(),
+                    'status_id'    => 1,
+                    'created_by'   => $userID,
+                    'created_at'   => date_now(),
+                    'modified_at'  => date_now(),
                 ], TRUE)['id'];
             }
 
             $sampleRow = $this->db->get_where('samples', ['id' => $sampleID])->row();
-            $testRow   = $this->db->get_where('tests', ['id' => $testID])->row();
-
             $sampleCode = $sampleRow ? $sampleRow->sample_code : 'XXXX';
-            $testCode   = $testRow ? $testRow->test_code : 'XXXX';
 
+            $testRow = $this->db->get_where('tests', ['id' => $testID])->row();
+            $testCode = $testRow ? $testRow->test_code : 'XXXX';
+
+            // Check existing record (same sample, supplier, plate, batch, production date)
             $existing = $this->db
                 ->where('trans_id', $trans_id)
                 ->where('sample_id', $sampleID)
@@ -1162,22 +1108,32 @@ class Registration extends CI_Controller {
                 ->row();
 
             if ($existing) {
+
+                   $allReleased = $this->db
+                    ->where('trans_id', $existing->trans_id)
+                    ->where('ext_lab_code', $existing->ext_lab_code)
+                    ->where('is_released !=', 1) // find any not released
+                    ->get('trans_details')
+                    ->num_rows() === 0;
+
+
+                if ($allReleased) {
+                   
+                    echo json_encode([
+                        'status'  => 'warning',
+                        'message' => 'This Sample Details is already Released!'
+                    ]);
+                    exit;
+                }
+
                 $laboratoryCode = $existing->lab_code;
                 $ext_lab_code   = $existing->ext_lab_code;
             } else {
-
-                $groupKey = $sampleCode.'|'.$productionDate.'|'.$supplierID.'|'.$plateID.'|'.$batchID;
-
-                if (!isset($submissionSequences[$groupKey])) {
-                    $seqName = 'LAB_CODE_'.$mmyy; // monthly reset
-                    $nextSeq = $this->next_sequence($seqName, 1, 1);
-                    $submissionSequences[$groupKey] = str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
-                }
-
-                $increment = $submissionSequences[$groupKey];
+                $maxIncrement++;
+                $increment = str_pad($maxIncrement, 4, '0', STR_PAD_LEFT);
 
                 $feedmillCode = null;
-                if ($commercialID) {
+                if (!empty($commercialID)) {
                     $commercial = $this->db->get_where('commercial_feedmills', ['id' => $commercialID])->row();
                     $feedmillCode = $commercial ? $commercial->feedmill_code : null;
                 }
@@ -1190,33 +1146,66 @@ class Registration extends CI_Controller {
                 $ext_lab_code   = "$feedmillCode-$mmyy-$increment";
             }
 
-            $coa_flag = !empty($coaRequired[$index]) ? 'Y' : 'N';
+            $coa_flag = isset($coaRequired[$index]) && $coaRequired[$index] ? 'Y' : 'N';
 
             $detailData = [
-                'trans_id' => $trans_id,
-                'sample_id' => $sampleID,
-                'sample_type_id' => $typeOfSamples[$index] ?? null,
-                'lab_test_id' => $testID,
-                'delivery_date' => $productionDate,
-                'supplier_id' => $supplierID,
-                'plate_number_id' => $plateID,
-                'batch_number_id' => $batchID,
-                'lead_time' => $leadTimeTypes[$index] ?? null,
-                'coa_flag' => $coa_flag,
-                'lab_code' => $laboratoryCode,
-                'ext_lab_code' => $ext_lab_code,
-                'created_at' => date('Y-m-d H:i:s'),
-                'created_by' => $userID,
+                'trans_id'           => $trans_id,
+                'sample_id'          => $sampleID,
+                'sample_type_id'     => $typeOfSamples[$index] ?? null,
+                'lab_test_id'        => $testID ?? null,
+                'delivery_date'      => $productionDate,
+                'supplier_id'        => $supplierID,
+                'plate_number_id'    => $plateID,
+                'batch_number_id'    => $batchID,
+                'lead_time'          => $leadTimeTypes[$index] ?? null,
+                'coa_flag'           => $coa_flag,
+                'lab_code'           => $laboratoryCode,
+                'ext_lab_code'       => $ext_lab_code,
+                'created_at'         => date('Y-m-d H:i:s'),
+                'created_by'         => $userID,
                 'trans_detail_status_id' => 20
             ];
 
-            $this->main->insert_data('trans_details', $detailData);
+            $details_result = $this->main->insert_data('trans_details', $detailData, TRUE);
+
+            if (!empty($details_result['id'])) {
+                $user_logs = [
+                    'userID'       => decode($info['userID']),
+                    'userFullName' => $info['userFullName'],
+                    'logTS'        => date_now(),
+                    'page'         => 'Registration/submit_registration',
+                    'logDetail'    => 'Successfully added Trans Detail ID:' . $details_result['id']
+                ];
+                $this->main->user_logs($user_logs);
+
+                $historyData = $detailData;
+                $historyData['trans_detail_id'] = $details_result['id'];
+                $historyData['detail_change'] = "This Detail is Added to Already Existing JO.";
+                $historyData['trans_detail_status_id'] = 19;
+                $historyData['created_at'] = date('Y-m-d H:i:s');
+                $historyData['created_by'] = $userID;
+                $this->main->insert_data('trans_history', $historyData);
+
+                $timestampData = [
+                    'trans_detail_id'        => $details_result['id'],
+                    'trans_detail_status_id' => 19,
+                    'status_id'              => 1,
+                    'created_at'             => date('Y-m-d H:i:s'),
+                    'created_by'             => $userID,
+                    'updated_by'             => null,
+                    'modified_at'            => null
+                ];
+                $this->main->insert_data('trans_timestamps', $timestampData);
+            }
         }
 
-        echo json_encode(['status' => 'success', 'message' => 'Sample details added successfully!']);
+        echo json_encode([
+            'status'  => 'success',
+            'message' => 'Sample details added successfully!'
+        ]);
+
         exit;
     }
-
 
     public function get_detail_data($detailId)
     {

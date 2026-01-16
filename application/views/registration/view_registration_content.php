@@ -9,40 +9,40 @@
     <div class="row align-items-center justify-content-between mt-3">
         <div class="col-md-4 col-sm-12 mb-2 mb-md-0 pl-3">
             <?php if (!empty($new_button)): ?>
-                <button type="button" id="add-registration" class="btn btn-primary shadow-sm">
-                    <i class="fas fa-plus-circle mr-1"></i> Add Registration
-                </button>
+            <button type="button" id="add-registration" class="btn bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
+                <i class="fas fa-plus-circle mr-1"></i> Add Registration
+            </button>
             <?php endif; ?>
         </div>
 
-          <div class="row align-items-center justify-content-end mt-3">
-        <div class="col-auto pr-1">
-            <select id="searchField" class="form-control shadow-sm" style = "cursor:pointer">
-                <option value="">All Fields</option>
-                <option value="job_order_no">Job Order No</option>
-                <option value="lab_code">Lab Code</option>
-                <option value="date_submitted">Date Submitted</option>
-                <option value="lab_result">Lab Result</option>
-                <option value="reference_no">Reference Number</option>
-                <option value="client">Client</option>
-                <option value="nutritionist">Nutritionist</option>
-                <option value="sample_name">Sample Name</option>
-                <option value="test_name">Laboratory Test</option>
-            </select>
+        <div class="row align-items-center justify-content-end mt-3">
+            <div class="col-auto pr-1">
+                <select id="searchField" class="form-control shadow-sm" style="cursor:pointer">
+                    <option value="">All Fields</option>
+                    <option value="job_order_no">Job Order No</option>
+                    <option value="lab_code">Lab Code</option>
+                    <option value="date_submitted">Date Submitted</option>
+                    <option value="lab_result">Lab Result</option>
+                    <option value="reference_no">Reference Number</option>
+                    <option value="client">Client</option>
+                    <option value="nutritionist">Nutritionist</option>
+                    <option value="sample_name">Sample Name</option>
+                    <option value="test_name">Laboratory Test</option>
+                </select>
+            </div>
+            <div class="col-auto pl-1">
+                <input type="text" id="jobSearch" class="form-control shadow-sm" placeholder="🔍 Search here">
+            </div>
         </div>
-        <div class="col-auto pl-1">
-            <input type="text" id="jobSearch" class="form-control shadow-sm" placeholder="🔍 Search here">
-        </div>
-    </div>
     </div>
 
     <?php if(!empty($verification_jobs)): ?>
 
 
     <div id="jobsContainer">
-            <?php $this->load->view('registration/registration_container', ['jobs'=>$verification_jobs, 'thColor'=>$thColor, 'display_status'=>$display_status]); ?>
+        <?php $this->load->view('registration/registration_container', ['jobs'=>$verification_jobs, 'thColor'=>$thColor, 'display_status'=>$display_status]); ?>
 
-      
+
     </div>
     <?php else: ?>
     <div class="row justify-content-center mt-4">
@@ -58,7 +58,7 @@
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
 
-                    <div class="modal-header bg-primary text-white">
+                    <div class="modal-header  bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
                         <h5 class="modal-title">Add Sample Detail</h5>
                         <button type="button" class="close text-white" data-dismiss="modal">
                             <span>&times;</span>
