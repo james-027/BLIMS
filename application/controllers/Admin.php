@@ -6527,7 +6527,6 @@ private function _read_excel($filePath)
 
 	public function analyst()
 	{
-		
 		$info = $this->custom_lib->_require_login();
 		$data['js_file'] = '';
 		$data['profile'] = $this->custom_lib->_get_profile();
@@ -14987,7 +14986,6 @@ private function _read_excel($filePath)
 	*/
 	public function laboratories()
 	{
-		
 		$info = $this->custom_lib->_require_login();
 		$data['js_file'] = '';
 		$data['profile'] = $this->custom_lib->_get_profile();
@@ -15096,7 +15094,6 @@ private function _read_excel($filePath)
 			if($module_access->edit){
 				$primary_action = '<a href="#" class="edit-laboratories" data-id="'.encode($r->id).'"><span class="fas fa-pencil-alt fa-md"></span></a>';
 			}
-
 			$createdBy  = $r->createdByName;
 			$createdOn  = time_stamp_display($r->created_at);
 			$modifiedBy = $r->updated_by == '' ? '' : $r->modifiedByName;
@@ -15106,6 +15103,7 @@ private function _read_excel($filePath)
 				$r->identifier_code,
 				$r->laboratory_name,
 				$r->address,
+				$r->coa_laboratory_name,
 				$createdBy,
 				$createdOn,
 				$modifiedBy,
@@ -15126,7 +15124,6 @@ private function _read_excel($filePath)
 		exit();
 	}
 
-
 	
 	public function add_laboratories()
 	{
@@ -15137,6 +15134,8 @@ private function _read_excel($filePath)
 			$identifierCode = clean_data($this->input->post('identifierCode'));
 			$laboratoryName = clean_data($this->input->post('laboratoryName'));
 			$addressName = clean_data($this->input->post('addressName'));
+			$coaHeaderRaw = clean_data($this->input->post('coaHeader'));
+			$coaHeader = preg_replace('/(\r\n|\r|\n|\\\\r\\\\n|\\\\n|\\\\r)/', '<br>', $coaHeaderRaw);
 
 			if(!empty($identifierCode) && !empty($laboratoryName) && !empty($addressName)){
 					$check_labname = $this->main->check_data('laboratories', array('laboratory_name' =>  $laboratoryName));
@@ -15145,6 +15144,7 @@ private function _read_excel($filePath)
 							'identifier_code' => trim(strtoupper($identifierCode)),
 							'laboratory_name' => trim(strtoupper($laboratoryName)),
 							'address' => trim(strtoupper($addressName)),
+							'coa_laboratory_name' => trim(strtoupper($coaHeader)),
 							'status_id' => 1,
 							'created_by'    => decode($info['userID']),
                             'created_at'  => date_now(),
@@ -15211,6 +15211,7 @@ private function _read_excel($filePath)
 				'identifier_code' => $check_lab['info']->identifier_code,
 				'laboratory_name' => $check_lab['info']->laboratory_name,
 				'address' => $check_lab['info']->address,
+				'coa_laboratory_name' => $check_lab['info']->coa_laboratory_name,
 				
 			);
 		}else{
@@ -15229,7 +15230,9 @@ private function _read_excel($filePath)
 			$identifierCode = clean_data($this->input->post('identifierCode'));
 			$laboratoryName = clean_data($this->input->post('laboratoryName'));
 			$addressName = clean_data($this->input->post('addressName'));
-			
+			$coaHeaderRaw = clean_data($this->input->post('coaHeader'));
+
+			$coaHeader = preg_replace('/(\r\n|\r|\n|\\\\r\\\\n|\\\\n|\\\\r)/', '<br>', $coaHeaderRaw);
 
 			if(!empty($labID) && !empty($laboratoryName) && !empty($addressName)){
 				$check_lab = $this->main->check_data('laboratories', array('laboratory_name' =>  $laboratoryName, 'id !=' => $labID));
@@ -15239,6 +15242,7 @@ private function _read_excel($filePath)
 							'identifier_code' => trim(strtoupper($identifierCode)),
 							'laboratory_name' => trim(strtoupper($laboratoryName)),
 							'address' => trim(strtoupper($addressName)),
+							'coa_laboratory_name' => trim(strtoupper($coaHeader)),
 							'updated_by' => decode($info['userID']),
                             'modified_at'   => date_now()
 						);

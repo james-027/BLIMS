@@ -993,6 +993,7 @@ class Main_model extends CI_Model {
 				ut_analyzed.userTypeName AS analyzed_usertype,
 				tt_reported.created_at AS date_reported,
 				lab.laboratory_name AS laboratory_name,
+				lab.coa_laboratory_name AS coa_laboratory_name,
 				lab.address AS laboratory_address
 			');
 			$this->db->from('trans_details td');

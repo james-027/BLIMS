@@ -9232,6 +9232,7 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
                     $('#update-laboratories').find('#identifierCode').val(parse_response['info'].identifier_code);
                     $('#update-laboratories').find('#laboratoryName').val(parse_response['info'].laboratory_name);
                     $('#update-laboratories').find('#addressName').val(parse_response['info'].address);
+                    $('#update-laboratories').find('#coaHeader').val(parse_response['info'].coa_laboratory_name);
                     $('#modal-edit-laboratories').modal({show:true});
                 }else{
                     console.log('Error please contact your administrator.');
