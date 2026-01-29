@@ -265,7 +265,7 @@ $(document).ready(function(){
     $('#saveBtnResultVerification').on('click', function(e) {
         e.preventDefault();
 
-        let approved = 0, disapproved = 0;
+        let approved = 0, disapproved = 0; re_analysis = 0;
         let missingRemarks = false;
 
         $('.result-verification-status-select').each(function() {
@@ -273,6 +273,7 @@ $(document).ready(function(){
             let transDetailId = $(this).attr('id').replace('result_verifications','');
             let remarkInput = $('input[name="result_verification_remarks['+transDetailId+']"]');
 
+            
             if (selectedText === 'approved') {
                 approved++;
             } else if (selectedText === 'disapproved') {
@@ -283,10 +284,18 @@ $(document).ready(function(){
                 } else {
                     remarkInput.removeClass('is-invalid');
                 }
+            } else if (selectedText === 're-analysis') {
+                re_analysis++;
+                if (remarkInput.val().trim() === '') {
+                    missingRemarks = true;
+                    remarkInput.addClass('is-invalid'); 
+                } else {
+                    remarkInput.removeClass('is-invalid');
+                }
             }
         });
 
-        if (approved === 0 && disapproved === 0) {
+        if (approved === 0 && disapproved === 0 && re_analysis === 0) {
             swal("Warning!", "Please select Test Result before proceeding.", "warning");
             return;
         }
@@ -304,9 +313,11 @@ $(document).ready(function(){
             return false;
         }
 
+        console.log(re_analysis);
 
         $('#countApproved').text(approved);
         $('#countDisapproved').text(disapproved);
+        $('#countReAnalysis').text(re_analysis);
 
         $('#confirmModalResultVerification').modal('show');
     });
@@ -414,6 +425,8 @@ $(document).ready(function(){
 
     //     $('#confirmModalTestExec').modal('show');
     // });
+
+
 
 
     $('#saveBtnTest').on('click', function(e) {
@@ -696,6 +709,197 @@ document.querySelector('#jobsContainer').addEventListener('click', function(even
         });
     });
 
+
+
+
+        $(document).on("change", "#rep_testCode", function () {
+        let labId = $("#replicateDetailModal").data("lab-id"); 
+        let testId = $(this).val();
+
+        if (labId && testId) {
+            loadLeadTimes(labId, testId);
+        }
+    });
+
+
+    function loadLeadTimes(labId, testId) {
+    if (!labId || !testId) return;
+
+    $.ajax({
+        url: baseUrl + controllerName + "/get_lead_times",
+        type: "GET",
+        data: { laboratory_id: labId, test_id: testId },
+        dataType: "json",
+        success: function (response) {
+            let leadDDLs = [$("#modal_leadTimeType"), $("#rep_leadTimeType")];
+
+            leadDDLs.forEach(dd => {
+                dd.empty().append('<option value="">Select Lead Time</option>');
+
+                if (Array.isArray(response) && response.length > 0) {
+                    response.forEach(item => dd.append(`<option value="${item.value}">${item.label}</option>`));
+                } else {
+                    dd.append('<option value="">No lead times available</option>');
+                }
+
+                if (dd.hasClass("select2-hidden-accessible")) dd.trigger("change.select2");
+            });
+        },
+        error: function(err) {
+            console.error("Error fetching lead times.", err);
+        }
+    });
+}
+
+
+    $('#saveReplicateDetailBtn').on('click', function (e) {
+        e.preventDefault();
+          let isValid = true;
+    $('#replicateSampleForm').find('select[required]').each(function() {
+        if (!$(this).val()) {
+            $(this).addClass('is-invalid');
+            isValid = false;
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+
+    if (isValid) {
+        $('#confirmReplicateSampleModal').modal('show');
+    } else {
+        alert('Please fill all required fields.');
+    }
+
+    });
+
+    
+    $('#confirmReplicateSubmitSample').on('click', function() {
+        $('#confirmReplicateSampleModal').modal('hide');
+        
+        $('#replicateSampleForm').submit();
+    });
+
+
+
+        $('#replicateSampleForm').on('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            beforeSend: function() {
+                $('#loader-div').show();
+            },
+            success: function(response) {
+                $('#loader-div').hide();
+                if (response.status === 'success') {
+                    swal("Success!", response.message, "success");
+                    setTimeout(function() {
+                        window.location.reload();
+                         window.scrollTo(0, 0);
+                    }, 2000);
+                } else {
+                    swal("Oops...", "Something went wrong!", "error");
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#loader-div').hide();
+                swal("AJAX Error", error, "error");
+            }
+        });
+    });
+    
+    $(document).on('click', '.replicateDetailBtn', function () {
+
+    let detailId = $(this).data("detail-id");
+    let labId = $(this).data("lab-id");  
+    let jobIndex = $(this).data("job");
+    let modal = $("#replicateDetailModal");
+    let transId = $(this).data("trans-id");
+    let labCode = $(this).data('lab-code');
+
+    $('#replicateLabCode').text(labCode);
+
+    $('#rep_labId').val(labId);
+    $('#rep_transId').val(transId)
+    $('#rep_detailId').val(detailId)
+
+     $("#replicateDetailModal")
+            .data('job', jobIndex)
+            .data('lab-id', labId) 
+            .data('trans-id', transId) 
+            .data('detail-id', detailId) 
+            .modal('show');
+
+        if (labId) {
+            loadSampleAndTestCodes(labId);
+        }
+
+    modal.find("#rep_jobIndex").val(jobIndex);
+
+    modal.find("input, select").prop("disabled", false);
+
+    modal.find("#rep_sampleName").prop("disabled", true);
+    modal.find("#rep_typeOfSample").prop("disabled", true);
+    modal.find("#rep_productionDate").prop("disabled", true);
+    modal.find("#rep_shipmentSupplier").prop("disabled", true);
+    modal.find("#rep_plateVanNumber").prop("disabled", true);
+    modal.find("#rep_batchLotNumber").prop("disabled", true);
+
+
+    $.ajax({
+        url: baseUrl + controllerName + "/get_detail_data/" + detailId,
+        type: "GET",
+        dataType: "json",
+        success: function (data) {
+            modal.find("#rep_labId").val(data.lab_id);
+            modal.find("#rep_transId").val(data.trans_id);
+            modal.find("#rep_sampleName").val(data.sample_name);
+            modal.find("#rep_typeOfSample").val(data.sample_type_name);
+            modal.find("#rep_productionDate").val(data.delivery_date);
+            modal.find("#rep_shipmentSupplier").val(data.supplier_name);
+            modal.find("#rep_plateVanNumber").val(data.plate_number);
+            modal.find("#rep_batchLotNumber").val(data.batch_number);
+            modal.find("#rep_leadTimeType").val(data.lead_time);
+            modal.find("#rep_coaRequired").prop("checked", data.coa_flag === "Y");
+
+            modal.modal("show");
+        }
+    });
+    });
+
+
+    
+  function loadSampleAndTestCodes(labId, preselected = {}) {
+    if (!labId) return;
+
+    $.ajax({
+        url: baseUrl + controllerName + "/get_lab_tests/" + labId,
+        type: "GET",
+        dataType: "json",
+        success: function (response) {
+            let testDDLs = [$("#modal_testCode"), $("#rep_testCode")];
+            testDDLs.forEach(dd => dd.empty().append('<option value="">Test Code</option>'));
+
+            if (Array.isArray(response.tests)) {
+                testDDLs.forEach(dd => {
+                    response.tests.forEach(item => {
+                        let selected = (preselected.testCodeId && preselected.testCodeId == item.id) ? 'selected' : '';
+                        dd.append(`<option value="${item.id}" ${selected}>${item.name}</option>`);
+                    });
+                });
+            }
+
+        },
+        error: function(err) {
+            console.error("Error fetching lab tests", err);
+        }
+    });
+}
 
         
     function initDynamicDropdowns(container = document) {

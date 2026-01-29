@@ -142,7 +142,7 @@
                                                 <td class="text-center align-middle">
                                                     <span>
 
-                                                `<?php
+                                                <?php
                                                     $hasEditAccess = !empty($edit_button);
 
                                                     $isDisabled = !$hasEditAccess || !empty($detail['replicate_disabled']);
@@ -166,7 +166,7 @@
                                                     <?= $isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>
                                                     title="<?= $replicateTitle ?>">
                                                     <i class="fas fa-clone"></i>
-                                                </button>`
+                                                </button>
 
 
 

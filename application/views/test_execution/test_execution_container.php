@@ -12,9 +12,13 @@
                             </h5>
 
                             <div class="d-flex align-items-center">
-                                <span class="badge badge-light mr-2">Samples:
+
+                                <span class="badge badge-light mr-3">Samples:
                                     <?= count($job['samples'] ?? []) ?></span>
-                                <i class="fas fa-chevron-down collapse-icon"></i>
+
+                                <span class="ml-2">
+                                    <i class="fas fa-chevron-down collapse-icon"></i>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -27,15 +31,16 @@
                                         <thead>
                                             <tr>
                                                 <th style="width:50px;">No.</th>
-                                                <th>Date Submitted</th>
+                                                <th style="width:150px;">Date Submitted</th>
                                                 <th style="width:150px;">Laboratory Code</th>
-                                                <th>Sample Name</th>
-                                                <th>Laboratory Tests</th>
+                                                <th style="width:150px;">Sample Name</th>
+                                                <th style="width:150px;">Laboratory Tests</th>
                                                 <th style="width:100px">Lead Time</th>
-                                                <th>Status</th>
-                                                <th>Lab Result</th>
-                                                <th>Remarks</th>
-                                                <th>Logs</th>
+                                                <th style="width:150px;">Status</th>
+                                                <th style="width:150px;">Lab Result</th>
+                                                <th style="width:150px;">Remarks</th>
+                                                <th style="width:150px;">Logs</th>
+                                                <th style="width:150px;">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -131,6 +136,39 @@
                                                     </button>
                                                 </td>
 
+                                                <td class="text-center align-middle">
+                                                    <span>
+
+                                                        <?php
+                                                    $hasEditAccess = !empty($can_modify);
+
+                                                    $isDisabled = !$hasEditAccess || !empty($detail['replicate_disabled']);
+
+                                                    if (!$hasEditAccess) {
+                                                        $replicateTitle = 'You do not have permission to replicate this sample';
+                                                    } elseif (!empty($detail['replicate_disabled'])) {
+                                                        $replicateTitle = 'Cannot Append Sample to this Lab Code';
+                                                    } else {
+                                                        $replicateTitle = 'Append Sample to this Lab Code';
+                                                    }
+                                                ?>
+
+                                                        <button type="button"
+                                                            class="btn btn-primary btn-sm replicateDetailBtn"
+                                                            data-job="<?= $jobIndex ?>"
+                                                            data-lab-id="<?= $job['laboratory_id'] ?>"
+                                                            data-trans-id="<?= $job['trans_id'] ?>"
+                                                            data-detail-id="<?= $detail['trans_detail_id'] ?>"
+                                                            data-lab-code="<?= $detail['lab_code'] ?>"
+                                                            <?= $isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '' ?>
+                                                            title="<?= $replicateTitle ?>">
+                                                            <i class="fas fa-clone"></i>
+                                                        </button>
+
+
+
+                                                    </span>
+                                                </td>
 
 
                                             </tr>

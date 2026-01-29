@@ -73,6 +73,8 @@ class TestExecution extends CI_Controller {
                 $jobs[$jobId] = [
                     'job_order_no' => $row['job_order_no'],
                     'lab_code' => $row['lab_code'],
+                    'laboratory_id' => $row['laboratory_id'],
+                    'trans_id' => $row['trans_id'],
                     'samples' => []
                 ];
             }
@@ -100,6 +102,10 @@ class TestExecution extends CI_Controller {
 
         $data['jobs'] = $jobs_indexed;
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 4], false, 'statusID, statDesc', 'statDesc ASC');
+        $data['plate_numbers']   = $this->main->get_data('plate_numbers', ['status_id' => 1], false, 'id, plate_number', 'plate_number ASC');
+		$data['suppliers']      = $this->main->get_data('suppliers', ['status_id' => 1], false, 'id, supplier_name', 'supplier_name ASC');
+		$data['batches']      = $this->main->get_data('batch_numbers', ['status_id' => 1], false, 'id, batch_number', 'batch_number ASC');
+		$data['samples']      = $this->main->get_data('samples', ['status_id' => 1], false, 'id, sample_name', 'sample_name ASC');
         $data['content'] = $this->load->view('test_execution/test_execution_content', $data , TRUE);
         $this->load->view('admin/templates', $data);
     }
@@ -144,6 +150,8 @@ class TestExecution extends CI_Controller {
                 $jobs[$jobId] = [
                     'job_order_no' => $row['job_order_no'],
                     'lab_code' => $row['lab_code'],
+                    'laboratory_id' => $row['laboratory_id'],
+                    'trans_id' => $row['trans_id'],
                     'samples' => []
                 ];
             }
@@ -169,6 +177,10 @@ class TestExecution extends CI_Controller {
 
         $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
         $data['test_statuses'] = $this->main->get_data('stats', ['status_type_id' => 4], false, 'statusID, statDesc', 'statDesc ASC');
+        $data['plate_numbers']   = $this->main->get_data('plate_numbers', ['status_id' => 1], false, 'id, plate_number', 'plate_number ASC');
+		$data['suppliers']      = $this->main->get_data('suppliers', ['status_id' => 1], false, 'id, supplier_name', 'supplier_name ASC');
+		$data['batches']      = $this->main->get_data('batch_numbers', ['status_id' => 1], false, 'id, batch_number', 'batch_number ASC');
+		$data['samples']      = $this->main->get_data('samples', ['status_id' => 1], false, 'id, sample_name', 'sample_name ASC');
         $html = $this->load->view('test_execution/test_execution_container', $data, TRUE);
 
         header('Content-Type: application/json; charset=utf-8');
@@ -351,6 +363,197 @@ class TestExecution extends CI_Controller {
         ]);
     }
 
+    	public function get_lab_tests($laboratory_id = null)
+	{
+		
+		if (!$laboratory_id) {
+			echo json_encode(['tests' => [], 'samples' => []]);
+			return;
+		}
+
+		$this->db->select('lt.test_id, tn.name as test_name, t.test_code,lt.sample_type_id, st.sample_type_name');
+		$this->db->from('lab_tests lt');
+		$this->db->join('tests t', 'lt.test_id = t.id', 'left');
+		$this->db->join('test_names tn', 't.test_name_id = tn.id', 'left');
+		$this->db->join('sample_types st', 'lt.sample_type_id = st.id', 'left');
+		$this->db->where('lt.laboratory_id', $laboratory_id);
+		$query = $this->db->get();
+		$data = $query->result();
+
+		$tests = [];
+		$samples = [];
+
+		foreach ($data as $row) {
+			$tests[$row->test_id] = $row->test_code;
+			$samples[$row->sample_type_id] = $row->sample_type_name;
+		}
+
+		echo json_encode([
+			'tests' => array_map(function ($id, $name) {
+				return ['id' => $id, 'name' => $name];
+			}, array_keys($tests), $tests),
+			'samples' => array_map(function ($id, $name) {
+				return ['id' => $id, 'name' => $name];
+			}, array_keys($samples), $samples),
+		]);
+	}
+
+    public function get_detail_data($detailId)
+    {
+        $this->db->select([
+            'td.*',
+            's.sample_name',
+            'st.sample_type_name',
+            'sup.supplier_name',
+            'p.plate_number',
+            'b.batch_number',
+            'td.lab_test_id',
+            'td.sample_type_id',
+            'td.coa_flag',
+            'td.lead_time AS lead_time'
+        ]);
+        $this->db->from('trans_details td');
+        $this->db->join('samples s', 's.id = td.sample_id', 'left');
+        $this->db->join('sample_types st', 'st.id = td.sample_type_id', 'left');
+        $this->db->join('lab_tests lt', 'lt.test_id = td.lab_test_id', 'left');
+        $this->db->join('suppliers sup', 'sup.id = td.supplier_id', 'left');
+        $this->db->join('plate_numbers p', 'p.id = td.plate_number_id', 'left');
+        $this->db->join('batch_numbers b', 'b.id = td.batch_number_id', 'left');
+        $this->db->where('td.trans_detail_id', $detailId);
+
+
+        $detail = $this->db->get()->row_array();
+
+        // Format delivery_date for <input type="date">
+        if (!empty($detail['delivery_date'])) {
+            $detail['delivery_date'] = date('Y-m-d', strtotime($detail['delivery_date']));
+        }
+
+        echo json_encode($detail);
+    }
+
+    public function get_lead_times()
+	{
+
+		$laboratoryId = $this->input->get('laboratory_id');
+		$testId = $this->input->get('test_id');
+        
+
+		$leadTimes = $this->db
+			->where('laboratory_id', $laboratoryId)
+			->where('test_id', $testId)
+			->get('lab_tests')
+			->row();
+
+		$response = [];
+
+		if ($leadTimes) {
+			if (!is_null($leadTimes->lead_regular)) {
+				$response[] = [
+					'label' => 'Regular',
+					'value' => $leadTimes->lead_regular,
+				];
+			}
+
+			if (!is_null($leadTimes->lead_rush)) {
+				$response[] = [
+					'label' => 'Rush',
+					'value' => $leadTimes->lead_rush,
+				];
+			}
+		}
+
+		echo json_encode($response);
+	}
+
+    public function replicate_sample_details()
+    {
+        $info = $this->custom_lib->_require_login();
+        $userID = decode($info['userID']);
+
+        $this->load->helper('url');
+
+        $trans_id        = $this->input->post('transId');  
+        $detail_id        = $this->input->post('detailId');  
+        $labTests        = $this->input->post('testCode'); 
+        $leadTimeTypes   = $this->input->post('leadTimeType'); 
+        $typeOfSamples   = $this->input->post('typeOfSample'); 
+        $coaRequired     = $this->input->post('coaRequired'); 
+
+        $existing = $this->db
+                ->where('trans_detail_id', $detail_id)
+                ->get('trans_details')
+                ->row();
+        $existing = $this->db
+        ->where('trans_detail_id', $detail_id)
+        ->get('trans_details')
+        ->row();
+
+        if ($existing) {
+            foreach ($labTests as $index => $sampleTypeId) {
+                $coa_flag = isset($coaRequired[$index]) && $coaRequired[$index] ? 'Y' : 'N';
+
+                $detailData = [
+                    'trans_id'           => $trans_id,
+                    'sample_id'          => $existing->sample_id,
+                    'sample_type_id'     => $existing->sample_type_id,
+                    'lab_test_id'        => $labTests[$index] ?? null,
+                    'delivery_date'      => $existing->delivery_date,
+                    'supplier_id'        => $existing->supplier_id,
+                    'plate_number_id'    => $existing->plate_number_id,
+                    'batch_number_id'    => $existing->batch_number_id,
+                    'lead_time'          => $leadTimeTypes[$index] ?? null,
+                    'coa_flag'           => $coa_flag,
+                    'lab_code'           => $existing->lab_code,
+                    'ext_lab_code'       => $existing->ext_lab_code,
+                    'created_at'         => date('Y-m-d H:i:s'),
+                    'created_by'         => $userID,
+                    'trans_detail_status_id' => 27
+                ];
+
+                $details_result = $this->main->insert_data('trans_details', $detailData, TRUE);
+
+                if (!empty($details_result['id'])) {
+                    $user_logs = [
+                        'userID'       => $userID,
+                        'userFullName' => $info['userFullName'],
+                        'logTS'        => date_now(),
+                        'page'         => 'Registration/submit_registration',
+                        'logDetail'    => 'Successfully added Trans Detail ID:' . $details_result['id']
+                    ];
+                    $this->main->user_logs($user_logs);
+
+                    $historyData = $detailData;
+                    $historyData['trans_detail_id'] = $details_result['id'];
+                    $historyData['detail_change'] = "This Detail is Replicated from {$existing->ext_lab_code}";
+                    $historyData['trans_detail_status_id'] = 27;
+                    $historyData['created_at'] = date('Y-m-d H:i:s');
+                    $historyData['created_by'] = $userID;
+                    $this->main->insert_data('trans_history', $historyData);
+
+                    $timestampData = [
+                        'trans_detail_id'        => $details_result['id'],
+                        'trans_detail_status_id' => 26,
+                        'status_id'              => 1,
+                        'created_at'             => date('Y-m-d H:i:s'),
+                        'created_by'             => $userID,
+                        'updated_by'             => null,
+                        'modified_at'            => null
+                    ];
+                    $this->main->insert_data('trans_timestamps', $timestampData);
+                }
+            }
+        }
+
+        echo json_encode([
+            'status'  => 'success',
+            'message' => 'Sample details replicated successfully!'
+        ]);
+        exit;
+
+    }
+
+    
 	// END OF Test Execution and Data Entry CONTROLLER
 
 

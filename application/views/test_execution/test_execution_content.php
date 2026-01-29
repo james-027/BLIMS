@@ -4,6 +4,130 @@
     </div>
 </div>
 
+
+ 
+
+
+    <form method="post" action="<?=base_url($controller.'/replicate_sample_details')?>" enctype="multipart/form-data"
+        id="replicateSampleForm">
+        <div class="modal fade" id="replicateDetailModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <span class="font-weight-bold">Replicate Sample Details:</span>
+                            <span id="replicateLabCode" class="font-weight-bold"></span>
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <input type="hidden" name="jobIndex" id="rep_jobIndex">
+                    <input type="hidden" name="labId" id="rep_labId">
+                    <input type="hidden" name="transId" id="rep_transId">
+                    <input type="hidden" name="detailId" id="rep_detailId">
+
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            <label>Sample Name</label>
+                            <input type="text" id="rep_sampleName" name="sampleName[]" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Type of Sample</label>
+                            <input
+                                type="text"
+                                id="rep_typeOfSample"
+                                name="typeOfSample[]"
+                                class="form-control"
+                                readonly
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Test Code</label>
+                            <select id="rep_testCode" name="testCode[]" class="form-control dynamic_dropdown_modal"
+                                required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Production/Delivery Date</label>
+                            <input type="date" id="rep_productionDate" name="productionDate[]"
+                                class="form-control dynamic_dropdown_modal" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Shipment/Supplier</label>
+                            <input type="text" id="rep_shipmentSupplier" name="shipmentSupplier[]" class="form-control"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Plate / Van Number</label>
+                            <input type="text" id="rep_plateVanNumber" name="plateVanNumber[]" class="form-control"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Batch / Lot Number</label>
+                            <input type="text" id="rep_batchLotNumber" name="batchLotNumber[]" class="form-control"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Type of Lead Time</label>
+                            <select id="rep_leadTimeType" name="leadTimeType[]" class="form-control" required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>COA Required: </label>
+                            <input type="checkbox" name="coaRequired[]" id="rep_coaRequired">
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                         <button type="button" id="saveReplicateDetailBtn" class="btn btn-success">Save</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="confirmReplicateSampleModal" tabindex="-1" role="dialog"
+            aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="confirmModalLabel">
+                            <i class="fas fa-exclamation-circle mr-2"></i> Replicating this Sample
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p class="confirm-text mt-4">
+                            Are you sure you want to Replicate this Samples?
+                        </p>
+                    </div>
+
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" id="confirmReplicateSubmitSample" class="btn btn-success px-4">
+                            <i class="fas fa-check mr-1"></i> Yes, Proceed
+                        </button>
+                        <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    
 <div class="page-inner animated fadeInRightBig">
     <?=$breadcrumbs?>
 

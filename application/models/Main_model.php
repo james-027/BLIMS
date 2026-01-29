@@ -630,6 +630,7 @@ class Main_model extends CI_Model {
 		$this->db->select([
 			'th.trans_id AS trans_id',
 			'th.job_order_no',
+			'th.laboratory_id',
 			'th.internal_id',
 			'th.commercial_id',
 			'td.*',

@@ -161,6 +161,8 @@ function toggleReason(statusSelect) {
             loadLeadTimes(labId, testId);
         }
     });
+
+    
     $(document).on("change", "#rep_testCode", function () {
         let labId = $("#replicateDetailModal").data("lab-id"); 
         let testId = $(this).val();

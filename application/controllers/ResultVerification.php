@@ -91,7 +91,7 @@ class ResultVerification extends CI_Controller {
         $data['jobs'] = array_values($jobs);
         $data['attachments'] = $attachments;
         $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
-        $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC');
+        $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC', ['statusID' => 35]  );
         $data['content'] = $this->load->view('result_verification/result_verification_content', $data , TRUE);
         $this->load->view('admin/templates', $data);
     }
@@ -183,7 +183,7 @@ class ResultVerification extends CI_Controller {
                 'updated_by'     => $userID
             ];
 
-            if ((int)$resultVeriID === 16) {
+           if ((int)$resultVeriID === 16 || (int)$resultVeriID === 35) {
                 $updateData['trans_detail_status_id'] = 27;
 
             }else{
@@ -229,12 +229,12 @@ class ResultVerification extends CI_Controller {
                     $historyData['created_by'] = $userID;
                     $historyData['created_at'] = date('Y-m-d H:i:s');
                     $this->main->insert_data('trans_history', $historyData);
-
                     $timestampData = [
                         'trans_detail_id'        => $trans_detail_id,
                         'trans_detail_status_id' => 36,
                         'status_id'              => 1,
                         'created_at'             => date('Y-m-d H:i:s'),
+                        'lead_ts_window_start'   => $this->getCutoffTimestamp(),
                         'created_by'             => $userID,
                     ];
                     $this->main->insert_data('trans_timestamps', $timestampData);
@@ -259,7 +259,8 @@ class ResultVerification extends CI_Controller {
                         ]); 
                 }
                     
-                if ((int)$resultVeriID === 16) {
+             if ((int)$resultVeriID === 16 || (int)$resultVeriID === 35) {
+                    $notificationHeader = ((int)$resultVeriID === 16) ? 'Disapproved' : 'Re-Analysis';
                     $timestampRow = $this->db->select('created_by')
                         ->from('trans_timestamps')
                         ->where('trans_detail_id', $trans_detail_id)
@@ -296,7 +297,7 @@ class ResultVerification extends CI_Controller {
                                     $statusText,
                                     $remark,
                                     $recipient,
-                                    'Disapproved'
+                                    $notificationHeader
                                 );
 
                                 log_message('info', "Sent 'Failed' notification to {$recipient['userEmail']} for trans_detail_id {$trans_detail_id}");
@@ -363,12 +364,83 @@ class ResultVerification extends CI_Controller {
                 $jobs[$jobId] = [
                     'job_order_no' => $row['job_order_no'],
                     'lab_code' => $row['lab_code'],
+                    'laboratory_id' => $row['laboratory_id'],
+                    'trans_id' => $row['trans_id'],
                     'samples' => []
                 ];
             }
 
             $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
             $jobs[$jobId]['samples'][] = $row;      
+        }
+
+
+        foreach ($jobs as $jobId => &$job) {
+
+            $this->db->where('trans_id', $jobId);
+            $this->db->group_start();  
+            $this->db->where_not_in('test_status_id', [23, 25]);
+            $this->db->or_where('test_status_id IS NULL', null, false);
+            $this->db->group_end(); 
+            $total = $this->db->count_all_results('trans_details');
+
+            $this->db->where('trans_id', $jobId);
+            $this->db->where('is_released', 1);
+            $this->db->group_start();  
+            $this->db->where_not_in('test_status_id', [23, 25]);
+            $this->db->or_where('test_status_id IS NULL', null, false);
+            $this->db->group_end();
+            $released = $this->db->count_all_results('trans_details');
+
+
+            $job['is_all_released'] = ($total > 0 && $total == $released);
+
+            if (!empty($job['samples'])) {
+
+                $labStatus = [];
+
+                foreach ($job['samples'] as $sample) {
+
+                    if (in_array($sample['test_status_id'], [23, 25])) {
+                        continue;
+                    }
+
+                    $lab = $sample['lab_code'];
+
+                    if (!isset($labStatus[$lab])) {
+                        $labStatus[$lab] = ['total' => 0, 'released' => 0];
+                    }
+
+                    $labStatus[$lab]['total']++;
+
+                    if (!empty($sample['is_released'])) {
+                        $labStatus[$lab]['released']++;
+                    }
+                }
+
+                foreach ($job['samples'] as &$sample) {
+
+                    if (in_array($sample['test_status_id'], [23, 25])) {
+                        $sample['replicate_disabled'] = true;
+                        continue;
+                    }
+
+                    $lab = $sample['lab_code'];
+
+                    if (isset($labStatus[$lab])) {
+                        $sample['replicate_disabled'] =
+                            ($labStatus[$lab]['total'] > 0 &&
+                            $labStatus[$lab]['total'] == $labStatus[$lab]['released']);
+                    } else {
+                        $sample['replicate_disabled'] = false; 
+                    }
+                }
+                unset($sample);
+                usort($job['samples'], function($a, $b) {
+                    return strtotime($b['created_at']) - strtotime($a['created_at']);
+                });
+            }
+
         }
 
         $transIds = array_keys($jobs);
@@ -385,7 +457,7 @@ class ResultVerification extends CI_Controller {
 
         $data['jobs'] = array_values($jobs);
         $data['attachments'] = $attachments;
-
+     $data['is_all_released'] = true OR false;
         $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
         $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC');
         $html = $this->load->view('result_verification/result_verification_container', $data, TRUE);
@@ -398,7 +470,20 @@ class ResultVerification extends CI_Controller {
         ]);
         exit;
     }
+    
 
+        private function getCutoffTimestamp()
+    {
+        $now = new DateTime('now');
+
+        $cutoff = new DateTime($now->format('Y-m-d') . ' 12:00:00');
+
+        if ($now >= $cutoff) {
+            $now->modify('+1 day');
+        }
+
+        return $now->format('Y-m-d H:i:s');
+    }
     
 
 	// END OF Result Verification CONTROLLER

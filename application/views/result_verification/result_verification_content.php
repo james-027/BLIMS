@@ -81,6 +81,11 @@
                         <div>Approved</div>
                         <div id="countApproved" style="font-size: 1.4rem;">0</div>
                     </div>
+                    <div class="status-box status-hold">
+                        <div><i class="fas fa-pause-circle fa-lg mb-1"></i></div>
+                        <div>Re-Analysis</div>
+                        <div id="countReAnalysis" style="font-size: 1.4rem;">0</div>
+                    </div>
                     <div class="status-box status-failed">
                         <div><i class="fas fa-times-circle fa-lg mb-1"></i></div>
                         <div>Disapproved</div>

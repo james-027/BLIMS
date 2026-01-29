@@ -562,7 +562,6 @@ class Registration extends CI_Controller {
 	}
 
 
-
 	public function get_commercial_feeds($internalID = null)
 	{
 		if (!$internalID) {
