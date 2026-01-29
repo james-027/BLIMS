@@ -264,7 +264,7 @@ class ResultVerification extends CI_Controller {
                     $timestampRow = $this->db->select('created_by')
                         ->from('trans_timestamps')
                         ->where('trans_detail_id', $trans_detail_id)
-                        ->where('trans_detail_status_id', 33)
+                        ->where('trans_detail_status_id', 27)
                         ->order_by('created_at', 'DESC')
                         ->get()
                         ->row_array();
