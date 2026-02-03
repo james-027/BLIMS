@@ -267,8 +267,7 @@ class ResultVerification extends CI_Controller {
                         ->where('trans_detail_status_id', 27)
                         ->order_by('created_at', 'DESC')
                         ->get()
-                        ->row_array();
-
+                        ->row_array()
                     if (!empty($timestampRow)) {
                         $userFromTimestamp = (int) $timestampRow['created_by'];
 

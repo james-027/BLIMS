@@ -204,6 +204,8 @@ class AutomationScript extends CI_Controller {
                 continue; // skip if no submission date
             }
 
+
+
             $this->send_overdue_lead_time($lead_time, $date_submitted, $trans_detail_id,$date_roundoff);
 
         
@@ -213,7 +215,6 @@ class AutomationScript extends CI_Controller {
 
     public function send_overdue_lead_time($lead_time, $date_submitted, $trans_detail_id,$date_roundoff)
     {
-
 
                     if (empty($date_submitted[$trans_detail_id])) {
                         return;
@@ -233,13 +234,13 @@ class AutomationScript extends CI_Controller {
 
                     if ($days_diff > $lead_days) {
                         $lab_row = $this->db
-                            ->select('th.laboratory_id, td.lead_time_identifier')
+                            ->select('th.laboratory_id, td.lead_time_identifier,td.*')
                             ->from('trans_details td')
                             ->join('trans_headers th', 'th.trans_id = td.trans_id')
                             ->where('td.trans_detail_id', $trans_detail_id)
                             ->get()
                             ->row();
-
+                            
                         if ($lab_row) {
                             $lab_id = $lab_row->laboratory_id;
                             $recipients = $this->db
@@ -247,7 +248,8 @@ class AutomationScript extends CI_Controller {
                                 ->from('users u')
                                 ->join('userslabs ul', 'ul.userID = u.userID')
                                 ->where('ul.laboratory_id', $lab_id)
-                                ->where_in('u.userTypeID', [17, 19,20]) 
+                                 ->where_in('u.userTypeID', [17, 19,20]) 
+                                //   ->where_in('u.userTypeID', [12]) 
                                 ->where('u.userEmail IS NOT NULL AND u.userEmail !=', '') 
                                 ->get()
                                 ->result_array();

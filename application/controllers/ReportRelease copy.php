@@ -25,19 +25,11 @@ class ReportRelease extends CI_Controller {
 	created by: James
 	Change Management #1`
 	*/
-
     public function index() 
     {
-
-        $alias = $this->alias;
+         $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
-
-        $page     = (int) ($this->input->get('page') ?? 1);
-        $perPage  = 5; // jobs per page
-        $offset   = ($page - 1) * $perPage;
-
-        $isReleased = $this->input->get('is_released');
-
+        
         $data['js_file'] = 'assets/js/preparation.js?v=2.0';
         $data['profile'] = $this->custom_lib->_get_profile();
         $data['menuColor'] = get_user_theme(['a.userID' => decode($info['userID'])], true)->menuColor;
@@ -61,49 +53,6 @@ class ReportRelease extends CI_Controller {
         $data['userID'] = $userID;
         $data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
         $data['reasons'] = $this->main->get_data('reasons', ['status_id' => 1], false, 'id, reason_name', 'reason_name ASC');
-
-            // Count total jobs first
-            $this->db->distinct();
-            $this->db->select('th.trans_id');
-            $this->db->from('trans_details td');
-            $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
-
-            if (!empty($data['lab_access'])) {
-                $labIDs = array_column($data['lab_access'], 'laboratory_id');
-                $this->db->where_in('th.laboratory_id', $labIDs);
-            }
-
-            $this->db->where('td.trans_detail_status_id', 37);
-            if ($isReleased !== null && $isReleased !== '') {
-                $this->db->where('td.is_released', (int)$isReleased);
-            }
-
-            $totalJobs = $this->db->count_all_results(); // resets query
-
-            // Now build query fresh for pagination
-            $this->db->distinct();
-            $this->db->select('th.trans_id');
-            $this->db->from('trans_details td');
-            $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
-
-            if (!empty($data['lab_access'])) {
-                $labIDs = array_column($data['lab_access'], 'laboratory_id');
-                $this->db->where_in('th.laboratory_id', $labIDs);
-            }
-
-            $this->db->where('td.trans_detail_status_id', 37);
-            if ($isReleased !== null && $isReleased !== '') {
-                $this->db->where('td.is_released', (int)$isReleased);
-            }
-
-
-            $this->db->group_by('th.trans_id');
-            $this->db->order_by('MAX(td.modified_at)', 'DESC', false);
-            $this->db->limit($perPage, $offset);
-
-            $pagedTransIds = array_column($this->db->get()->result_array(), 'trans_id');
-
-
         
         $this->db->select([
             'th.trans_id AS trans_id',
@@ -179,20 +128,7 @@ class ReportRelease extends CI_Controller {
             ) tt_max_latest ON tt_latest.id = tt_max_latest.latest_id
         ) tt_latest", 'tt_latest.trans_detail_id = td.trans_detail_id', 'left');
 
-        if (!empty($pagedTransIds)) {
-                $this->db->where_in('th.trans_id', $pagedTransIds);
-            } else {
-                $this->db->where('th.trans_id', 0); // no results
-            }
-
-
-
        $this->db->where('td.trans_detail_status_id', 37);
-       if ($isReleased !== null && $isReleased !== '') {
-            $this->db->where('td.is_released', (int)$isReleased);
-        }
-
-
        $this->db->order_by('td.modified_at', 'DESC');
 
         $all_details = $this->db->get()->result_array();
@@ -228,15 +164,9 @@ class ReportRelease extends CI_Controller {
 
         $jobs_indexed = array_values($jobs);
 
-        $data['current_page'] = $page;
-        $data['per_page']     = $perPage;
-        $data['total_jobs']   = $totalJobs;
-        $data['total_pages']  = ceil($totalJobs / $perPage);
         $data['jobs'] = $jobs_indexed;
         $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
         $data['content'] = $this->load->view('report_release/report_release_content', $data , TRUE);
-
-
         $this->load->view('admin/templates', $data);
     }
 
@@ -247,7 +177,6 @@ class ReportRelease extends CI_Controller {
 
         $searchValue = $this->input->get_post('search') ?? '';
         $searchField = $this->input->get_post('field') ?? '';
-
 
         $info = $this->custom_lib->_require_login();
         $userID = decode($info['userID']);
@@ -416,8 +345,7 @@ class ReportRelease extends CI_Controller {
     }
 
 
-  
-
+    
     public function get_logs($trans_detail_id)
     {
         $info   = $this->custom_lib->_require_login();

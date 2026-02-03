@@ -675,9 +675,36 @@ document.querySelector('#jobsContainer').addEventListener('click', function(even
 });
 
 
+$('#releaseFilter').on('change', function () {
+    const params = new URLSearchParams(window.location.search);
+
+    if (this.value === '') {
+        params.delete('is_released');
+    } else {
+        params.set('is_released', this.value);
+    }
+
+    params.set('page', 1); 
+    window.location.search = params.toString();
+});
+
+
+
+$(document).ready(function() {
+    const params = new URLSearchParams(window.location.search);
+    const filter = params.get('is_released') ?? '';
+    $('#releaseFilter').val(filter);
+});
+
+
 
     $('#jobSearch').on('keyup', function() {
         let value = $(this).val().trim();
+            if (value === '') {
+        window.location.href = baseUrl + controllerName;
+        return;
+    }
+
         let field = $('#searchField').val();
         $.ajax({
             url: baseUrl + controllerName + '/search_details',
