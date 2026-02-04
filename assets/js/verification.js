@@ -33,38 +33,59 @@ function toggleReason(statusSelect) {
 
 
     
-    $('#verificationForm').on('submit', function(e) {
-        e.preventDefault();
-        var formData = new FormData(this);
-        $.ajax({
-            url: $(this).attr('action'),
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            beforeSend: function() {
-                $('#loader-div').show();
-            },
-            success: function(response) {
-                $('#loader-div').hide();
-                if (response.status === 'success') {
-                    swal("Success!", response.message, "success");
-                    setTimeout(function() {
-                        window.location.reload();
-                         window.scrollTo(0, 0);
-                    }, 2000);
-                } else {
-                    swal("Oops...", "Something went wrong!", "error");
-                }
-            },
-            error: function(xhr, status, error) {
-                $('#loader-div').hide();
-                swal("AJAX Error", error, "error");
-            }
-        });
+
+$('#verificationForm').on('submit', function(e) {
+    e.preventDefault();
+
+    let formData = new FormData();
+
+    $('.test-status-select').each(function() {
+        let transId = $(this).attr('name').match(/\d+/)[0];
+        let newStatus = $(this).val();
+        if (!newStatus) return; // skip empty statuses
+
+        let reasonSelect = $(`#reason-${transId}`);
+        let remarkInput = $(`input[name='remarks[${transId}]']`);
+
+        let newReason = reasonSelect.val();
+        let newRemark = remarkInput.val();
+
+        formData.append(`test_status[${transId}]`, newStatus);
+        if (newReason) formData.append(`reasons[${transId}]`, newReason);
+        if (newRemark) formData.append(`remarks[${transId}]`, newRemark);
     });
 
+    if ([...formData].length === 0) {
+        swal("Info", "No changes detected to submit.", "info");
+        return;
+    }
+
+    $.ajax({
+        url: $(this).attr('action'),
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        beforeSend: function() { $('#loader-div').show(); },
+        success: function(response) {
+            $('#loader-div').hide();
+            if (response.status === 'success') {
+                swal("Success!", response.message, "success");
+                setTimeout(function() {
+                    window.location.reload();
+                    window.scrollTo(0, 0);
+                }, 2000);
+            } else {
+                swal("Oops...", response.message || "Something went wrong!", "error");
+            }
+        },
+        error: function(xhr, status, error) {
+            $('#loader-div').hide();
+            swal("AJAX Error", error, "error");
+        }
+    });
+});
  
 
     $('#saveBtn').on('click', function (e) {

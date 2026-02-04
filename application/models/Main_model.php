@@ -637,7 +637,7 @@ class Main_model extends CI_Model {
 			's.sample_name',
 			'st.sample_type_name',
 			'tp.param_name',
-			'tn.name AS laboratory_tests',
+			't.test_code AS laboratory_tests',
 			'sup.supplier_name',
 			'p.plate_number',
 			'b.batch_number',
@@ -764,13 +764,13 @@ class Main_model extends CI_Model {
                     break;
 
                 case "test_name":
-                    $this->db->like('tn.name', $searchValue);
+                    $this->db->like('t.test_code', $searchValue);
                     break;
                 default:
                     $this->db->like('th.job_order_no', $searchValue);
                     $this->db->or_like('td.ext_lab_code', $searchValue);
                     $this->db->or_like('s.sample_name', $searchValue);
-                    $this->db->or_like('tn.name', $searchValue);
+                    $this->db->or_like('t.test_code', $searchValue);
                     $this->db->or_where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");
                     $this->db->or_like('td.test_exec_lab_result', $searchValue);
                     break;
@@ -804,7 +804,7 @@ class Main_model extends CI_Model {
 			's.sample_name',
 			'st.sample_type_name',
 			'tp.param_name',
-			'tn.name AS laboratory_tests',
+			't.test_code AS laboratory_tests',
 			'sup.supplier_name',
 			'p.plate_number',
 			'b.batch_number',
@@ -909,7 +909,7 @@ class Main_model extends CI_Model {
 				$this->db->or_like('td.ext_lab_code', $searchValue);
 				$this->db->or_like('td.test_exec_lab_result', $searchValue);
 				$this->db->or_like('s.sample_name', $searchValue);
-				$this->db->or_like('tn.name', $searchValue);
+				$this->db->or_like('t.test_code', $searchValue);
 				$this->db->group_end();
 			}
 		
@@ -927,93 +927,6 @@ class Main_model extends CI_Model {
 		return $this->db->get()->result_array();
 	}
 
-	public function get_pdf_trans_detail01($trans_detail_id) 
-	{
-			$this->db->select('sample_id, trans_id');
-			$this->db->from('trans_details');
-			$this->db->where('trans_detail_id', $trans_detail_id);
-			$result = $this->db->get()->row_array();
-
-			if (!$result) return null;
-
-			$sample_id = $result['sample_id'];
-			$trans_id = $result['trans_id'];
-
-			$this->db->select('trans_detail_id');
-			$this->db->from('trans_details');
-			$this->db->where('sample_id', $sample_id);
-			$this->db->where('trans_id', $trans_id);
-			$this->db->where('trans_detail_status_id', 37);
-			$this->db->order_by('modified_at', 'DESC');
-			$latest_detail = $this->db->get()->row_array();
-
-			$target_detail_id = $latest_detail['trans_detail_id'] ?? $trans_detail_id;
-
-			$tt_received_sub = "(SELECT t1.* 
-								FROM trans_timestamps t1
-								WHERE t1.trans_detail_status_id = 20
-								AND t1.created_at = (
-									SELECT MAX(t2.created_at)
-									FROM trans_timestamps t2
-									WHERE t2.trans_detail_id = t1.trans_detail_id
-										AND t2.trans_detail_status_id = 20
-								))";
-
-			$tt_analyzed_sub = "(SELECT t1.* 
-								FROM trans_timestamps t1
-								WHERE t1.trans_detail_status_id = 26
-								AND t1.created_at = (
-									SELECT MAX(t2.created_at)
-									FROM trans_timestamps t2
-									WHERE t2.trans_detail_id = t1.trans_detail_id
-										AND t2.trans_detail_status_id = 26
-								))";
-
-			$tt_reported_sub = "(SELECT t1.* 
-								FROM trans_timestamps t1
-								WHERE t1.trans_detail_status_id = 36
-								AND t1.created_at = (
-									SELECT MAX(t2.created_at)
-									FROM trans_timestamps t2
-									WHERE t2.trans_detail_id = t1.trans_detail_id
-										AND t2.trans_detail_status_id = 36
-								))";
-
-			$this->db->select('
-				td.*, 
-				th.*, 
-				s.sample_name AS sample_name,
-				tt_received.created_at AS date_received,
-				tt_analyzed.created_at AS date_analyzed,
-				u_analyzed.userFirstName AS analyzed_firstname,
-				u_analyzed.userLastName AS analyzed_lastname,
-				u_analyzed.userEsign AS analyzed_userEsign,
-				prof.name AS analyzed_profession,
-				ss_prof.license_no AS license_no,
-				ss_prof.license_valid AS license_valid,
-				ut_analyzed.userTypeName AS analyzed_usertype,
-				tt_reported.created_at AS date_reported,
-				lab.laboratory_name AS laboratory_name,
-				lab.coa_laboratory_name AS coa_laboratory_name,
-				lab.address AS laboratory_address
-			');
-			$this->db->from('trans_details td');
-			$this->db->join('trans_headers th', 'td.trans_id = th.trans_id', 'left');
-			$this->db->join('samples s', 'td.sample_id = s.id', 'left');
-			$this->db->join('laboratories lab', 'th.laboratory_id = lab.id', 'left');
-
-			$this->db->join("($tt_received_sub) tt_received", "tt_received.trans_detail_id = td.trans_detail_id", 'left');
-			$this->db->join("($tt_analyzed_sub) tt_analyzed", "tt_analyzed.trans_detail_id = td.trans_detail_id", 'left');
-			$this->db->join('users u_analyzed', 'u_analyzed.userID = tt_analyzed.created_by', 'left');
-			$this->db->join('user_professions ss_prof', 'ss_prof.userID = u_analyzed.userID', 'left');
-			$this->db->join('professions prof', 'prof.id = ss_prof.profession_id', 'left');
-			$this->db->join('usertype ut_analyzed', 'ut_analyzed.userTypeID = u_analyzed.userTypeID', 'left');
-			$this->db->join("($tt_reported_sub) tt_reported", "tt_reported.trans_detail_id = td.trans_detail_id", 'left');
-
-			$this->db->where('td.trans_detail_id', $target_detail_id);
-
-			return $this->db->get()->row_array();
-	}
 
 	public function get_pdf_trans_detail($trans_detail_id) 
 	{

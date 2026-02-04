@@ -157,164 +157,191 @@ class ResultVerification extends CI_Controller {
             ->set_output(json_encode($data));
     }
 
+   
     public function submit_result_veri()
-    {
-        $info   = $this->custom_lib->_require_login();
-        $userID = decode($info['userID']);
-        $result_verifications = $this->input->post('result_verifications');
-        $remarks      = $this->input->post('result_verification_remarks');
+{
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL & ~E_WARNING);
+    header('Content-Type: application/json');
 
-        if (empty($result_verifications)) {
-            echo json_encode([
-                'status'  => 'error',
-                'message' => 'No Final Prep data received.'
-            ]);
-            return;
+    $info = $this->custom_lib->_require_login();
+    if (!$info) {
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'Unauthorized'
+        ]);
+        exit;
+    }
+
+    $userID = decode($info['userID']);
+
+    $result_verifications = (array) $this->input->post('result_verifications');
+    $remarks = (array) $this->input->post('result_verification_remarks');
+
+    if (empty($result_verifications)) {
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'No changes detected.'
+        ]);
+        exit;
+    }
+
+    foreach ($result_verifications as $trans_detail_id => $resultVeriID) {
+
+        $trans_detail_id = (int) $trans_detail_id;
+        $resultVeriID    = (int) $resultVeriID;
+        $remark          = trim($remarks[$trans_detail_id] ?? '');
+
+        if ($resultVeriID === 0 && $remark === '') {
+            continue;
         }
 
-        foreach ($result_verifications as $trans_detail_id => $resultVeriID) {
-            if (empty($resultVeriID)) continue;
+        $current = $this->db
+            ->select('test_result_id')
+            ->from('trans_details')
+            ->where('trans_detail_id', $trans_detail_id)
+            ->get()
+            ->row_array();
 
-            $remark   = $remarks[$trans_detail_id] ?? null;
+        if (!$current) {
+            continue;
+        }
 
-            $updateData = [
-                'test_result_id' => $resultVeriID,
-                'modified_at'    => date('Y-m-d H:i:s'),
-                'updated_by'     => $userID
-            ];
+        if ((int)$current['test_result_id'] === $resultVeriID && $remark === '') {
+            continue;
+        }
 
-           if ((int)$resultVeriID === 16 || (int)$resultVeriID === 35) {
-                $updateData['trans_detail_status_id'] = 27;
+        //16 - Disapproved
+        //35 - Re-Analysis
+        //27 - Test Execution
+        //37 - Result Verification
+        $newStatus = ((int)$resultVeriID === 16 || (int)$resultVeriID === 35) ? 27 : 37;
 
-            }else{
-                $updateData['trans_detail_status_id'] = 37;
-            }
+        $updateData = [
+            'test_result_id'          => $resultVeriID,
+            'trans_detail_status_id'  => $newStatus,
+            'modified_at'             => date('Y-m-d H:i:s'),
+            'updated_by'              => $userID
+        ];
 
-            $result_prep = $this->main->update_data(
-                'trans_details',
-                $updateData,
-                ['trans_detail_id' => $trans_detail_id]
-            );
+        $updated = $this->main->update_data(
+            'trans_details',
+            $updateData,
+            ['trans_detail_id' => $trans_detail_id]
+        );
 
-            $statusText = '';
-                    if (!empty($resultVeriID)) {
-                        $statusRow = $this->db->select('statDesc')
-                                            ->from('stats')
-                                            ->where('statusID', $resultVeriID)
-                                            ->get()
-                                            ->row_array();
-                        $statusText = $statusRow['statDesc'] ?? '';
-            }
+        if (!$updated) {
+            continue;
+        }
 
+        $statusText = '';
+        $statusRow = $this->db
+            ->select('statDesc')
+            ->from('stats')
+            ->where('statusID', $resultVeriID)
+            ->get()
+            ->row_array();
 
-            if (!empty($result_prep)) {
-                $this->main->user_logs([
-                    'userID'       => $userID,
-                    'userFullName' => $info['userFullName'],
-                    'logTS'        => date_now(),
-                    'page'         => 'ResultVerification/submit_result_veri',
-                    'logDetail'    => 'Successfully Updated Result Veri ID:' . $trans_detail_id
-                ]);
+        $statusText = $statusRow['statDesc'] ?? '';
 
-                $detail = $this->db->where('trans_detail_id', $trans_detail_id)
-                                ->get('trans_details')
-                                ->row_array();
+        $this->main->user_logs([
+            'userID'       => $userID,
+            'userFullName' => $info['userFullName'],
+            'logTS'        => date_now(),
+            'page'         => 'ResultVerification/submit_result_veri',
+            'logDetail'    => 'Updated Result Verification ID: ' . $trans_detail_id
+        ]);
 
-                if (!empty($detail)) {
-                    $historyData = $detail;
-                    unset($historyData['id']);
-                    $historyData['trans_detail_id'] = $trans_detail_id;
-                    $historyData['detail_change'] = $statusText;
-                    $historyData['trans_detail_status_id'] = 36;
-                    $historyData['created_by'] = $userID;
-                    $historyData['created_at'] = date('Y-m-d H:i:s');
-                    $this->main->insert_data('trans_history', $historyData);
-                    $timestampData = [
-                        'trans_detail_id'        => $trans_detail_id,
-                        'trans_detail_status_id' => 36,
-                        'status_id'              => 1,
-                        'created_at'             => date('Y-m-d H:i:s'),
-                        'lead_ts_window_start'   => $this->getCutoffTimestamp(),
-                        'created_by'             => $userID,
-                    ];
-                    $this->main->insert_data('trans_timestamps', $timestampData);
-                }
-                $statusText = '';
-                    if (!empty($resultVeriID)) {
-                        $statRow = $this->db->select('statDesc')
-                                            ->from('stats')
-                                            ->where('statusID', $resultVeriID)
-                                            ->get()
-                                            ->row_array();
-                        $statusText = $statRow['statDesc'] ?? '';
-                    } 
+        $detail = $this->db
+            ->where('trans_detail_id', $trans_detail_id)
+            ->get('trans_details')
+            ->row_array();
 
-                if (!empty($remark)) {
-                        $this->main->insert_data('trans_remarks', [
-                            'trans_detail_id'        => $trans_detail_id,
-                            'trans_detail_status_id' => 36,
-                            'remark'                 => $remark,
-                            'created_by'             => $userID,
-                            'created_at'             => date('Y-m-d H:i:s'),
-                        ]); 
-                }
-                    
-             if ((int)$resultVeriID === 16 || (int)$resultVeriID === 35) {
-                    $notificationHeader = ((int)$resultVeriID === 16) ? 'Disapproved' : 'Re-Analysis';
-                    $timestampRow = $this->db->select('created_by')
-                        ->from('trans_timestamps')
-                        ->where('trans_detail_id', $trans_detail_id)
-                        ->where('trans_detail_status_id', 27)
-                        ->order_by('created_at', 'DESC')
+        if ($detail) {
+            unset($detail['id']);
+
+            $detail['trans_detail_id']        = $trans_detail_id;
+            $detail['detail_change']          = $statusText;
+            $detail['trans_detail_status_id'] = 36;
+            $detail['created_by']             = $userID;
+            $detail['created_at']             = date('Y-m-d H:i:s');
+
+            $this->main->insert_data('trans_history', $detail);
+
+            $this->main->insert_data('trans_timestamps', [
+                'trans_detail_id'        => $trans_detail_id,
+                'trans_detail_status_id' => 36,
+                'status_id'              => 1,
+                'created_at'             => date('Y-m-d H:i:s'),
+                'lead_ts_window_start'   => $this->getCutoffTimestamp(),
+                'created_by'             => $userID,
+            ]);
+        }
+
+        if ($remark !== '') {
+            $this->main->insert_data('trans_remarks', [
+                'trans_detail_id'        => $trans_detail_id,
+                'trans_detail_status_id' => 36,
+                'remark'                 => $remark,
+                'created_by'             => $userID,
+                'created_at'             => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        if ($newStatus === 27) {
+
+            $notificationHeader = ($resultVeriID === 16) ? 'Disapproved' : 'Re-Analysis';
+
+            $timestampRow = $this->db
+                ->select('created_by')
+                ->from('trans_timestamps')
+                ->where('trans_detail_id', $trans_detail_id)
+                ->where('trans_detail_status_id', 27)
+                ->order_by('created_at', 'DESC')
+                ->get()
+                ->row_array();
+
+            if (!empty($timestampRow)) {
+
+                $recipient = $this->db
+                    ->select('userID, userEmail, userFirstName, userLastName')
+                    ->from('users')
+                    ->where('userID', (int)$timestampRow['created_by'])
+                    ->where('userEmail IS NOT NULL AND userEmail !=', '')
+                    ->get()
+                    ->row_array();
+
+                if ($recipient) {
+
+                    $transHeader = $this->db
+                        ->select('th.trans_id, th.job_order_no, td.ext_lab_code')
+                        ->from('trans_headers th')
+                        ->join('trans_details td', 'td.trans_id = th.trans_id')
+                        ->where('td.trans_detail_id', $trans_detail_id)
                         ->get()
-                        ->row_array()
-                    if (!empty($timestampRow)) {
-                        $userFromTimestamp = (int) $timestampRow['created_by'];
+                        ->row_array();
 
-                        $recipient = $this->db
-                            ->select('u.userID, u.userEmail, u.userFirstName, u.userLastName, u.userTypeId')
-                            ->from('users u')
-                            ->where('u.userID', $userFromTimestamp)
-                            ->where('u.userEmail IS NOT NULL AND u.userEmail !=', '')
-                            ->get()
-                            ->row_array();
-
-                        if (!empty($recipient)) {
-                            $transHeader = $this->db
-                                ->select('th.trans_id, th.job_order_no, td.ext_lab_code')
-                                ->from('trans_headers th')
-                                ->join('trans_details td', 'td.trans_id = th.trans_id')
-                                ->where('td.trans_detail_id', $trans_detail_id)
-                                ->get()
-                                ->row_array();
-
-                            if (!empty($transHeader)) {
-                                $remark = $remark;
-                                $this->email_format->generateEmailNotification(
-                                    $transHeader,
-                                    $trans_detail_id,
-                                    $statusText,
-                                    $remark,
-                                    $recipient,
-                                    $notificationHeader
-                                );
-
-                                log_message('info', "Sent 'Failed' notification to {$recipient['userEmail']} for trans_detail_id {$trans_detail_id}");
-                            }
-                        } else {
-                            log_message('warning', "No valid recipient found for userID {$userFromTimestamp} in Failed notification.");
-                        }
+                    if ($transHeader) {
+                        $this->email_format->generateEmailNotification(
+                            $transHeader,
+                            $trans_detail_id,
+                            $statusText,
+                            $remark,
+                            $recipient,
+                            $notificationHeader
+                        );
                     }
                 }
-
             }
         }
-
-        echo json_encode([
-            'status'  => 'success',
-            'message' => 'Result Verification submitted successfully.'
-        ]);
     }
+
+    echo json_encode([
+        'status'  => 'success',
+        'message' => 'Result Verification submitted successfully.'
+    ]);
+    exit;
+}
 
 
     
@@ -328,7 +355,6 @@ class ResultVerification extends CI_Controller {
         $searchField = $this->input->get_post('field') ?? '';
 
         
-
         $theme = get_user_theme(['a.userID' => $userID], true);
         $data['thColor'] = $theme->thColor;
         $data['btnColor'] = $theme->btnColor;

@@ -103,7 +103,6 @@ class ReportRelease extends CI_Controller {
 
             $pagedTransIds = array_column($this->db->get()->result_array(), 'trans_id');
 
-
         
         $this->db->select([
             'th.trans_id AS trans_id',
@@ -113,7 +112,7 @@ class ReportRelease extends CI_Controller {
             's.sample_name',
             'st.sample_type_name',
             'tp.param_name',
-            'tn.name AS laboratory_tests',
+            't.test_code AS laboratory_tests',
             'td.ext_lab_code AS lab_code',
             'tr.remark AS existing_remark',
             'tt.latest_timestamp AS date_submitted',
@@ -267,7 +266,7 @@ class ReportRelease extends CI_Controller {
             's.sample_name',
             'st.sample_type_name',
             'tp.param_name',
-            'tn.name AS laboratory_tests',
+            't.test_code AS laboratory_tests',
             'td.ext_lab_code AS lab_code',
             'tr.remark AS existing_remark',
             'tt.latest_timestamp AS date_submitted',
@@ -355,7 +354,7 @@ class ReportRelease extends CI_Controller {
                     break;
 
                 case "test_name":
-                    $this->db->like('tn.name', $searchValue);
+                    $this->db->like('t.test_code', $searchValue);
                     break;
                 default:
                     $this->db->like('th.job_order_no', $searchValue);

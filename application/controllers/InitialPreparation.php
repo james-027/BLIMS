@@ -73,7 +73,6 @@ class InitialPreparation extends CI_Controller {
                     'samples' => []
                 ];
             }
-
             $row['delivery_date'] = !empty($row['delivery_date']) ? date('Y-m-d', strtotime($row['delivery_date'])) : '';
 
             $jobs[$jobId]['samples'][] = $row;

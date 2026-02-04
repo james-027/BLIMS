@@ -133,11 +133,44 @@ $(document).ready(function(){
         });
     });
 
+
+    let changedRows = new Set();
+
+    $('.result-verification-status-select, input[name^="result_verification_remarks"]').on('change input', function () {
+        let id;
+
+        if ($(this).hasClass('result-verification-status-select')) {
+            id = $(this).attr('id').replace('result_verifications', '');
+        } else {
+            id = $(this).attr('name').match(/\d+/)[0];
+        }
+
+        changedRows.add(id);
+    });
+
+
     $('#resultVerificationForm').on('submit', function(e) {
         e.preventDefault();
-        var formData = new FormData(this);
+
+        if (changedRows.size === 0) {
+            swal("No changes", "Nothing to update.", "info");
+            return;
+        }
+
+        let formData = new FormData();
+
+        changedRows.forEach(function(id) {
+            let resultVal = $('#result_verifications' + id).val();
+            let remarkVal = $('input[name="result_verification_remarks[' + id + ']"]').val();
+
+            if (!resultVal && !remarkVal) return;
+
+            formData.append('result_verifications[' + id + ']', resultVal);
+            formData.append('result_verification_remarks[' + id + ']', remarkVal);
+        });
+
         $.ajax({
-            url: $(this).attr('action'),
+            url: $('#resultVerificationForm').attr('action'),
             type: 'POST',
             data: formData,
             processData: false,
@@ -152,18 +185,19 @@ $(document).ready(function(){
                     swal("Success!", response.message, "success");
                     setTimeout(function() {
                         window.location.reload();
-                         window.scrollTo(0, 0);
-                    }, 2000);
+                    }, 1500);
                 } else {
-                    swal("Oops...", "Something went wrong!", "error");
+                    swal("Oops...", response.message || "Something went wrong!", "error");
                 }
             },
-            error: function(xhr, status, error) {
+            error: function(xhr) {
                 $('#loader-div').hide();
-                swal("AJAX Error", error, "error");
+                console.error(xhr.responseText);
+                swal("AJAX Error", "Request failed. Check console.", "error");
             }
         });
     });
+
 
     $('#testExecutionForm').on('submit', function(e) {
         e.preventDefault();
@@ -313,8 +347,6 @@ $(document).ready(function(){
             return false;
         }
 
-        console.log(re_analysis);
-
         $('#countApproved').text(approved);
         $('#countDisapproved').text(disapproved);
         $('#countReAnalysis').text(re_analysis);
@@ -380,52 +412,6 @@ $(document).ready(function(){
 
         $('#confirmModalFinal').modal('show');
     });
-
-    // $('#saveBtnTest').on('click', function(e) {
-    //     e.preventDefault();
-
-    //     let complete = 0, ongoing = 0;
-    //     let invalid = false;
-
-    //     $('.test-status-select').each(function() {
-    //         let $statusSelect = $(this);
-    //         let selectedText = $statusSelect.find('option:selected').text().trim().toLowerCase();
-    //         let transId = $statusSelect.attr('name').match(/\d+/)[0];
-    //         let $labResult = $(`input[name='lab_results[${transId}]']`);
-
-    //         if (selectedText === 'complete') complete++;
-    //         else if (selectedText === 'ongoing') ongoing++;
-
-    //         if (selectedText === 'complete') {
-    //             if ($labResult.length === 0 || !$labResult.val().trim()) {
-    //                 invalid = true;
-    //                 $labResult.addClass('is-invalid');
-    //             } else {
-    //                 $labResult.removeClass('is-invalid');
-    //             }
-    //         } else {
-    //             $labResult.removeClass('is-invalid');
-    //         }
-    //     });
-
-    //     if (invalid) {
-    //         let $firstInvalid = $('.is-invalid').first();
-    //         if ($firstInvalid.length > 0) {
-    //             $('html, body').animate({
-    //                 scrollTop: $firstInvalid.offset().top - 100
-    //             }, 500);
-    //             $firstInvalid.focus();
-    //         }
-    //         swal("Validation Error", "Please provide Lab Result For Completed Test Execution and Data Entry.", "warning");
-    //         return false;
-    //     }
-
-    //     $('#countComplete').text(complete);
-    //     $('#countOngoing').text(ongoing);
-
-    //     $('#confirmModalTestExec').modal('show');
-    // });
-
 
 
 

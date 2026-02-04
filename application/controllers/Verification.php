@@ -93,9 +93,11 @@ class Verification extends CI_Controller {
 
              foreach ($verification_jobs as $jobId => &$job) {
             if (!empty($job['samples'])) {
-                usort($job['samples'], function($a, $b) {
-                    return strtotime($b['created_at']) - strtotime($a['created_at']); // latest first
-                });
+             usort($job['samples'], function($a, $b) {
+                $timeA = !empty($a['modified_at']) ? strtotime($a['modified_at']) : strtotime($a['created_at']);
+                $timeB = !empty($b['modified_at']) ? strtotime($b['modified_at']) : strtotime($b['created_at']);
+                return $timeB - $timeA; // latest first
+            });
             }
         }
         unset($job); // break reference
@@ -115,9 +117,16 @@ class Verification extends CI_Controller {
         $verification_jobs_indexed = array_values($verification_jobs);
 
         usort($verification_jobs_indexed, function($a, $b) {
-            $latestA = max(array_column($a['samples'], 'created_at'));
-            $latestB = max(array_column($b['samples'], 'created_at'));
-            return strtotime($latestB) - strtotime($latestA); 
+            $latestA = max(array_map(function($sample) {
+                return !empty($sample['modified_at']) ? $sample['modified_at'] : $sample['created_at'];
+            }, $a['samples']));
+
+            $latestB = max(array_map(function($sample) {
+                return !empty($sample['modified_at']) ? $sample['modified_at'] : $sample['created_at'];
+            }, $b['samples']));
+
+            return strtotime($latestB) - strtotime($latestA); // latest first
+
         });
 
         $data['attachments'] = $attachments;
@@ -208,6 +217,7 @@ class Verification extends CI_Controller {
             $userID = decode($info['userID']);
 
             $testStatuses = $this->input->post('test_status');
+
             $reasons      = $this->input->post('reasons');
             $remarks      = $this->input->post('remarks');
 
