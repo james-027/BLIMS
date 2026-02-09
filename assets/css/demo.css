@@ -866,3 +866,8 @@ input#jobSearch::placeholder {
 .dt-buttons .dt-button i.me-1 {
     margin-right: 0.3rem;
 }
+
+#sampleType {
+    max-height: 200px;  /* adjust as needed */
+    overflow-y: auto;
+}

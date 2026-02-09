@@ -66,7 +66,7 @@
                     <div class="form-group">
                         <label for="sampleType">Select Sample Type:</label>
                         <select name="sampleType" id="sampleType"
-                            class="form-control form-control-md dynamic_dropdown" required>
+                            class="form-control form-control-md modal_dynamic_dropdown" required>
                             <option value="">-- Select Sample Type --</option>
                             <?php foreach($sample_types as $sample_type): ?>
                             <option value="<?= $sample_type->id ?>"><?= $sample_type->sample_type_name ?></option>
@@ -116,7 +116,7 @@
                     <div class="form-group">
                         <label for="sampleType">Select Sample Type:</label>
                         <select name="sampleType" id="editsampleType"
-                            class="form-control form-control-md dynamic_dropdown" required>
+                            class="form-control form-control-md modal_dynamic_dropdown" required>
                             <option value="">-- Select Sample Type --</option>
                             <?php foreach($sample_types as $sample_type): ?>
                             <option value="<?= $sample_type->id ?>"><?= $sample_type->sample_type_name ?></option>

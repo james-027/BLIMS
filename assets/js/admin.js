@@ -185,6 +185,34 @@ $(document).ready(function () {
         });
     });
 
+
+    $('select.modal_dynamic_dropdown').each(function() {
+    var $select = $(this);
+    var $modal = $select.closest('.modal'); // find the modal container
+
+    if ($select.find('option[value="_reset"]').length === 0) {
+        $select.prepend('<option value="_reset">Select</option>');
+    }
+
+    $select.select2({
+        placeholder: 'Select',
+        theme: 'bootstrap4',
+        sorter: data => data.sort((a, b) => {
+            if (a.id === '_reset') return -1;
+            if (b.id === '_reset') return 1;
+            return a.text.localeCompare(b.text);
+        }),
+        width: '100%',
+        dropdownParent: $modal.length ? $modal : $select.parent() // attach to modal if exists
+    });
+
+    $select.on('change', function() {
+        if ($(this).val() === '_reset') {
+            $(this).val('').trigger('change'); 
+        }
+    });
+});
+
     
     $('select.dynamic_dropdown_reports').each(function() {
         var $select = $(this);
