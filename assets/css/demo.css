@@ -333,6 +333,9 @@ body[data-background-color="dark"] .demo-icon .icon-class {
     z-index: 99999 !important;
 }
 
+.card-body {
+    position: relative;
+}
 .page-inner.animated {
   animation: none !important;
   transform: none !important;
@@ -826,3 +829,40 @@ input#jobSearch::placeholder {
     overflow-y: auto;
 }
 
+
+
+.dynamic_dropdown[multiple] {
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.d-flex .dynamic_dropdown {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 150px;
+}
+
+.filter-dropdown {
+    min-width: 180px;   /* ensures short values don't shrink */
+    max-width: 250px;   /* limits very long values */
+}
+
+
+#jobsTable {
+    width: 100% !important;
+}
+
+.dataTables_scrollBody table {
+    width: 100% !important;
+}
+
+/* Target all icons inside DataTables buttons */
+.dt-buttons .dt-button i {
+    color: white !important;   /* force white icon */
+    vertical-align: middle;    /* optional: aligns icon nicely with text */
+}
+
+/* Optional spacing if you use <i class="me-1"> */
+.dt-buttons .dt-button i.me-1 {
+    margin-right: 0.3rem;
+}

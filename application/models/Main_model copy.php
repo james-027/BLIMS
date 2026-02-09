@@ -1071,11 +1071,8 @@ class Main_model extends CI_Model {
 		return $this->db->get()->result_array();
 	}
 
-
-
 	  public function fetch_report_trans_details($filters, $lab_access,$sample_type_id)
     {
-	 
         $this->db->select([
             'td.trans_detail_id',
             'td.trans_id',
@@ -1099,8 +1096,8 @@ class Main_model extends CI_Model {
             't.test_name_id',
             'tt_finalprep.date_received AS latest_timestamp',
             'st.sample_type_name',
-			'"" AS class',
-            'tp.param_name AS test_param_name',
+			
+            'tp.param_name',
             'if.feedmill_name AS internal_feedmill_name',
             'cf.feedmill_name AS commercial_feedmill_name',
             'GROUP_CONCAT(DISTINCT tn.name ORDER BY tn.name SEPARATOR ", ") AS laboratory_tests',
@@ -1134,25 +1131,12 @@ class Main_model extends CI_Model {
         }
 
         // Lab access
-	$selectedLabs = isset($filters['laboratory']) ? (array)$filters['laboratory'] : []; 
-
-	if (!empty($lab_access)) {
-		$labIDs = array_column($lab_access, 'laboratory_id');
-
-		if (!empty($selectedLabs)) {
-			$allowedLabs = array_intersect($selectedLabs, $labIDs);
-
-			if (!empty($allowedLabs)) {
-				$this->db->where_in('th.laboratory_id', $allowedLabs);
-			} else {
-				$this->db->where('th.laboratory_id', 0);
-			}
-		} else {
-			$this->db->where_in('th.laboratory_id', $labIDs);
-		}
-	} else {
-		$this->db->where('th.laboratory_id', 0);
-	}
+        if (!empty($lab_access)) {
+            $labIDs = array_column($lab_access, 'laboratory_id');
+            $this->db->where_in('th.laboratory_id', $labIDs);
+        } else {
+            $this->db->where('th.laboratory_id', 0);
+        }
 
         // Latest timestamp
         $this->db->join("(SELECT trans_detail_id, MAX(created_at) AS date_received
@@ -1210,6 +1194,7 @@ class Main_model extends CI_Model {
             $this->db->where('(' . implode(' OR ', $weekConditions) . ')');
         }
             // Month filter
+
         $months = isset($filters['month']) ? (array)$filters['month'] : [];
         if (!empty($months)) {
             $monthConditions = [];
@@ -1218,6 +1203,7 @@ class Main_model extends CI_Model {
             }
             $this->db->where('(' . implode(' OR ', $monthConditions) . ')');
         }
+
         $this->db->where('td.trans_detail_status_id', 37);
         $this->db->where('s.sample_type_id', $sample_type_id);
         $this->db->group_by('td.trans_detail_id');
@@ -1353,7 +1339,6 @@ class Main_model extends CI_Model {
 		$this->db->group_by('td.trans_detail_id');
 		$this->db->order_by('td.modified_at', 'DESC');
 	}
-
 	public function count_all_trans_details($lab_access, $sample_type_id)
 	{
 		$this->fetch_report_trans_details_query([], $lab_access, $sample_type_id);
@@ -1391,7 +1376,6 @@ class Main_model extends CI_Model {
 					->like('th.job_order_no', $search)
 					->or_like('s.sample_name', $search)
 					->or_like('tn.name', $search)
-					->or_like('td.ext_lab_code', $search)
 				->group_end();
 			}
 

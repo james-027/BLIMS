@@ -12,6 +12,7 @@
         <div class="card-body">
             <!-- Filter Form -->
             <form method="POST" id="feedmillFilterForm" action="<?= base_url($controller . '/index') ?>">
+                <input type="hidden" name="sample_type_id" value="5">
                 <div class="row g-3">
 
                     <!-- Feedmill -->
@@ -28,20 +29,6 @@
                         </select>
                     </div>
 
-                    
-                    <div class="col-md-3">
-                        <label for="laboratoryFilter" class="form-label"><strong>Laboratory:</strong></label>
-                        <select name="laboratory[]" id="laboratoryFilter" class="form-select dynamic_dropdown_reports"
-                            multiple>
-                            <?php foreach ($laboratories as $lab): ?>
-                            <option value="<?= $lab->id ?>"
-                                <?= (!empty($selected_laboratory) && in_array($lab->id, $selected_laboratory)) ? 'selected' : '' ?>>
-                                <?= $lab->identifier_code ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
                     <!-- Job Number -->
                     <div class="col-md-3">
                         <label for="jobNumberFilter" class="form-label"><strong>Job Number:</strong></label>
@@ -53,6 +40,29 @@
                             <option value="<?= $jn ?>"
                                 <?= (!empty($selected_job_number) && in_array($jn, $selected_job_number)) ? 'selected' : '' ?>>
                                 <?= $jn ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="supplierFilter" class="form-label">
+                            <strong>Supplier:</strong>
+                        </label>
+                        <select name="supplier[]" id="supplierFilter" class="form-select dynamic_dropdown_reports"
+                            multiple>
+                            <?php
+                                $suppliers = [];
+                                foreach ($jobs as $job) {
+                                    if (!empty($job['supplier_id'])) {
+                                        $suppliers[$job['supplier_id']] = $job['supplier_name'];
+                                    }
+                                }
+                                asort($suppliers);
+                                foreach ($suppliers as $id => $name): ?>
+                            <option value="<?= $id ?>"
+                                <?= (!empty($selected_supplier) && in_array($id, $selected_supplier)) ? 'selected' : '' ?>>
+                                <?= $name ?>
                             </option>
                             <?php endforeach; ?>
                         </select>
@@ -140,6 +150,8 @@
    
     <div class="card shadow-sm">
         <div class="card-body p-2">
+
+
             <div class="table-responsive">
                 <table id="jobsTable" class="table table-bordered table-hover table-striped mb-0">
                     <thead class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
@@ -148,6 +160,8 @@
                             <th style="width:200px;">Sample Name</th>
                             <th style="width:200px;">Location/Feedmill</th>
                             <th style="width:150px;">Laboratory Code</th>
+                            <th style="width:150px;">Supplier / Supplier</th>
+                            <th style="width:150px;">Plate/Van No.</th>
                             <th style="width:150px;">Production/ Delivery Date</th>
                             <th style="width:150px;">Date Received</th>
                             <th style="width:50px;">Week#</th>
@@ -165,32 +179,13 @@
                     </thead>
 
                     <tbody>
-                        <?php foreach ($jobs as $row): ?>
-                        <tr>
-                            <td><?= $row['sample_name'] ?></td>
-                            <td><?= $row['sample_name'] ?></td>
-                            <td><?= $row['feedmill'] ?></td>
-                            <td><?= $row['lab_code'] ?></td>
-                            <td><?= date('M d, Y', strtotime($row['delivery_date'])) ?></td>
-                            <td><?= date('M d, Y', strtotime($row['latest_timestamp'])) ?></td>
-                            <td><?= $row['week_number'] ?></td>
-                            <td><?= $row['month_name'] ?></td>
-                            <td></td>
-                            <td><?= $row['job_order_no'] ?></td>
-                            <td><?= $row['estimated_release_date'] ?></td>
-                            <td><?= date('M d, Y', strtotime($row['latest_timestamp'])) ?></td>
-                            <td><?= $row['test_name'] ?></td>
-                            <?php foreach($dynamic_test_headers as $test_code): ?>
-                            <td><?= $row[$test_code] ?? '' ?></td>
-                            <?php endforeach; ?>
-                        </tr>
-                        <?php endforeach; ?>
+
                     </tbody>
                 </table>
             </div>
 
         </div>
-    </div>
+</div>
 
 
 </div>

@@ -112,25 +112,23 @@
                     echo menu_link_to_display('resultverification', 'resultverification', null, 1);
                     echo menu_link_to_display('reportrelease', 'reportrelease', null, 1);
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Transactional', 1, 'suffix');
-
           
-                
-
                 $parentLinkArray = array(
                     array('1' => 'reportfeeds'),
+                    array('1' => 'reportrawmaterials'),
                 );
 
                 $parentAliasArray = array(
                     'reportfeeds',
+                    'reportrawmaterials',
                 );
 
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Reports', 1, 'prefix', 'fa-chart-bar');
 
                     echo menu_link_to_display('reportfeeds','reportfeeds', null, 1);
+                    echo menu_link_to_display('reportrawmaterials','reportrawmaterials', null, 1);
 
                 echo menu_link_to_display($parentLinkArray, $parentAliasArray, 'Reports', 1, 'suffix');
-
-
 
 
                 

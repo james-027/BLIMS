@@ -6,19 +6,21 @@
 <div class="page-inner animated fadeInRightBig">
 
     <?=$breadcrumbs?>
-        
+
     <div class="row">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
                     <?=$new_button?>
                     <div class="table-responsive">
-                        
-                        <table class="table table-striped table-hover dt-responsive nowrap " style="width:100%" id="tbl-sample-name">
+
+                        <table class="table table-striped table-hover dt-responsive nowrap " style="width:100%"
+                            id="tbl-sample-name">
                             <thead class="bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
                                 <tr>
                                     <th>Sample Name</th>
                                     <th>Sample Code</th>
+                                    <th>Sample Type</th>
                                     <th>Created By</th>
                                     <th>Created On</th>
                                     <th>Modified By</th>
@@ -36,7 +38,8 @@
     </div>
 </div>
 
-<div class="modal fade animated bounceInDown" id="modal-add-sample-name"   role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade animated bounceInDown" id="modal-add-sample-name" role="dialog"
+    aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header <?=expColor($thColor)->fontColor?> bg-<?=$btnColor?>">
@@ -59,10 +62,22 @@
                             <input type="text" name="sampleCode" class="form-control form-control-md" required="true">
                         </label>
                     </div>
+
+                    <div class="form-group">
+                        <label for="sampleType">Select Sample Type:</label>
+                        <select name="sampleType" id="sampleType"
+                            class="form-control form-control-md dynamic_dropdown" required>
+                            <option value="">-- Select Sample Type --</option>
+                            <?php foreach($sample_types as $sample_type): ?>
+                            <option value="<?= $sample_type->id ?>"><?= $sample_type->sample_type_name ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
-            
+
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round"
+                        data-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-<?=$btnColor?> btn-md btn-round">Save</button>
                 </div>
             </form>
@@ -70,7 +85,8 @@
     </div>
 </div>
 
-<div class="modal fade animated bounceInDown" id="modal-edit-sample-name"   role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade animated bounceInDown" id="modal-edit-sample-name" role="dialog"
+    aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header <?=expColor($thColor)->fontColor?> bg-<?=$btnColor?>">
@@ -85,18 +101,34 @@
                     <div class="form-group">
                         <label for="exampleInputEmail1">Sample Name: </label>
                         <label for="" class="input-group">
-                            <input type="text" name="sampleName" id="sampleName" class="form-control form-control-md" required="true">
+                            <input type="text" name="sampleName" id="sampleName" class="form-control form-control-md"
+                                required="true">
                         </label>
                     </div>
                     <div class="form-group">
                         <label for="exampleInputEmail1">Sample Code: </label>
                         <label for="" class="input-group">
-                            <input type="text" name="sampleCode" id="sampleCode" class="form-control form-control-md" required="true">
+                            <input type="text" name="sampleCode" id="sampleCode" class="form-control form-control-md"
+                                required="true">
                         </label>
                     </div>
+
+                    <div class="form-group">
+                        <label for="sampleType">Select Sample Type:</label>
+                        <select name="sampleType" id="editsampleType"
+                            class="form-control form-control-md dynamic_dropdown" required>
+                            <option value="">-- Select Sample Type --</option>
+                            <?php foreach($sample_types as $sample_type): ?>
+                            <option value="<?= $sample_type->id ?>"><?= $sample_type->sample_type_name ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round"
+                        data-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-<?=$btnColor?> btn-md btn-round">Update</button>
                 </div>
             </form>
@@ -104,7 +136,8 @@
     </div>
 </div>
 
-<div class="modal fade animated bounceInDown" id="modal-active-sample-name"   role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade animated bounceInDown" id="modal-active-sample-name" role="dialog"
+    aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header <?=expColor($thColor)->fontColor?> bg-<?=$btnColor?>">
@@ -120,7 +153,8 @@
 
                     <p class="text-center">
                         <button type="submit" class="btn btn-<?=$btnColor?> btn-md btn-round">Yes</button>&nbsp;
-                        <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round" data-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round"
+                            data-dismiss="modal">No</button>
                     </p>
                 </div>
             </form>
@@ -128,7 +162,8 @@
     </div>
 </div>
 
-<div class="modal fade animated bounceInDown" id="modal-deactivate-sample-name"   role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade animated bounceInDown" id="modal-deactivate-sample-name" role="dialog"
+    aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header <?=expColor($thColor)->fontColor?> bg-<?=$btnColor?>">
@@ -144,11 +179,11 @@
 
                     <p class="text-center">
                         <button type="submit" class="btn btn-<?=$btnColor?> btn-md btn-round">Yes</button>&nbsp;
-                        <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round" data-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-danger btn-border fw-bold btn-md btn-round"
+                            data-dismiss="modal">No</button>
                     </p>
                 </div>
             </form>
         </div>
     </div>
 </div>
-        

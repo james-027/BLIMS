@@ -6936,7 +6936,6 @@ private function _read_excel($filePath)
 
 	public function sample_name()
 	{
-		
 		$info = $this->custom_lib->_require_login();
 		$data['js_file'] = '';
 		$data['profile'] = $this->custom_lib->_get_profile();
@@ -6989,7 +6988,7 @@ private function _read_excel($filePath)
 
 		$data['userID'] = decode($info['userID']);
 		$data['breadcrumbs'] = $this->load->view('admin/breadcrumbs', $data , TRUE);
-
+		$data['sample_types'] = $this->main->get_data('sample_types', ['sample_status_identifier' => 1]);
 		$data['content'] = $this->load->view('admin/sample_name_content', $data , TRUE);
 		$this->load->view('admin/templates', $data);
 	}
@@ -7007,19 +7006,26 @@ private function _read_excel($filePath)
 
 		$join = array(
 			'stats s'   => 'a.status_id = s.statusID',
+			'sample_types st'   => array('a.sample_type_id = st.id' => 'LEFT'),
 			'users u1'  => array('a.created_by = u1.userID'   => 'INNER'),
 			'users u2'  => array('a.updated_by = u2.userID'   => 'LEFT'),
 		);
 
+			$select = "a.*, 
+				a.status_id as statusID, 
+				s.statDesc, 
+				st.sample_type_name as sample_type_name, 
+				CONCAT(u1.userFirstName, ' ', u1.userLastName) as createdByName, 
+				CONCAT(u2.userFirstName, ' ', u2.userLastName) as modifiedByName";
+
+
 		$recFound = $this->main->get_join_datatables(
 			'samples a',
 			$join,
+		false,
 			false,
-			'a.sample_name',
 			false,
-			'*, a.status_id as statusID, 
-			CONCAT(u1.userFirstName," ",u1.userLastName) as createdByName,
-			CONCAT(u2.userFirstName," ",u2.userLastName) as modifiedByName',
+			$select,
 			false
 		);
 
@@ -7054,6 +7060,7 @@ private function _read_excel($filePath)
 			$data[] = array(
 				$r->sample_name,
 				$r->sample_code,
+				$r->sample_type_name,
 				$createdBy,
 				$createdOn,
 				$modifiedBy,
@@ -7082,6 +7089,7 @@ private function _read_excel($filePath)
 
 			$sampleName = clean_data($this->input->post('sampleName'));
 			$sampleCode = clean_data($this->input->post('sampleCode'));
+			$sampleType = clean_data($this->input->post('sampleType'));
 
 			if (!empty($sampleName)&&!empty($sampleCode)) {
 				$check_sample = $this->main->check_data('samples', ['sample_name' => $sampleName]);
@@ -7093,6 +7101,7 @@ private function _read_excel($filePath)
 					$set = [
 						'sample_name' => trim(strtoupper($sampleName)),
 						'sample_code' => trim(strtoupper($sampleCode)),
+						'sample_type_id' => $sampleType,
 						'status_id'     => 1,
 						'created_by'    => decode($info['userID']),
 						'created_at'    => date_now(),
@@ -7163,10 +7172,25 @@ private function _read_excel($filePath)
 		echo json_encode($check_samples); exit;
 		
 		if($check_samples['result'] == TRUE){
+
+		$sample_type_id = $check_samples['info']->sample_type_id;
+
+			$get_sample_types = $this->main->get_data('sample_types', ['sample_status_identifier' => 1]);
+			$data_sample_type_names = '<option value="">-- Select Sample Type --</option>';
+
+		foreach ($get_sample_types as $row) {
+				if ($row->id == $sample_type_id) {
+					$data_sample_type_names .= '<option value="' . $row->id . '" selected>' . $row->sample_type_name . '</option>';
+				} else {
+					$data_sample_type_names .= '<option value="' . $row->id . '">' . $row->sample_type_name . '</option>';
+				}
+			}
+			
 			$data['result'] = 1;
 			$data['info'] = array(
 				'sample_name' => $check_samples['info']->sample_name,
 				'sample_code' => $check_samples['info']->sample_code,
+				'sample_type_id' => $check_samples['info']->sample_type_id
 				
 			);
 		}else{
@@ -7184,6 +7208,7 @@ private function _read_excel($filePath)
 			$sampleID = decode($this->input->post('id'));
 			$sampleName = clean_data($this->input->post('sampleName'));
 			$sampleCode = clean_data($this->input->post('sampleCode'));
+			$sampleType = clean_data($this->input->post('sampleType'));
 
 			if(!empty($sampleID) && !empty($sampleName) && !empty($sampleCode)){
 					$check = $this->main->check_data('samples', array('sample_name' =>  $sampleName, 'id !=' => $sampleID));
@@ -7193,6 +7218,7 @@ private function _read_excel($filePath)
 								$set = array(
 									'sample_name' => trim(strtoupper($sampleName)),
 									'sample_code' => trim(strtoupper($sampleCode)),
+									'sample_type_id' => $sampleType,
 									'updated_by' => decode($info['userID']),
 									'modified_at'   => date_now()
 								);
@@ -7516,12 +7542,14 @@ private function _read_excel($filePath)
 		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			$sampleType = clean_data($this->input->post('sampleType'));
+			$setForSamples = clean_data($this->input->post('setForSamples'));
 
 			if (!empty($sampleType)) {
 				$check_sample = $this->main->check_data('sample_types', ['sample_type_name' => $sampleType]);
 				if ($check_sample == FALSE) {
 					$set = [
 						'sample_type_name' => trim(strtoupper($sampleType)),
+						'sample_status_identifier' => $setForSamples,
 						'status_id'     => 1,
 						'created_by'    => decode($info['userID']),
 						'created_at'    => date_now(),
@@ -7603,11 +7631,14 @@ private function _read_excel($filePath)
 		if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$sampleID = decode($this->input->post('id'));
 			$sampleType = clean_data($this->input->post('sampleType'));
+			$setForSamples = clean_data($this->input->post('editsetForSamples'));
+
 			if(!empty($sampleID) && !empty($sampleType)){
 					$check = $this->main->check_data('sample_types', array('sample_type_name' =>  $sampleType, 'id !=' => $sampleID));
 					if($check == FALSE){
 								$set = array(
 									'sample_type_name' => trim(strtoupper($sampleType)),
+									'sample_status_identifier' => $setForSamples,
 									'updated_by' => decode($info['userID']),
 									'modified_at'   => date_now()
 								);

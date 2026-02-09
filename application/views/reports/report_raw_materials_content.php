@@ -28,7 +28,6 @@
                         </select>
                     </div>
 
-                    
                     <div class="col-md-3">
                         <label for="laboratoryFilter" class="form-label"><strong>Laboratory:</strong></label>
                         <select name="laboratory[]" id="laboratoryFilter" class="form-select dynamic_dropdown_reports"
@@ -53,6 +52,29 @@
                             <option value="<?= $jn ?>"
                                 <?= (!empty($selected_job_number) && in_array($jn, $selected_job_number)) ? 'selected' : '' ?>>
                                 <?= $jn ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="supplierFilter" class="form-label">
+                            <strong>Supplier:</strong>
+                        </label>
+                        <select name="supplier[]" id="supplierFilter" class="form-select dynamic_dropdown_reports"
+                            multiple>
+                            <?php
+                                $suppliers = [];
+                                foreach ($jobs as $job) {
+                                    if (!empty($job['supplier_id'])) {
+                                        $suppliers[$job['supplier_id']] = $job['supplier_name'];
+                                    }
+                                }
+                                asort($suppliers);
+                                foreach ($suppliers as $id => $name): ?>
+                            <option value="<?= $id ?>"
+                                <?= (!empty($selected_supplier) && in_array($id, $selected_supplier)) ? 'selected' : '' ?>>
+                                <?= $name ?>
                             </option>
                             <?php endforeach; ?>
                         </select>
@@ -137,9 +159,11 @@
         </div>
     </div>
 
-   
+
     <div class="card shadow-sm">
         <div class="card-body p-2">
+
+
             <div class="table-responsive">
                 <table id="jobsTable" class="table table-bordered table-hover table-striped mb-0">
                     <thead class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
@@ -148,6 +172,8 @@
                             <th style="width:200px;">Sample Name</th>
                             <th style="width:200px;">Location/Feedmill</th>
                             <th style="width:150px;">Laboratory Code</th>
+                            <th style="width:150px;">Supplier / Supplier</th>
+                            <th style="width:150px;">Plate/Van No.</th>
                             <th style="width:150px;">Production/ Delivery Date</th>
                             <th style="width:150px;">Date Received</th>
                             <th style="width:50px;">Week#</th>
@@ -171,6 +197,8 @@
                             <td><?= $row['sample_name'] ?></td>
                             <td><?= $row['feedmill'] ?></td>
                             <td><?= $row['lab_code'] ?></td>
+                            <td><?= $row['supplier_name'] ?></td>
+                            <td><?= $row['plate_number'] ?></td>
                             <td><?= date('M d, Y', strtotime($row['delivery_date'])) ?></td>
                             <td><?= date('M d, Y', strtotime($row['latest_timestamp'])) ?></td>
                             <td><?= $row['week_number'] ?></td>
@@ -188,11 +216,8 @@
                     </tbody>
                 </table>
             </div>
-
         </div>
     </div>
-
-
 </div>
 
 <script>

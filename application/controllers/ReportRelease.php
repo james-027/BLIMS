@@ -360,6 +360,7 @@ class ReportRelease extends CI_Controller {
                     $this->db->like('th.job_order_no', $searchValue);
                     $this->db->or_like('td.ext_lab_code', $searchValue);
                     $this->db->or_like('s.sample_name', $searchValue);
+                   $this->db->like('t.test_code', $searchValue);
                     $this->db->or_like('tn.name', $searchValue);
                     $this->db->or_like('td.release_ref_number', $searchValue);
                     $this->db->or_where("DATE_FORMAT(tt.latest_timestamp, '%M %d, %Y') LIKE", "%$searchValue%");

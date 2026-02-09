@@ -185,6 +185,33 @@ $(document).ready(function () {
         });
     });
 
+    
+    $('select.dynamic_dropdown_reports').each(function() {
+        var $select = $(this);
+        var $tableWrapper = $select.closest('.table-responsive');
+
+        if ($select.find('option[value="_reset"]').length === 0) {
+            $select.prepend('<option value="_reset">Select</option>');
+        }
+
+        $select.select2({
+            theme: 'bootstrap4',
+            sorter: data => data.sort((a, b) => {
+                if (a.id === '_reset') return -1;
+                if (b.id === '_reset') return 1;
+                return a.text.localeCompare(b.text);
+            }),
+            width: '100%',
+            dropdownParent: $tableWrapper.length ? $tableWrapper : $select.parent()
+        });
+
+        $select.on('change', function() {
+            if ($(this).val() === '_reset') {
+                $(this).val('').trigger('change'); 
+            }
+        });
+    });
+
 
     $('select.dynamic_dropdown_modal').each(function() {
 
@@ -227,6 +254,13 @@ $(document).ready(function () {
         //dropdownPosition: 'below',
         theme: 'bootstrap4'
     });
+
+    $('select.dynamic_dropdown_no_order_page').select2({
+    width: '100%',
+    placeholder: 'Select...',
+    theme: 'bootstrap4',
+    dropdownParent: $(document.body) // <-- this fixes z-index and overflow issues
+});
 
     $(".dropdown_2").select2({
         dropdownParent: $("#update-customer"),
@@ -4654,28 +4688,35 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
         });
     });
 
-    $(document).on('click', '.edit-sample-name', function(e){
-        e.preventDefault();
-        var id = $(this).attr('data-id');
-        $('#loader-div').removeClass('loaded');
-        $.ajax({
-            url: base_url + 'admin/modal-sample-name/',
-            data: {id:id},
-            method: 'POST',
-            success:function(response){
-                var parse_response = JSON.parse(response);
-                if(parse_response['result'] == 1){
-                    $('#update-sample-name').find('#id').val(id);
-                    $('#update-sample-name').find('#sampleName').val(parse_response['info'].sample_name);
-                    $('#update-sample-name').find('#sampleCode').val(parse_response['info'].sample_code);
-                    $('#modal-edit-sample-name').modal({show:true});
-                }else{
-                    console.log('Error please contact your administrator.');
-                }
-                $('#loader-div').addClass('loaded');
+$(document).on('click', '.edit-sample-name', function(e){
+    e.preventDefault();
+    var id = $(this).attr('data-id');
+    $('#loader-div').removeClass('loaded');
+    $.ajax({
+        url: base_url + 'admin/modal-sample-name/',
+        data: {id:id},
+        method: 'POST',
+        success:function(response){
+            var parse_response = JSON.parse(response);
+            if(parse_response['result'] == 1){
+                $('#update-sample-name').find('#id').val(id);
+                $('#update-sample-name').find('#sampleName').val(parse_response['info'].sample_name);
+                $('#update-sample-name').find('#sampleCode').val(parse_response['info'].sample_code);
+
+                $('#update-sample-name').find('#editsampleType')
+                    .val(parse_response['info'].sample_type_id)
+                    .trigger('change');
+
+                $('#modal-edit-sample-name').modal({show:true});
+            }else{
+                console.log('Error please contact your administrator.');
             }
-        });
+            $('#loader-div').addClass('loaded');
+        }
     });
+});
+
+
 
     $(document).on('submit', '#update-sample-name', function(event){  
         event.preventDefault();
@@ -4903,6 +4944,11 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
                 if(parse_response['result'] == 1){
                     $('#update-sample-type').find('#id').val(id);
                     $('#update-sample-type').find('#sampleType').val(parse_response['info'].sample_type_name);
+                if(parse_response['info'].sample_status_identifier == 1){
+                    $('#update-sample-type').find('#editsetForSamples').prop('checked', true);
+                } else {
+                    $('#update-sample-type').find('#editsetForSamples').prop('checked', false);
+                }
                     $('#modal-edit-sample-type').modal({show:true});
                 }else{
                     console.log('Error please contact your administrator.');
@@ -7974,7 +8020,7 @@ $(document).on('submit', '#upload-supplier-form', function(event) {
                     $('#update-test').find('#id').val(id);
 
                     $('#update-test').find('#testName').empty();
-                    $('#update-test').find('#testName').append(parse_response['info'].test_name_id);
+                    $('#update-test').find('#testName').append(parse_response['info'].test_name_id) .trigger('change');
 
                     $('#update-test').find('#testCode').val(parse_response['info'].test_code);
 
