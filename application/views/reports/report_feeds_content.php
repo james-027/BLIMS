@@ -136,7 +136,6 @@
 
         </div>
     </div>
-
    
     <div class="card shadow-sm">
         <div class="card-body p-2">
@@ -144,7 +143,7 @@
                 <table id="jobsTable" class="table table-bordered table-hover table-striped mb-0">
                     <thead class="card-header bg-<?=$thColor?> <?=expColor($thColor)->fontColor?>">
                         <tr>
-                            <th style="width:150px;">Raw Material</th>
+                            <th style="width:150px;">Feed Type</th>
                             <th style="width:200px;">Sample Name</th>
                             <th style="width:200px;">Location/Feedmill</th>
                             <th style="width:150px;">Laboratory Code</th>

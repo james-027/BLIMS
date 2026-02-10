@@ -188,7 +188,7 @@ $(document).ready(function () {
 
     $('select.modal_dynamic_dropdown').each(function() {
     var $select = $(this);
-    var $modal = $select.closest('.modal'); // find the modal container
+    var $modal = $select.closest('.modal'); 
 
     if ($select.find('option[value="_reset"]').length === 0) {
         $select.prepend('<option value="_reset">Select</option>');
@@ -203,7 +203,7 @@ $(document).ready(function () {
             return a.text.localeCompare(b.text);
         }),
         width: '100%',
-        dropdownParent: $modal.length ? $modal : $select.parent() // attach to modal if exists
+        dropdownParent: $modal.length ? $modal : $select.parent()
     });
 
     $select.on('change', function() {
