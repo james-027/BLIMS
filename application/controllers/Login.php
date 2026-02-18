@@ -65,28 +65,63 @@ class Login extends CI_Controller {
 
 		
 
-			$where = array('userEmail' => $email);
-			$redirect = '';
-			$join = array(
-						'userkey b' => 'a.userID = b.userID and b.statusID = 1 and (a.userEmail = "'.$email.'" or a.employeeNo = "'.$empNo.'")',
-						'key c' => 'b.keyID = c.keyID',
-						'businesscenter d' => 'c.bcID = d.bcID',
-						'businessunit e' => 'c.buID = e.buID',
-						'usertype g' => 'a.userTypeID = g.userTypeID',
-						'themes h' => 'a.themeID = h.themeID',
-						'usertheme f' => 'a.userID = f.userID'
-					);
-			$check_login = $this->main->check_join('users a', $join, TRUE, 'b.current DESC, b.keyID', FALSE, FALSE);
-			$data['empID'] = $empID;
 			
+			$redirect = '';
+
+			$join = array(
+			'userkey b' => 'a.userID = b.userID',
+			'key c' => 'b.keyID = c.keyID',
+			'businesscenter d' => 'c.bcID = d.bcID',
+			'businessunit e' => 'c.buID = e.buID',
+			'usertype g' => 'a.userTypeID = g.userTypeID',
+			'themes h' => 'a.themeID = h.themeID',
+			'usertheme f' => 'a.userID = f.userID'
+		);
+
+		$where = array(
+			'b.statusID' => 1,
+			'a.userEmail' => $email
+		);
+
+		$select = '
+			a.*,
+			a.statusID as user_statusID,
+			b.keyID,
+			b.userKeyID,
+			b.current,
+			c.keyCode,
+			d.bcName,
+			d.bcCode,
+			e.buLDesc,
+			g.userTypeName AS userTypeName,
+			g.userTypeLevel,
+			h.themeID,
+			h.themeName AS backgroundColor,
+			h.menuColor AS sideBarColor,
+			h.menuColor AS topBarColor,
+			h.menuColor AS logoHeaderColor,
+			h.menuColor AS menuColor,
+			h.thColor AS thColor,
+			h.btnColor AS btnColor,
+			h.tableColor AS tableColor
+		';
 
 
+		$check_login = $this->main->check_join(
+			'users a',
+			$join,
+			TRUE,
+			'b.current DESC, b.keyID',
+			FALSE,
+			$select,
+			$where
+		);
 
+			
+			$data['empID'] = $empID;
 
 
 			if($check_login['result'] == TRUE){
-
-				
 
 				if($check_login['info']->lastLoginTS != '' && $check_login['info']->isLogout != 1){
 					$msg = "You've been automatically logged out because you did not log out last time. Please login again.";
@@ -94,10 +129,6 @@ class Login extends CI_Controller {
 					redirect('admin/logout/'.encode($msg).'/'.$check_login['info']->userID.'/'.$empID);
 				}
 
-	
-
-				
-				
 				if(decode($check_login['info']->password) == $password){
 					$session = array(
 						'userID'			=>	encode($check_login['info']->userID),
@@ -136,8 +167,9 @@ class Login extends CI_Controller {
 					$filter = array('userID' => $check_login['info']->userID);
 					$set = array('lastLoginTS' => date_now(), 'isLogout' => 0);
 					$this->main->update_data('users', $set, $filter );
-					
-					if($check_login['info']->statusID == 1){
+
+					if($check_login['info']->user_statusID == 1){
+
 						$this->session->set_userdata(APP_SESS_NAME, $session);
 						if($redirect == ''){
 
@@ -163,7 +195,7 @@ class Login extends CI_Controller {
 						}else{
 							//redirect($redirect);
 						}
-					}elseif($check_login['info']->statusID == 2){
+					}elseif($check_login['info']->user_statusID == 2){
 						$msg = '<div class="alert alert-danger">Your account has been deactivated contact your administrator.</div>';
 						$this->session->set_flashdata('message', $msg);
 						$this->load->view('login/login_content', $data);
