@@ -174,18 +174,20 @@ class ReportRawMaterials extends CI_Controller {
         return array_merge(array_keys($testHeaders), $finalComputed, $extraColumns);
     }
 
+
     private function map_job_results($all_details, $dynamicHeaders)
     {
         $jobs = [];
 
         foreach ($all_details as $row) {
+
             $groupKey = $row['trans_id'] . '_' . $row['sample_name'] . '_' . $row['lab_code'];
 
             if (!isset($jobs[$groupKey])) {
-                $timestamp = $row['latest_timestamp'] ?? $row['created_at'];
+
+                $timestamp = $row['original_timestamp'] ?? $row['created_at'];
                 $timestampUnix = strtotime($timestamp);
                 $leadTimeDays = (int)$row['lead_time'];
-                $estimatedReleaseDate = date('M d, Y', strtotime("+$leadTimeDays days", $timestampUnix));
 
                 $jobs[$groupKey] = [
                     'job_order_no' => $row['job_order_no'],
@@ -197,16 +199,15 @@ class ReportRawMaterials extends CI_Controller {
                     'test_name' => $row['test_name'],
                     'lab_code' => $row['lab_code'],
                     'delivery_date' => $row['delivery_date'],
-                    'latest_timestamp' => $row['latest_timestamp'],
+                    'latest_timestamp' => $row['original_timestamp'],
+                    'actual_date' => $row['original_actual_date'],
                     'week_number' => date('W', $timestampUnix),
                     'month_name' => date('F', $timestampUnix),
-                    'estimated_release_date' => $estimatedReleaseDate,
-                    '_nfe_nir' => [],
-                    '_nfe_fallback' => [],
-                    '_me_nir' => [],
-                    '_me_fallback' => [],
-                    '_traditional_me_nir' => [],
-                    '_traditional_me_fallback' => [],
+                    'estimated_release_date' => date('M d, Y', strtotime("+$leadTimeDays days", $timestampUnix)),
+
+                    '_calc' => [
+                        'nfe' => [],
+                    ]
                 ];
 
                 foreach ($dynamicHeaders as $code) {
@@ -214,75 +215,72 @@ class ReportRawMaterials extends CI_Controller {
                 }
             }
 
-            $testCode = strtoupper($row['test_code']);
+            $testCode  = strtoupper($row['test_code']);
             $paramName = $this->normalize_text($row['test_param_name'] ?? '');
             $testName  = $this->normalize_text($row['test_name'] ?? '');
-            $cleanValue = $this->sanitize_result($row['test_exec_lab_result']);
-            $jobs[$groupKey][$testCode] = $cleanValue;
 
-            // Collect NFE
+            $result = $this->sanitize_result($row['test_exec_lab_result']);
 
-        if (
-            in_array($paramName, [
-                'MOISTURE,%',
-                'CRUDEPROTEIN,%',
-                'CRUDEFAT,%',
-                'CRUDEFIBER,%',
-                'ASH,%',
-            ]) && $cleanValue !== null
-        ) {
-            if ($testName === 'NIRPROXIMATE') {
-                $jobs[$groupKey]['_nfe_nir'][$paramName] = $cleanValue;
-            }
-            if ($testName === 'WETANALYSIS') {
-                $jobs[$groupKey]['_nfe_fallback'][$paramName] = $cleanValue;
-            }
-        }
+            $rawValue     = $result['raw'];
+            $numericValue = $result['numeric'];
 
-              if (
-            in_array($paramName, [
-                'CRUDEPROTEIN,%',
-                'CRUDEFAT,%',
-            ]) && $cleanValue !== null
-        ) {
-            if ($testName === 'NIRPROXIMATE') {
-                $jobs[$groupKey]['_me_nir'][$paramName] = $cleanValue;
-                $jobs[$groupKey]['_traditional_me_nir'][$paramName] = $cleanValue;
-            }
-            if ($testName === 'WETANALYSIS') {
-                $jobs[$groupKey]['_me_fallback'][$paramName] = $cleanValue;
-                $jobs[$groupKey]['_traditional_me_fallback'][$paramName] = $cleanValue;
+            // Store RAW for display
+            $jobs[$groupKey][$testCode] = $rawValue;
+
+        
+            if ($numericValue !== null) {
+
+                if (in_array($paramName, [
+                    'MOISTURE,%',
+                    'CRUDEPROTEIN,%',
+                    'CRUDEFAT,%',
+                    'CRUDEFIBER,%',
+                    'ASH,%',
+                ])) {
+
+                    $source = ($testName === 'NIRPROXIMATE') ? 'nir' : 'fallback';
+                    $jobs[$groupKey]['_calc']['nfe'][$source][$paramName] = $numericValue;
+                }
+
+                if (
+                    $paramName === 'SALT,%' &&
+                    $testCode === 'WET-SALT'
+                ) {
+                    $jobs[$groupKey]['WET-CI'] = round($numericValue * 0.606605, 2);
+                }
             }
         }
 
-        if (
-            $paramName === 'SALT,%'
-            && $testCode === 'WET-SALT'
-            && $cleanValue !== null
-        ) {
-            $jobs[$groupKey]['WET-CI'] = round($cleanValue * 0.606605, 2);
-        }
-
-        }
-
-        // Compute NFE
+    
         foreach ($jobs as &$job) {
-            $nfeSource = !empty($job['_nfe_nir']) ? $job['_nfe_nir'] : $job['_nfe_fallback'];
-            $sum = 0;
-            foreach ([
-                'MOISTURE,%',
-                'CRUDEPROTEIN,%',
-                'CRUDEFAT,%',
-                'CRUDEFIBER,%',
-                'ASH,%',
-            ] as $p) {
-                $sum += $nfeSource[$p] ?? 0;
-            }
-            $job['NFE'] = !empty($nfeSource) ? round(100 - $sum, 2) : '';
 
-            // Cleanup temp keys
-            unset($job['_nfe_nir'], $job['_nfe_fallback']);
+            $nfeSource = !empty($job['_calc']['nfe']['nir'])
+                ? $job['_calc']['nfe']['nir']
+                : ($job['_calc']['nfe']['fallback'] ?? []);
+
+            if (!empty($nfeSource)) {
+
+                $sum = 0;
+
+                foreach ([
+                    'MOISTURE,%',
+                    'CRUDEPROTEIN,%',
+                    'CRUDEFAT,%',
+                    'CRUDEFIBER,%',
+                    'ASH,%',
+                ] as $p) {
+                    $sum += $nfeSource[$p] ?? 0;
+                }
+
+                $job['NFE'] = round(100 - $sum, 2);
+
+            } else {
+                $job['NFE'] = '';
+            }
+
+            unset($job['_calc']);
         }
+
         unset($job);
 
         return array_values($jobs);
@@ -291,22 +289,29 @@ class ReportRawMaterials extends CI_Controller {
     private function sanitize_result($value)
     {
         if ($value === null) {
-            return null;
+            return [
+                'raw' => null,
+                'numeric' => null
+            ];
         }
 
-        // Remove percentage sign
-        $value = str_replace('%', '', $value);
+        $rawValue = trim($value);
 
-        // Handle ± (take only the first number)
-        if (strpos($value, '±') !== false) {
-            $parts = explode('±', $value);
-            $value = trim($parts[0]);
+        // Remove %
+        $clean = str_replace('%', '', $rawValue);
+
+        // Handle ±
+        if (strpos($clean, '±') !== false) {
+            $parts = explode('±', $clean);
+            $clean = trim($parts[0]);
         }
 
-        // Final trim
-        $value = trim($value);
+        $numeric = is_numeric($clean) ? (float)$clean : null;
 
-        return is_numeric($value) ? (float)$value : null;
+        return [
+            'raw' => $rawValue,
+            'numeric' => $numeric
+        ];
     }
 
     private function normalize_text($name)

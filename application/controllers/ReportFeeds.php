@@ -189,7 +189,7 @@ private function map_job_results($all_details, $dynamicHeaders)
 
         if (!isset($jobs[$groupKey])) {
 
-            $timestamp = $row['original_actual_date'] ?? $row['created_at'];
+            $timestamp = $row['original_timestamp'] ?? $row['created_at'];
             $timestampUnix = strtotime($timestamp);
             $leadTimeDays = (int)$row['lead_time'];
 
@@ -200,7 +200,7 @@ private function map_job_results($all_details, $dynamicHeaders)
                 'test_name' => $row['test_name'],
                 'lab_code' => $row['lab_code'],
                 'delivery_date' => $row['delivery_date'],
-                'latest_timestamp' => $row['original_actual_date'],
+                'latest_timestamp' => $row['original_timestamp'],
                 'actual_date' => $row['original_actual_date'],
                 'week_number' => date('W', $timestampUnix),
                 'month_name' => date('F', $timestampUnix),
@@ -388,6 +388,7 @@ private function normalize_text($name)
 
 
 
+    
 
 }
 
