@@ -1073,158 +1073,178 @@ class Main_model extends CI_Model {
 
 
 
-	  public function fetch_report_trans_details($filters, $lab_access,$sample_type_id)
-    {
-	 
-        $this->db->select([
-            'td.trans_detail_id',
-            'td.trans_id',
-            'th.job_order_no',
-            'th.laboratory_id',
-            'td.sample_id',
-            'lt.lab_test_grouping_id',
-            't.test_code',
-            'td.lab_test_id',
-            'td.test_exec_lab_result',
-            'td.ext_lab_code AS lab_code',
-            'lt.test_param_id',
-            'td.lead_time',
-            'td.delivery_date',
-            'td.created_at',
-            'tn.name AS test_name',
-            'sp.supplier_name AS supplier_name',
-            'sp.id AS supplier_id',
-            'pn.plate_number AS plate_number',
-            's.sample_name',
-            't.test_name_id',
-            'tt_finalprep.date_received AS latest_timestamp',
-            'st.sample_type_name',
+		
+		public function fetch_report_trans_details($filters, $lab_access, $sample_type_id)
+	{
+		$this->db->select([
+			'td.trans_detail_id',
+			'td.trans_id',
+			'th.job_order_no',
+			'th.laboratory_id',
+			'td.sample_id',
+			'lt.lab_test_grouping_id',
+			't.test_code',
+			'td.lab_test_id',
+			'td.test_exec_lab_result',
+			'td.ext_lab_code AS lab_code',
+			'lt.test_param_id',
+			'td_max.max_lead_time AS lead_time',
+			'td.delivery_date',
+			'td.created_at',
+			'tn.name AS test_name',
+			'sp.supplier_name AS supplier_name',
+			'sp.id AS supplier_id',
+			'pn.plate_number AS plate_number',
+			's.sample_name',
+			't.test_name_id',
+			'tt_finalprep.date_received AS original_timestamp',
+			'tt_resultverification.actual_date AS original_actual_date',
+			'st.sample_type_name',
 			'"" AS class',
-            'tp.param_name AS test_param_name',
-            'if.feedmill_name AS internal_feedmill_name',
-            'cf.feedmill_name AS commercial_feedmill_name',
-            'GROUP_CONCAT(DISTINCT tn.name ORDER BY tn.name SEPARATOR ", ") AS laboratory_tests',
-            'tr.remark AS existing_remark',
-            'CONCAT(us.userFirstName, " ", us.userLastName) AS client_name',
-            'n.nutritionist_name AS nutritionist_name'
-        ]);
-        $this->db->from('trans_details td');
-        $this->db->join('trans_headers th', 'th.trans_id = td.trans_id', 'inner');
-        $this->db->join('samples s', 's.id = td.sample_id', 'inner');
-        $this->db->join('sample_types st', 'st.id = td.sample_type_id', 'left');
-        $this->db->join('lab_tests lt', 'lt.test_id = td.lab_test_id AND lt.laboratory_id = th.laboratory_id', 'inner');
-        $this->db->join('test_parameters tp', 'tp.id = lt.test_param_id', 'left');
-        $this->db->join('tests t', 't.id = lt.test_id', 'left');
-        $this->db->join('suppliers sp', 'sp.id = td.supplier_id', 'left');
-        $this->db->join('plate_numbers pn', 'pn.id = td.plate_number_id', 'left');
-        $this->db->join('test_names tn', 'tn.id = t.test_name_id', 'left');
-        $this->db->join('users us', 'us.userID = th.client_id', 'left');
-        $this->db->join('nutritionists n', 'n.id = th.nutritionist_id', 'left');
-        $this->db->join('internal_feedmills if', 'if.id = th.internal_id', 'left');
-        $this->db->join('commercial_feedmills cf', 'cf.id = th.commercial_id', 'left');
+			'tp.param_name AS test_param_name',
+			'if.feedmill_name AS internal_feedmill_name',
+			'cf.feedmill_name AS commercial_feedmill_name',
+			'GROUP_CONCAT(DISTINCT tn.name ORDER BY tn.name SEPARATOR ", ") AS laboratory_tests',
+			'tr.remark AS existing_remark',
+			'CONCAT(us.userFirstName, " ", us.userLastName) AS client_name',
+			'n.nutritionist_name AS nutritionist_name'
+		]);
 
-        // Feedmill filter
-        $feedmillFilters = isset($filters['feedmill']) ? (array)$filters['feedmill'] : [];
+		$this->db->from('trans_details td');
+		$this->db->join('trans_headers th', 'th.trans_id = td.trans_id', 'inner');
+		$this->db->join('samples s', 's.id = td.sample_id', 'inner');
+		$this->db->join('sample_types st', 'st.id = td.sample_type_id', 'left');
+		$this->db->join('lab_tests lt', 'lt.test_id = td.lab_test_id AND lt.laboratory_id = th.laboratory_id', 'inner');
+		$this->db->join('test_parameters tp', 'tp.id = lt.test_param_id', 'left');
+		$this->db->join('tests t', 't.id = lt.test_id', 'left');
+		$this->db->join('suppliers sp', 'sp.id = td.supplier_id', 'left');
+		$this->db->join('plate_numbers pn', 'pn.id = td.plate_number_id', 'left');
+		$this->db->join('test_names tn', 'tn.id = t.test_name_id', 'left');
+		$this->db->join('users us', 'us.userID = th.client_id', 'left');
+		$this->db->join('nutritionists n', 'n.id = th.nutritionist_id', 'left');
+		$this->db->join('internal_feedmills if', 'if.id = th.internal_id', 'left');
+		$this->db->join('commercial_feedmills cf', 'cf.id = th.commercial_id', 'left');
 
-        if (!empty($feedmillFilters) && !in_array("ALL", $feedmillFilters)) {
-            $this->db->group_start();
-            $this->db->where_in('if.feedmill_name', $feedmillFilters);
-            $this->db->or_where_in('cf.feedmill_name', $feedmillFilters);
-            $this->db->group_end();
-        }
+		//  HIGHEST LEAD TIME PER TRANS_ID
+		$this->db->join("(SELECT trans_id, MAX(lead_time) AS max_lead_time
+						FROM trans_details
+						GROUP BY trans_id) td_max",
+						"td_max.trans_id = td.trans_id", "left");
 
-        // Lab access
-	$selectedLabs = isset($filters['laboratory']) ? (array)$filters['laboratory'] : []; 
+		// FIRST DATE RECEIVED FINAL PREP PER TRANS_ID
+		$this->db->join("(SELECT td2.trans_id, MIN(tt.created_at) AS date_received
+						FROM trans_timestamps tt
+						INNER JOIN trans_details td2 
+							ON td2.trans_detail_id = tt.trans_detail_id
+						WHERE tt.trans_detail_status_id = 26
+						GROUP BY td2.trans_id) tt_finalprep",
+						"tt_finalprep.trans_id = td.trans_id", "left");
 
-	if (!empty($lab_access)) {
-		$labIDs = array_column($lab_access, 'laboratory_id');
+		//  FIRST ACTUAL DATE RESULT VERIFICATION PER TRANS_ID
+		$this->db->join("(SELECT td2.trans_id, MIN(tt.created_at) AS actual_date
+						FROM trans_timestamps tt
+						INNER JOIN trans_details td2 
+							ON td2.trans_detail_id = tt.trans_detail_id
+						WHERE tt.trans_detail_status_id = 36
+						GROUP BY td2.trans_id) tt_resultverification",
+						"tt_resultverification.trans_id = td.trans_id", "left");
 
-		if (!empty($selectedLabs)) {
-			$allowedLabs = array_intersect($selectedLabs, $labIDs);
+		//  FIRST REMARK (STATUS 27) PER TRANS_ID
+		$this->db->join("(SELECT td2.trans_id, tr1.remark
+						FROM trans_remarks tr1
+						INNER JOIN trans_details td2 
+							ON td2.trans_detail_id = tr1.trans_detail_id
+						INNER JOIN (
+							SELECT td3.trans_id, MIN(tr2.created_at) AS first_created
+							FROM trans_remarks tr2
+							INNER JOIN trans_details td3 
+								ON td3.trans_detail_id = tr2.trans_detail_id
+							WHERE tr2.trans_detail_status_id = 27
+							GROUP BY td3.trans_id
+						) first_remark
+						ON td2.trans_id = first_remark.trans_id 
+						AND tr1.created_at = first_remark.first_created
+						WHERE tr1.trans_detail_status_id = 27
+						) tr",
+						"tr.trans_id = td.trans_id", "left");
 
-			if (!empty($allowedLabs)) {
-				$this->db->where_in('th.laboratory_id', $allowedLabs);
+
+		$feedmillFilters = isset($filters['feedmill']) ? (array)$filters['feedmill'] : [];
+		if (!empty($feedmillFilters) && !in_array("ALL", $feedmillFilters)) {
+			$this->db->group_start();
+			$this->db->where_in('if.feedmill_name', $feedmillFilters);
+			$this->db->or_where_in('cf.feedmill_name', $feedmillFilters);
+			$this->db->group_end();
+		}
+
+		$selectedLabs = isset($filters['laboratory']) ? (array)$filters['laboratory'] : [];
+
+		if (!empty($lab_access)) {
+			$labIDs = array_column($lab_access, 'laboratory_id');
+
+			if (!empty($selectedLabs)) {
+				$allowedLabs = array_intersect($selectedLabs, $labIDs);
+
+				if (!empty($allowedLabs)) {
+					$this->db->where_in('th.laboratory_id', $allowedLabs);
+				} else {
+					$this->db->where('th.laboratory_id', 0);
+				}
 			} else {
-				$this->db->where('th.laboratory_id', 0);
+				$this->db->where_in('th.laboratory_id', $labIDs);
 			}
 		} else {
-			$this->db->where_in('th.laboratory_id', $labIDs);
+			$this->db->where('th.laboratory_id', 0);
 		}
-	} else {
-		$this->db->where('th.laboratory_id', 0);
+
+		if (!empty($filters['job_number'])) {
+			$this->db->where_in('th.job_order_no', (array)$filters['job_number']);
+		}
+
+		if (!empty($filters['supplier'])) {
+			$this->db->where_in('td.supplier_id', (array)$filters['supplier']);
+		}
+
+		if (!empty($filters['delivery_date_from'])) {
+			$this->db->where('td.delivery_date >=', $filters['delivery_date_from']);
+		}
+
+		if (!empty($filters['delivery_date_to'])) {
+			$this->db->where('td.delivery_date <=', $filters['delivery_date_to']);
+		}
+
+		if (!empty($filters['date_received_from'])) {
+			$this->db->where('DATE(tt_finalprep.date_received) >=', $filters['date_received_from']);
+		}
+
+		if (!empty($filters['date_received_to'])) {
+			$this->db->where('DATE(tt_finalprep.date_received) <=', $filters['date_received_to']);
+		}
+
+		if (!empty($filters['week'])) {
+			$weekConditions = [];
+			foreach ((array)$filters['week'] as $w) {
+				$weekConditions[] = "WEEK(IFNULL(tt_finalprep.date_received, td.created_at), 1) = " . (int)$w;
+			}
+			$this->db->where('(' . implode(' OR ', $weekConditions) . ')');
+		}
+
+		if (!empty($filters['month'])) {
+			$monthConditions = [];
+			foreach ((array)$filters['month'] as $m) {
+				$monthConditions[] = "MONTH(IFNULL(tt_finalprep.date_received, td.created_at)) = " . (int)$m;
+			}
+			$this->db->where('(' . implode(' OR ', $monthConditions) . ')');
+		}
+
+		$this->db->where('td.trans_detail_status_id', 37);
+		$this->db->where('s.sample_type_id', $sample_type_id);
+
+		$this->db->group_by('td.trans_detail_id');
+		$this->db->order_by('td.modified_at', 'DESC');
+
+		return $this->db->get()->result_array();
 	}
-
-        // Latest timestamp
-        $this->db->join("(SELECT trans_detail_id, MAX(created_at) AS date_received
-                        FROM trans_timestamps
-                        WHERE trans_detail_status_id = 26
-                        GROUP BY trans_detail_id) tt_finalprep",
-                        'tt_finalprep.trans_detail_id = td.trans_detail_id', 'left');
-
-        // Latest remark
-        $this->db->join("(SELECT tr1.trans_detail_id, tr1.remark
-                        FROM trans_remarks tr1
-                        INNER JOIN (
-                            SELECT trans_detail_id, MAX(created_at) AS latest_created
-                            FROM trans_remarks
-                            WHERE trans_detail_status_id = 27
-                            GROUP BY trans_detail_id
-                        ) tr2 ON tr1.trans_detail_id = tr2.trans_detail_id AND tr1.created_at = tr2.latest_created
-                        WHERE tr1.trans_detail_status_id = 27
-                        ) tr", 'tr.trans_detail_id = td.trans_detail_id', 'left');
-
-            // Job number filter
-        $jobNumbers = isset($filters['job_number']) ? (array)$filters['job_number'] : [];
-        if (!empty($jobNumbers)) {
-            $this->db->where_in('th.job_order_no', $jobNumbers);
-        }
-
-        $suppliers = isset($filters['supplier']) ? (array)$filters['supplier'] : [];
-        if (!empty($suppliers)) {
-            $this->db->where_in('td.supplier_id', $suppliers);
-        }
-
-        // Delivery date filter
-        if (!empty($filters['delivery_date_from'])) {
-            $this->db->where('td.delivery_date >=', $filters['delivery_date_from']);
-        }
-        if (!empty($filters['delivery_date_to'])) {
-            $this->db->where('td.delivery_date <=', $filters['delivery_date_to']);
-        }
-
-        // Date received filter
-        if (!empty($filters['date_received_from'])) {
-            $this->db->where('DATE(tt_finalprep.date_received) >=', $filters['date_received_from']);
-        }
-        if (!empty($filters['date_received_to'])) {
-            $this->db->where('DATE(tt_finalprep.date_received) <=', $filters['date_received_to']);
-        }
-
-        // Week filter
-        $weeks = isset($filters['week']) ? (array)$filters['week'] : [];
-        if (!empty($weeks)) {
-            $weekConditions = [];
-            foreach ($weeks as $w) {
-                $weekConditions[] = "WEEK(IFNULL(tt_finalprep.date_received, td.created_at), 1) = " . (int)$w;
-            }
-            $this->db->where('(' . implode(' OR ', $weekConditions) . ')');
-        }
-            // Month filter
-        $months = isset($filters['month']) ? (array)$filters['month'] : [];
-        if (!empty($months)) {
-            $monthConditions = [];
-            foreach ($months as $m) {
-                $monthConditions[] = "MONTH(IFNULL(tt_finalprep.date_received, td.created_at)) = " . (int)$m;
-            }
-            $this->db->where('(' . implode(' OR ', $monthConditions) . ')');
-        }
-        $this->db->where('td.trans_detail_status_id', 37);
-        $this->db->where('s.sample_type_id', $sample_type_id);
-        $this->db->group_by('td.trans_detail_id');
-        $this->db->order_by('td.modified_at', 'DESC');
-
-        return $this->db->get()->result_array();
-    }
 
 
 	//DONT REMOVE WILL BE USED FOR FUTURE OPTIMIZATION OF REPORT QUERY

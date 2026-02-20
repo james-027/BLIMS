@@ -177,7 +177,7 @@
                             <td></td>
                             <td><?= $row['job_order_no'] ?></td>
                             <td><?= $row['estimated_release_date'] ?></td>
-                            <td><?= date('M d, Y', strtotime($row['latest_timestamp'])) ?></td>
+                            <td><?= date('M d, Y', strtotime($row['actual_date'])) ?></td>
                             <td><?= $row['test_name'] ?></td>
                             <?php foreach($dynamic_test_headers as $test_code): ?>
                             <td><?= $row[$test_code] ?? '' ?></td>

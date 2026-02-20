@@ -64,8 +64,6 @@ class Login extends CI_Controller {
 			$empID = clean_data($this->input->post('empID'));
 
 		
-
-			
 			$redirect = '';
 
 			$join = array(
