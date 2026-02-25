@@ -119,12 +119,12 @@ class ReportFeeds extends CI_Controller {
             if (!$hasPost) {
         $headers = $this->compute_dynamic_headers($all_details);
         $this->session->set_userdata('locked_report_headers', $headers);
-    } else {
-        $headers = $this->session->userdata('locked_report_headers');
-    }
+        } else {
+            $headers = $this->session->userdata('locked_report_headers');
+        }
 
-       $data['dynamic_test_headers'] = $headers;
-    $data['jobs'] = $this->map_job_results($all_details, $headers);
+        $data['dynamic_test_headers'] = $headers;
+        $data['jobs'] = $this->map_job_results($all_details, $headers);
 
 
 
@@ -132,7 +132,9 @@ class ReportFeeds extends CI_Controller {
     }
 
 
-    private function compute_dynamic_headers($all_details)
+   
+
+private function compute_dynamic_headers($all_details)
 {
     $testHeaders = [];
     $computedHeaders = [
@@ -168,6 +170,31 @@ class ReportFeeds extends CI_Controller {
         }
     }
 
+    // Group test headers by prefix automatically
+    $grouped = [];
+    $ungrouped = [];
+
+    foreach (array_keys($testHeaders) as $h) {
+        if (strpos($h, '-') !== false) {
+            [$prefix, ] = explode('-', $h, 2);
+            $grouped[$prefix][] = $h;
+        } else {
+            $ungrouped[] = $h;
+        }
+    }
+
+    // Flatten groups in **alphabetical order of prefix**
+    ksort($grouped);
+    $finalHeaders = [];
+    foreach ($grouped as $tests) {
+        sort($tests); 
+        $finalHeaders = array_merge($finalHeaders, $tests);
+    }
+
+    // Append ungrouped headers at the end
+    $finalHeaders = array_merge($finalHeaders, $ungrouped);
+
+    // Add computed headers and extra columns
     $finalComputed = array_keys(array_filter($computedHeaders));
 
     $extraColumns = [
@@ -175,9 +202,8 @@ class ReportFeeds extends CI_Controller {
         'Water Activity','Formula Code','Others','Remarks'
     ];
 
-    return array_merge(array_keys($testHeaders), $finalComputed, $extraColumns);
+    return array_merge($finalHeaders, $finalComputed, $extraColumns);
 }
-
 
 private function map_job_results($all_details, $dynamicHeaders)
 {
@@ -342,7 +368,6 @@ private function map_job_results($all_details, $dynamicHeaders)
 
     return array_values($jobs);
 }
-
 
 
 private function sanitize_result($value)

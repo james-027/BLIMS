@@ -128,52 +128,84 @@ class ReportRawMaterials extends CI_Controller {
         return $data;
     }
 
-
-
+  
     private function compute_dynamic_headers($all_details)
     {
         $testHeaders = [];
         $computedHeaders = [
             'WET-CI' => false,
             'NFE' => false,
-
         ];
 
         foreach ($all_details as $row) {
             if (empty($row['test_code'])) continue;
+
             $testCode = strtoupper($row['test_code']);
             $testHeaders[$testCode] = true;
-
 
             $paramName = $this->normalize_text($row['test_param_name'] ?? '');
             $testName  = $this->normalize_text($row['test_name'] ?? '');
 
+            // Existing computed headers logic
+            if ($paramName === 'SALT,%' && $testCode === 'WET-SALT') {
+                $computedHeaders['WET-CI'] = true;
+            }
 
-        if ($paramName === 'SALT,%' && $testCode === 'WET-SALT') {
-            $computedHeaders['WET-CI'] = true;
+            if (in_array($paramName, [
+                'MOISTURE,%',
+                'CRUDEPROTEIN,%',
+                'CRUDEFAT,%',
+                'CRUDEFIBER,%',
+                'ASH,%',
+            ])) {
+                $computedHeaders['NFE'] = true;
+            }
         }
 
-        if (in_array($paramName, [
-            'MOISTURE,%',
-            'CRUDEPROTEIN,%',
-            'CRUDEFAT,%',
-            'CRUDEFIBER,%',
-            'ASH,%',
-        ])) {
-            $computedHeaders['NFE'] = true;
-        }
+        $grouped = [];
+        $prefixOrder = []; // to preserve order of first appearance
+        $ungrouped = [];
+
+        foreach (array_keys($testHeaders) as $h) {
+            if (strpos($h, '-') !== false) {
+                [$prefix, ] = explode('-', $h, 2);
+                if (!isset($grouped[$prefix])) {
+                    $grouped[$prefix] = [];
+                    $prefixOrder[] = $prefix;
+                }
+                $grouped[$prefix][] = $h;
+            } else {
+                $ungrouped[] = $h;
+            }
         }
 
+        // Flatten grouped headers in the order prefixes appear
+        $finalHeaders = [];
+        foreach ($prefixOrder as $prefix) {
+            sort($grouped[$prefix]); // optional: sort within group
+            $finalHeaders = array_merge($finalHeaders, $grouped[$prefix]);
+        }
+
+        // Append ungrouped headers
+        $finalHeaders = array_merge($finalHeaders, $ungrouped);
+
+        // Append computed headers
         $finalComputed = [];
         foreach ($computedHeaders as $code => $active) {
             if ($active) $finalComputed[] = $code;
         }
 
-        $extraColumns = ['STARCH(WET)','FFA ( OLEIC )','FFA ( LINOLEIC)','POTASSIUM','PDI','MESH # 10','MESH # 20','MESH # 30','MESH # 40','PAN','TOTAL','GOOD GRAINS','SMALL GRAINS','SHRUNKEN','SPROUT','SHRUNKEN','MOLDY','CRACKED','INSECT DAMAGED','HEAT DAMAGED','DIFF COLORS','SMUT','BLACK TIPS GRAIN','FOREIGN MATTER','Remarks'];
+        // Extra columns
+        $extraColumns = [
+            'STARCH(WET)','FFA ( OLEIC )','FFA ( LINOLEIC)','POTASSIUM','PDI',
+            'MESH # 10','MESH # 20','MESH # 30','MESH # 40','PAN','TOTAL',
+            'GOOD GRAINS','SMALL GRAINS','SHRUNKEN','SPROUT','SHRUNKEN','MOLDY',
+            'CRACKED','INSECT DAMAGED','HEAT DAMAGED','DIFF COLORS','SMUT',
+            'BLACK TIPS GRAIN','FOREIGN MATTER','Remarks'
+        ];
 
-        return array_merge(array_keys($testHeaders), $finalComputed, $extraColumns);
+        return array_merge($finalHeaders, $finalComputed, $extraColumns);
     }
-
 
     private function map_job_results($all_details, $dynamicHeaders)
     {
