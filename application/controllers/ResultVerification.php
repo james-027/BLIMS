@@ -465,7 +465,6 @@ class ResultVerification extends CI_Controller {
                     return strtotime($b['created_at']) - strtotime($a['created_at']);
                 });
             }
-
         }
 
         $transIds = array_keys($jobs);
@@ -482,9 +481,9 @@ class ResultVerification extends CI_Controller {
 
         $data['jobs'] = array_values($jobs);
         $data['attachments'] = $attachments;
-     $data['is_all_released'] = true OR false;
+        $data['is_all_released'] = true OR false;
         $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
-        $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC');
+        $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC', ['statusID' => 35]  );
         $html = $this->load->view('result_verification/result_verification_container', $data, TRUE);
 
 
