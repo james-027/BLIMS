@@ -107,7 +107,7 @@ define('APP_NAME', 'apps');
 
 //QA AND PRODUCTION SERVER
 
-define('APP_SESS_NAME', 'blims-sys-sess');x
+define('APP_SESS_NAME', 'blims-sys-sess');
 define('APP_SESS_COOKIE_NAME', 'blimssysmgmt_session');
 define('APP_SESS_DIR', 'application\crish-sys-sess');
 define('APP_PORT', 8085);
