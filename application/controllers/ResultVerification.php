@@ -178,6 +178,7 @@ class ResultVerification extends CI_Controller {
     $result_verifications = (array) $this->input->post('result_verifications');
     $remarks = (array) $this->input->post('result_verification_remarks');
 
+    
     if (empty($result_verifications)) {
         echo json_encode([
             'status'  => 'error',
@@ -195,6 +196,8 @@ class ResultVerification extends CI_Controller {
         if ($resultVeriID === 0 && $remark === '') {
             continue;
         }
+
+
 
         $current = $this->db
             ->select('test_result_id')
@@ -343,7 +346,6 @@ class ResultVerification extends CI_Controller {
     exit;
 }
 
-
     
     public function search_details()
     {
@@ -354,7 +356,6 @@ class ResultVerification extends CI_Controller {
         $searchValue = $this->input->get_post('search') ?? '';
         $searchField = $this->input->get_post('field') ?? '';
 
-        
         $theme = get_user_theme(['a.userID' => $userID], true);
         $data['thColor'] = $theme->thColor;
         $data['btnColor'] = $theme->btnColor;

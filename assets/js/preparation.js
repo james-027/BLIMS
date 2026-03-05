@@ -152,15 +152,12 @@ $(document).ready(function(){
     $('#resultVerificationForm').on('submit', function(e) {
         e.preventDefault();
 
-        if (changedRows.size === 0) {
-            swal("No changes", "Nothing to update.", "info");
-            return;
-        }
-
         let formData = new FormData();
 
-        changedRows.forEach(function(id) {
-            let resultVal = $('#result_verifications' + id).val();
+        $('.result-verification-status-select').each(function() {
+
+            let id = $(this).attr('id').replace('result_verifications', '');
+            let resultVal = $(this).val();
             let remarkVal = $('input[name="result_verification_remarks[' + id + ']"]').val();
 
             if (!resultVal && !remarkVal) return;
