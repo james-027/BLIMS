@@ -148,7 +148,6 @@ $(document).ready(function(){
         changedRows.add(id);
     });
 
-
     $('#resultVerificationForm').on('submit', function(e) {
         e.preventDefault();
 
