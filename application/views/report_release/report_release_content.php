@@ -50,7 +50,6 @@
         </div>
 
 
-
         <?php if ($total_pages > 1): ?>
 
         <?php
@@ -62,7 +61,8 @@
             $start = max(1, $end - $visible + 1);
 
             $baseQuery = $_GET;
-            ?>
+        ?>
+
 
         <nav class="mt-4">
             <ul class="pagination justify-content-end">

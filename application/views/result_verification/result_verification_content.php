@@ -37,6 +37,100 @@
         </div>
 
 
+        
+        <?php if ($total_pages > 1): ?>
+
+        <?php
+            $visible = 5;
+            $half    = floor($visible / 2);
+
+            $start = max(1, $current_page - $half);
+            $end   = min($total_pages, $start + $visible - 1);
+            $start = max(1, $end - $visible + 1);
+
+            $baseQuery = $_GET;
+        ?>
+
+        
+        <nav class="mt-4">
+            <ul class="pagination justify-content-end">
+
+                <?php
+                    $prevQuery = $baseQuery;
+                    $prevQuery['page'] = max(1, $current_page - 1);
+                    ?>
+                <li class="page-item <?= $current_page <= 1 ? 'disabled' : '' ?>">
+                    <a class="page-link" href="<?= base_url($controller.'?'.http_build_query($prevQuery)) ?>">
+                        Previous
+                    </a>
+                </li>
+
+                <?php if ($start > 1): ?>
+                <?php
+                        $firstQuery = $baseQuery;
+                        $firstQuery['page'] = 1;
+                        ?>
+                <li class="page-item">
+                    <a class="page-link" href="<?= base_url($controller.'?'.http_build_query($firstQuery)) ?>">
+                        1
+                    </a>
+                </li>
+
+                <?php if ($start > 2): ?>
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+                <?php endif; ?>
+                <?php endif; ?>
+
+                <?php for ($i = $start; $i <= $end; $i++): ?>
+                <?php
+                        $pageQuery = $baseQuery;
+                        $pageQuery['page'] = $i;
+                        ?>
+                <li class="page-item <?= $i == $current_page ? 'active' : '' ?>">
+                    <a class="page-link" href="<?= base_url($controller.'?'.http_build_query($pageQuery)) ?>">
+                        <?= $i ?>
+                    </a>
+                </li>
+                <?php endfor; ?>
+
+                <?php if ($end < $total_pages): ?>
+                <?php if ($end < $total_pages - 1): ?>
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+                <?php endif; ?>
+
+                <?php
+                        $lastQuery = $baseQuery;
+                        $lastQuery['page'] = $total_pages;
+                        ?>
+                <li class="page-item">
+                    <a class="page-link" href="<?= base_url($controller.'?'.http_build_query($lastQuery)) ?>">
+                        <?= $total_pages ?>
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <?php
+                    $nextQuery = $baseQuery;
+                    $nextQuery['page'] = min($total_pages, $current_page + 1);
+                    ?>
+                <li class="page-item <?= $current_page >= $total_pages ? 'disabled' : '' ?>">
+                    <a class="page-link" href="<?= base_url($controller.'?'.http_build_query($nextQuery)) ?>">
+                        Next
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+
+        <?php endif; ?>
+
+
+        
+
         <div class="row justify-content-end mt-3">
             <div class="col-md-12 d-flex justify-content-end gap-2">
                 <button type="button" id="saveBtnResultVerification" class="btn btn-success mr-2">Save</button>

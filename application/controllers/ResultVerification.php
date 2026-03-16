@@ -17,7 +17,6 @@ class ResultVerification extends CI_Controller {
 
     }
 
-
     /*  
 	module: Result Verification Controller
 	desc: Creation of Result Verification Controller
@@ -28,8 +27,13 @@ class ResultVerification extends CI_Controller {
 
     public function index() 
     {
-         $alias = $this->alias;
+        $alias = $this->alias;
         $info = $this->custom_lib->_require_login();
+
+        $page = (int) ($this->input->get('page') ?? 1);
+        $perPage = 5;
+        $offset = ($page - 1) * $perPage;
+
         $data['js_file'] = 'assets/js/preparation.js?v=2.0';
         $data['profile'] = $this->custom_lib->_get_profile();
         $userID = decode($info['userID']);
@@ -59,7 +63,39 @@ class ResultVerification extends CI_Controller {
         $result_veri_remark = 36; // RESULT VERIFICATION REMARK
         $searchValue = "";
         $searchField = "";
-        $all_details = $this->main->get_trans_details($data,$result_veri_stat,$data_review_stat,$test_exec_stat,$result_veri_remark,$searchValue,$searchField); // data , RESULT VERIFICATION STATUS , DATA REVIEW STATUS, ,TEST EXECUTION STATUS , RESULT VERIFICATINO STATUS
+
+        $this->db->distinct();
+        $this->db->select('th.trans_id');
+        $this->db->from('trans_details td');
+        $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
+
+        if (!empty($data['lab_access'])) {
+            $labIDs = array_column($data['lab_access'], 'laboratory_id');
+            $this->db->where_in('th.laboratory_id', $labIDs);
+        }
+
+        $this->db->where('td.trans_detail_status_id', $result_veri_stat);
+
+        $totalJobs = $this->db->count_all_results();
+
+        $this->db->distinct();
+        $this->db->select('th.trans_id');
+        $this->db->from('trans_details td');
+        $this->db->join('trans_headers th', 'th.trans_id = td.trans_id');
+
+        if (!empty($data['lab_access'])) {
+            $labIDs = array_column($data['lab_access'], 'laboratory_id');
+            $this->db->where_in('th.laboratory_id', $labIDs);
+        }
+
+        $this->db->where('td.trans_detail_status_id', $result_veri_stat);
+        $this->db->group_by('th.trans_id');
+        $this->db->order_by('MAX(td.modified_at)', 'DESC', false);
+        $this->db->limit($perPage, $offset);
+
+        $pagedTransIds = array_column($this->db->get()->result_array(), 'trans_id');
+
+        $all_details = $this->main->get_trans_details($data,$result_veri_stat,$data_review_stat,$test_exec_stat,$result_veri_remark,$searchValue,$searchField,$pagedTransIds); // data , RESULT VERIFICATION STATUS , DATA REVIEW STATUS, ,TEST EXECUTION STATUS , RESULT VERIFICATINO STATUS
         $jobs = [];
         foreach ($all_details as $row) {
             $jobId = $row['trans_id'];
@@ -90,6 +126,10 @@ class ResultVerification extends CI_Controller {
 
         $data['jobs'] = array_values($jobs);
         $data['attachments'] = $attachments;
+        $data['per_page']     = $perPage;
+        $data['current_page'] = $page;
+        $data['total_jobs']   = $totalJobs;
+        $data['total_pages']  = ceil($totalJobs / $perPage);
         $data['display_status'] = $this->main->get_data('stats', false, false, 'statusID, statDesc', 'statDesc ASC');
         $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC', ['statusID' => 35]  );
         $data['content'] = $this->load->view('result_verification/result_verification_content', $data , TRUE);
@@ -159,192 +199,192 @@ class ResultVerification extends CI_Controller {
 
    
     public function submit_result_veri()
-{
-    ini_set('display_errors', 0);
-    error_reporting(E_ALL & ~E_WARNING);
-    header('Content-Type: application/json');
+    {
+        ini_set('display_errors', 0);
+        error_reporting(E_ALL & ~E_WARNING);
+        header('Content-Type: application/json');
 
-    $info = $this->custom_lib->_require_login();
-    if (!$info) {
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Unauthorized'
-        ]);
-        exit;
-    }
-
-    $userID = decode($info['userID']);
-
-    $result_verifications = (array) $this->input->post('result_verifications');
-    $remarks = (array) $this->input->post('result_verification_remarks');
-
-    
-    if (empty($result_verifications)) {
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'No changes detected.'
-        ]);
-        exit;
-    }
-
-    foreach ($result_verifications as $trans_detail_id => $resultVeriID) {
-
-        $trans_detail_id = (int) $trans_detail_id;
-        $resultVeriID    = (int) $resultVeriID;
-        $remark          = trim($remarks[$trans_detail_id] ?? '');
-
-        if ($resultVeriID === 0 && $remark === '') {
-            continue;
-        }
-
-
-
-        $current = $this->db
-            ->select('test_result_id')
-            ->from('trans_details')
-            ->where('trans_detail_id', $trans_detail_id)
-            ->get()
-            ->row_array();
-
-        if (!$current) {
-            continue;
-        }
-
-        if ((int)$current['test_result_id'] === $resultVeriID && $remark === '') {
-            continue;
-        }
-
-        //16 - Disapproved
-        //35 - Re-Analysis
-        //27 - Test Execution
-        //37 - Result Verification
-        $newStatus = ((int)$resultVeriID === 16 || (int)$resultVeriID === 35) ? 27 : 37;
-
-        $updateData = [
-            'test_result_id'          => $resultVeriID,
-            'trans_detail_status_id'  => $newStatus,
-            'modified_at'             => date('Y-m-d H:i:s'),
-            'updated_by'              => $userID
-        ];
-
-        $updated = $this->main->update_data(
-            'trans_details',
-            $updateData,
-            ['trans_detail_id' => $trans_detail_id]
-        );
-
-        if (!$updated) {
-            continue;
-        }
-
-        $statusText = '';
-        $statusRow = $this->db
-            ->select('statDesc')
-            ->from('stats')
-            ->where('statusID', $resultVeriID)
-            ->get()
-            ->row_array();
-
-        $statusText = $statusRow['statDesc'] ?? '';
-
-        $this->main->user_logs([
-            'userID'       => $userID,
-            'userFullName' => $info['userFullName'],
-            'logTS'        => date_now(),
-            'page'         => 'ResultVerification/submit_result_veri',
-            'logDetail'    => 'Updated Result Verification ID: ' . $trans_detail_id
-        ]);
-
-        $detail = $this->db
-            ->where('trans_detail_id', $trans_detail_id)
-            ->get('trans_details')
-            ->row_array();
-
-        if ($detail) {
-            unset($detail['id']);
-
-            $detail['trans_detail_id']        = $trans_detail_id;
-            $detail['detail_change']          = $statusText;
-            $detail['trans_detail_status_id'] = 36;
-            $detail['created_by']             = $userID;
-            $detail['created_at']             = date('Y-m-d H:i:s');
-
-            $this->main->insert_data('trans_history', $detail);
-
-            $this->main->insert_data('trans_timestamps', [
-                'trans_detail_id'        => $trans_detail_id,
-                'trans_detail_status_id' => 36,
-                'status_id'              => 1,
-                'created_at'             => date('Y-m-d H:i:s'),
-                'lead_ts_window_start'   => $this->getCutoffTimestamp(),
-                'created_by'             => $userID,
+        $info = $this->custom_lib->_require_login();
+        if (!$info) {
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Unauthorized'
             ]);
+            exit;
         }
 
-        if ($remark !== '') {
-            $this->main->insert_data('trans_remarks', [
-                'trans_detail_id'        => $trans_detail_id,
-                'trans_detail_status_id' => 36,
-                'remark'                 => $remark,
-                'created_by'             => $userID,
-                'created_at'             => date('Y-m-d H:i:s'),
+        $userID = decode($info['userID']);
+
+        $result_verifications = (array) $this->input->post('result_verifications');
+        $remarks = (array) $this->input->post('result_verification_remarks');
+
+        
+        if (empty($result_verifications)) {
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'No changes detected.'
             ]);
+            exit;
         }
 
-        if ($newStatus === 27) {
+        foreach ($result_verifications as $trans_detail_id => $resultVeriID) {
 
-            $notificationHeader = ($resultVeriID === 16) ? 'Disapproved' : 'Re-Analysis';
+            $trans_detail_id = (int) $trans_detail_id;
+            $resultVeriID    = (int) $resultVeriID;
+            $remark          = trim($remarks[$trans_detail_id] ?? '');
 
-            $timestampRow = $this->db
-                ->select('created_by')
-                ->from('trans_timestamps')
+            if ($resultVeriID === 0 && $remark === '') {
+                continue;
+            }
+
+
+
+            $current = $this->db
+                ->select('test_result_id')
+                ->from('trans_details')
                 ->where('trans_detail_id', $trans_detail_id)
-                ->where('trans_detail_status_id', 27)
-                ->order_by('created_at', 'DESC')
                 ->get()
                 ->row_array();
 
-            if (!empty($timestampRow)) {
+            if (!$current) {
+                continue;
+            }
 
-                $recipient = $this->db
-                    ->select('userID, userEmail, userFirstName, userLastName')
-                    ->from('users')
-                    ->where('userID', (int)$timestampRow['created_by'])
-                    ->where('userEmail IS NOT NULL AND userEmail !=', '')
+            if ((int)$current['test_result_id'] === $resultVeriID && $remark === '') {
+                continue;
+            }
+
+            //16 - Disapproved
+            //35 - Re-Analysis
+            //27 - Test Execution
+            //37 - Result Verification
+            $newStatus = ((int)$resultVeriID === 16 || (int)$resultVeriID === 35) ? 27 : 37;
+
+            $updateData = [
+                'test_result_id'          => $resultVeriID,
+                'trans_detail_status_id'  => $newStatus,
+                'modified_at'             => date('Y-m-d H:i:s'),
+                'updated_by'              => $userID
+            ];
+
+            $updated = $this->main->update_data(
+                'trans_details',
+                $updateData,
+                ['trans_detail_id' => $trans_detail_id]
+            );
+
+            if (!$updated) {
+                continue;
+            }
+
+            $statusText = '';
+            $statusRow = $this->db
+                ->select('statDesc')
+                ->from('stats')
+                ->where('statusID', $resultVeriID)
+                ->get()
+                ->row_array();
+
+            $statusText = $statusRow['statDesc'] ?? '';
+
+            $this->main->user_logs([
+                'userID'       => $userID,
+                'userFullName' => $info['userFullName'],
+                'logTS'        => date_now(),
+                'page'         => 'ResultVerification/submit_result_veri',
+                'logDetail'    => 'Updated Result Verification ID: ' . $trans_detail_id
+            ]);
+
+            $detail = $this->db
+                ->where('trans_detail_id', $trans_detail_id)
+                ->get('trans_details')
+                ->row_array();
+
+            if ($detail) {
+                unset($detail['id']);
+
+                $detail['trans_detail_id']        = $trans_detail_id;
+                $detail['detail_change']          = $statusText;
+                $detail['trans_detail_status_id'] = 36;
+                $detail['created_by']             = $userID;
+                $detail['created_at']             = date('Y-m-d H:i:s');
+
+                $this->main->insert_data('trans_history', $detail);
+
+                $this->main->insert_data('trans_timestamps', [
+                    'trans_detail_id'        => $trans_detail_id,
+                    'trans_detail_status_id' => 36,
+                    'status_id'              => 1,
+                    'created_at'             => date('Y-m-d H:i:s'),
+                    'lead_ts_window_start'   => $this->getCutoffTimestamp(),
+                    'created_by'             => $userID,
+                ]);
+            }
+
+            if ($remark !== '') {
+                $this->main->insert_data('trans_remarks', [
+                    'trans_detail_id'        => $trans_detail_id,
+                    'trans_detail_status_id' => 36,
+                    'remark'                 => $remark,
+                    'created_by'             => $userID,
+                    'created_at'             => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            if ($newStatus === 27) {
+
+                $notificationHeader = ($resultVeriID === 16) ? 'Disapproved' : 'Re-Analysis';
+
+                $timestampRow = $this->db
+                    ->select('created_by')
+                    ->from('trans_timestamps')
+                    ->where('trans_detail_id', $trans_detail_id)
+                    ->where('trans_detail_status_id', 27)
+                    ->order_by('created_at', 'DESC')
                     ->get()
                     ->row_array();
 
-                if ($recipient) {
+                if (!empty($timestampRow)) {
 
-                    $transHeader = $this->db
-                        ->select('th.trans_id, th.job_order_no, td.ext_lab_code')
-                        ->from('trans_headers th')
-                        ->join('trans_details td', 'td.trans_id = th.trans_id')
-                        ->where('td.trans_detail_id', $trans_detail_id)
+                    $recipient = $this->db
+                        ->select('userID, userEmail, userFirstName, userLastName')
+                        ->from('users')
+                        ->where('userID', (int)$timestampRow['created_by'])
+                        ->where('userEmail IS NOT NULL AND userEmail !=', '')
                         ->get()
                         ->row_array();
 
-                    if ($transHeader) {
-                        $this->email_format->generateEmailNotification(
-                            $transHeader,
-                            $trans_detail_id,
-                            $statusText,
-                            $remark,
-                            $recipient,
-                            $notificationHeader
-                        );
+                    if ($recipient) {
+
+                        $transHeader = $this->db
+                            ->select('th.trans_id, th.job_order_no, td.ext_lab_code')
+                            ->from('trans_headers th')
+                            ->join('trans_details td', 'td.trans_id = th.trans_id')
+                            ->where('td.trans_detail_id', $trans_detail_id)
+                            ->get()
+                            ->row_array();
+
+                        if ($transHeader) {
+                            $this->email_format->generateEmailNotification(
+                                $transHeader,
+                                $trans_detail_id,
+                                $statusText,
+                                $remark,
+                                $recipient,
+                                $notificationHeader
+                            );
+                        }
                     }
                 }
             }
         }
-    }
 
-    echo json_encode([
-        'status'  => 'success',
-        'message' => 'Result Verification submitted successfully.'
-    ]);
-    exit;
-}
+        echo json_encode([
+            'status'  => 'success',
+            'message' => 'Result Verification submitted successfully.'
+        ]);
+        exit;
+    }
 
     
     public function search_details()
@@ -497,7 +537,7 @@ class ResultVerification extends CI_Controller {
     }
     
 
-        private function getCutoffTimestamp()
+    private function getCutoffTimestamp()
     {
         $now = new DateTime('now');
 

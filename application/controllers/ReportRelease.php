@@ -239,10 +239,9 @@ class ReportRelease extends CI_Controller {
         $this->load->view('admin/templates', $data);
     }
 
-
-      public function search_details()
+    public function search_details()
     {
-         $alias = $this->alias;
+        $alias = $this->alias;
 
         $searchValue = $this->input->get_post('search') ?? '';
         $searchField = $this->input->get_post('field') ?? '';
@@ -415,8 +414,6 @@ class ReportRelease extends CI_Controller {
         exit;
     }
 
-
-  
 
     public function get_logs($trans_detail_id)
     {

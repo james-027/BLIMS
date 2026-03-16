@@ -37,6 +37,7 @@ $port = APP_PORT;
 
 //TO QA SERVER
 
+
     $server_private_ip = ENVIRONMENT === "production" ? '10.2.4.87' : '10.2.0.57';
     if (php_sapi_name() == 'cli') {
         $base_url2 = 'http://localhost:' . $port;

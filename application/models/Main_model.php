@@ -625,7 +625,7 @@ class Main_model extends CI_Model {
         return $query->num_rows();
     }
 
-	public function get_trans_details($data, $status_id, $timestamp_from_status = null, $remark_from_status = null , $remark_from_verification = null,$searchValue,$searchField) 
+	public function get_trans_details($data, $status_id, $timestamp_from_status = null, $remark_from_status = null , $remark_from_verification = null,$searchValue,$searchField,$pagedTransIds = []) 
 	{
 		$this->db->select([
 			'th.trans_id AS trans_id',
@@ -668,6 +668,11 @@ class Main_model extends CI_Model {
 		} else {
 			$this->db->where('th.laboratory_id', 0);
 		}
+
+		if (!empty($pagedTransIds)) {
+			$this->db->where_in('th.trans_id', $pagedTransIds);
+		}
+		
 
 		$this->db->group_by('td.trans_detail_id');
 
@@ -734,11 +739,10 @@ class Main_model extends CI_Model {
 			$this->db->join("($reason_join) trr", 'trr.trans_detail_id = td.trans_detail_id', 'left');
 			$this->db->join('reasons r', 'r.id = trr.reason_id', 'left');
 
-
-	
-
 			
         if (!empty($searchValue)) {
+
+		
             $this->db->group_start();
 
             switch ($searchField) {

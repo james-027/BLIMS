@@ -64,6 +64,7 @@ class TestExecution extends CI_Controller {
         
         $searchValue = "";
         $searchField = "";
+        
 
         $all_details = $this->main->get_trans_details($data,$test_exec_status,$final_prep,null,null,$searchValue ,$searchField); // data , TEST EXECUTION STATUS , FINAL PREP STATUS, 
         $jobs = [];
