@@ -247,7 +247,6 @@ class Registration extends CI_Controller {
     }
 
 
-
     public function search_details()
     {
         $searchValue = $this->input->get_post('search') ?? '';

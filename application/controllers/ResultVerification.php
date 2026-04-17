@@ -134,7 +134,7 @@ class ResultVerification extends CI_Controller {
         $data['result_verifications'] = $this->main->get_data('stats', ['status_type_id' => 7], false, 'statusID, statDesc', 'statDesc ASC', ['statusID' => 35]  );
         $data['content'] = $this->load->view('result_verification/result_verification_content', $data , TRUE);
         $this->load->view('admin/templates', $data);
-    }
+    }   
 
 
     public function get_logs($trans_detail_id)
